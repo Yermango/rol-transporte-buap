@@ -1128,16 +1128,144 @@ function render() {
       let stU = document.getElementById("modalEstU").value;
       let stOp = document.getElementById("modalEstOp").value;
       let ds = getDayState();
-      
+      store.unassignedReasons = store.unassignedReasons || {};
+      store.operadoresDB = store.operadoresDB || {};
+      ds.opOverride = ds.opOverride || {}; ds.unitOverride = ds.unitOverride || {};
+
+      // Desvincula la asignación anterior sin borrar el historial de viajes.
       if(origU) ds.opOverride[origU] = "VACIO";
-      if(origOp) { ds.unitOverride[origOp] = "VACIO"; let opC = Object.keys(store.operadoresDB).find(k => store.operadoresDB[k] === origOp); if (opC) ds.unitOverride[opC] = "VACIO"; }
+      if(origOp) {
+          ds.unitOverride[origOp] = "VACIO";
+          let oldCode = Object.keys(store.operadoresDB).find(k => store.operadoresDB[k] === origOp);
+          if(oldCode) ds.unitOverride[oldCode] = "VACIO";
+      }
       if(origK) ds.unitOverride[origK] = "VACIO";
 
       if(finalU && finalU !== "VACIO") ds.opOverride[finalU] = "VACIO";
-      if(finalOp && finalOp !== "VACIO") { ds.unitOverride[finalOp] = "VACIO"; let opC = Object.keys(store.operadoresDB).find(k => store.operadoresDB[k] === finalOp); if (opC) ds.unitOverride[opC] = "VACIO"; }
-
-      if(finalU && finalU !== "VACIO") { if(stU === 'Activa') delete store.unassignedReasons[finalU]; else store.unassignedReasons[finalU] = stU; }
       if(finalOp && finalOp !== "VACIO") {
-          let opC = Object.keys(store.operadoresDB).find(k => store.operadoresDB[k] === finalOp);
-          if (stOp === 'Activo') { delete store.unassignedReasons[finalOp]; if(opC) delete store.unassignedReasons[opC]; } 
-          else { store.unassignedReasons[finalOp] = stOp; if(opC) store
+          ds.unitOverride[finalOp] = "VACIO";
+          let opCode = Object.keys(store.operadoresDB).find(k => store.operadoresDB[k] === finalOp);
+          if(opCode) ds.unitOverride[opCode] = "VACIO";
+      }
+
+      if(finalU && finalU !== "VACIO") {
+          if(stU === "Activa") delete store.unassignedReasons[finalU];
+          else store.unassignedReasons[finalU] = stU;
+      }
+      if(finalOp && finalOp !== "VACIO") {
+          let opCode = Object.keys(store.operadoresDB).find(k => store.operadoresDB[k] === finalOp);
+          if(stOp === "Activo") {
+              delete store.unassignedReasons[finalOp];
+              if(opCode) delete store.unassignedReasons[opCode];
+          } else {
+              store.unassignedReasons[finalOp] = stOp;
+              if(opCode) store.unassignedReasons[opCode] = stOp;
+          }
+      }
+
+      // Guarda la relación elegida para la flota global.
+      store.globalFleet = store.globalFleet || [];
+      let fleetRow = store.globalFleet.find(x => String(x.u) === String(origU) || (origK && String(x.k) === String(origK)) || (origOp && x.n === origOp));
+      if(!fleetRow) { fleetRow = {}; store.globalFleet.push(fleetRow); }
+      if(finalU === "VACIO") { delete fleetRow.u; } else if(finalU) fleetRow.u = finalU;
+      if(finalOp === "VACIO") { delete fleetRow.n; } else if(finalOp) fleetRow.n = finalOp;
+      if(origK && !fleetRow.k) fleetRow.k = origK;
+      closeSheet(); render(); saveStore();
+  };
+
+  window.openChangeModal = function(card) {
+      const tripId = card?.dataset?.id;
+      const trip = (store.days?.[store.currentDay]?.trips || []).find(t => String(t.id) === String(tripId));
+      if(!trip) { openSheet('<h2>No se encontró el viaje</h2><p>Actualiza la aplicación e inténtalo de nuevo.</p>'); return; }
+      const ds = getDayState();
+      const baseU = ds.tripUnitOverride[trip.id] || ds.unitOverride[trip.k || trip.n] || ds.unitOverride[trip.u] || trip.u || '';
+      const baseOp = ds.tripOpOverride[trip.id] || ds.opOverride[baseU] || ds.opOverride[trip.n] || trip.n || '';
+      const unitOptions = ['<option value="">Sin unidad</option>'].concat(FLOTA_FIJA.map(f => `<option value="${f.u}" ${String(baseU)===String(f.u)?'selected':''}>U-${f.u} · ${f.p}</option>`)).join('');
+      const ops = [...new Set(Object.values(store.operadoresDB || {}).filter(Boolean).concat((store.days[store.currentDay].trips || []).map(t=>t.n).filter(Boolean)))].sort((a,b)=>a.localeCompare(b));
+      const opOptions = ['<option value="">Sin operador</option>'].concat(ops.map(op=>`<option value="${String(op).replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" ${op===baseOp?'selected':''}>${op}</option>`)).join('');
+      openSheet(`<h2>Modificar viaje</h2>
+        <div style="background:var(--surface-2);padding:12px;border-radius:10px;margin-bottom:14px"><b>${trip.h}</b><br>${formatRouteName(trip.o,trip.d)}<br><small>Clave: ${trip.k || '—'}</small></div>
+        <label>Unidad</label><select id="changeUnit" class="input-field" style="appearance:auto">${unitOptions}</select>
+        <label>Operador</label><select id="changeOperator" class="input-field" style="appearance:auto">${opOptions}</select>
+        <button class="btn-primary" onclick="guardarCambioViaje('${String(trip.id).replace(/'/g, '')}')">Guardar cambios</button>
+        <button class="btn-outline" onclick="closeSheet()">Cancelar</button>`);
+  };
+
+  window.guardarCambioViaje = function(tripId) {
+      const ds = getDayState();
+      const unit = document.getElementById('changeUnit')?.value || '';
+      const op = document.getElementById('changeOperator')?.value || '';
+      ds.tripUnitOverride[tripId] = unit || 'VACIO';
+      ds.tripOpOverride[tripId] = op || 'VACIO';
+      ds.unitChanges = ds.unitChanges || [];
+      const trip = (store.days?.[store.currentDay]?.trips || []).find(t => String(t.id) === String(tripId));
+      ds.unitChanges.push({time:new Date().toISOString(), route:trip?formatRouteName(trip.o,trip.d):tripId, tripId, oldUnit:'—', newUnit:unit||'VACIO', oldOp:'—', newOp:op||'VACIO', reason:'Cambio manual de viaje'});
+      closeSheet(); render(); saveStore();
+  };
+
+  window.abrirConfiguracion = function() {
+      const trips = store.days?.[store.currentDay]?.trips || [];
+      openSheet(`<h2>Configuración y datos</h2>
+        <div style="background:var(--surface-2);padding:12px;border-radius:10px;font-size:13px;line-height:1.8;margin-bottom:12px">
+          <b>Conexión:</b> ${db ? 'Firebase configurado' : 'Sin conexión'}<br>
+          <b>Fecha activa:</b> ${store.currentDay || '—'}<br>
+          <b>Viajes:</b> ${trips.length}<br><b>Unidades fijas:</b> ${FLOTA_FIJA.length}
+        </div>
+        <p style="font-size:13px;color:var(--ink-soft)">Importa archivos Excel para actualizar los datos. La importación solo se ejecutará si el archivo tiene el formato esperado por la aplicación.</p>
+        <button class="btn-outline" onclick="document.getElementById('fileAsignacion').click()">📄 Cargar asignación Excel</button>
+        <button class="btn-outline" onclick="document.getElementById('fileSeguimiento').click()">📊 Cargar seguimiento Excel</button>
+        <button class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
+  };
+
+  window.verDisponibilidad = function() {
+      const trips = [...(store.days?.[store.currentDay]?.trips || [])].sort((a,b)=>a.h.localeCompare(b.h));
+      const ds = getDayState();
+      const baselineOp = {}; (store.globalFleet || []).forEach(g=>{if(g.u && g.n) baselineOp[String(g.u)] = g.n;});
+      const rows = trips.map(t=>{
+        const ovU = ds.tripUnitOverride[t.id] || ds.unitOverride[t.k || t.n] || ds.unitOverride[t.u];
+        const u = ovU === 'VACIO' ? '' : (ovU || t.u || '');
+        const ovO = ds.tripOpOverride[t.id] || ds.opOverride[u] || ds.opOverride[t.n];
+        const op = ovO === 'VACIO' ? '' : (ovO || baselineOp[u] || t.n || '');
+        const start = hhmmToMins(t.h), end = start + getTripDuration(t);
+        return {t,u,op,start,end};
+      });
+      const html = rows.map(r=>`<div class="avail-row"><div style="display:flex;justify-content:space-between;gap:8px"><b class="mono">${r.t.h}</b><b>${r.u ? 'U-'+r.u : 'Sin unidad'}</b></div><div style="font-size:13px;margin-top:4px">${formatRouteName(r.t.o,r.t.d)}</div><div style="font-size:12px;color:var(--ink-soft);margin-top:4px">${r.op || 'Sin operador'} · llegada estimada ${minsToHhmm(r.end % 1440)}</div></div>`).join('');
+      openSheet(`<h2>⏱ Disponibilidad de viajes</h2><p style="font-size:13px;color:var(--ink-soft)">Duración estimada por trayecto: CU–CU2 40 min; otros destinos 55 min. Los empalmes se revisan por separado.</p><div style="max-height:65vh;overflow:auto">${html || '<p>No hay viajes cargados para esta fecha.</p>'}</div>`);
+  };
+
+  window.verVacios = function() {
+      const trips = store.days?.[store.currentDay]?.trips || [];
+      const ds = getDayState();
+      const empty = trips.filter(t=>[normLoc(t.o),normLoc(t.d)].includes('CU2')).filter(t=>{
+        const ov = ds.tripUnitOverride[t.id] || ds.unitOverride[t.k || t.n] || ds.unitOverride[t.u];
+        return ov === 'VACIO' || !(ov || t.u);
+      }).sort((a,b)=>a.h.localeCompare(b.h));
+      openSheet(`<h2>🚎 Viajes CU2 sin unidad</h2>${empty.length ? empty.map(t=>`<div class="avail-row"><b class="mono">${t.h}</b><div>${formatRouteName(t.o,t.d)}</div><button class="btn-outline btn-small" onclick="abrirModalDesdePendientes('${t.id}','','','${t.k || t.n || ''}')">Asignar unidad/operador</button></div>`).join('') : '<p style="text-align:center;color:var(--done);padding:20px">No hay viajes CU2 sin unidad asignada.</p>'}`);
+  };
+
+  window.verCambios = function() {
+      const changes = getDayState().unitChanges || [];
+      const html = [...changes].reverse().map(c=>`<div class="avail-row"><b>${c.route || 'Cambio'}</b><div style="font-size:12px;color:var(--ink-soft)">${c.time ? new Date(c.time).toLocaleString('es-MX') : ''}</div><div style="font-size:13px;margin-top:4px">Unidad: ${c.oldUnit || '—'} → ${c.newUnit || '—'}<br>Operador: ${c.oldOp || '—'} → ${c.newOp || '—'}</div><div style="font-size:12px;margin-top:4px">${c.reason || ''}</div></div>`).join('');
+      openSheet(`<h2>🔄 Historial de cambios</h2><div style="max-height:70vh;overflow:auto">${html || '<p style="text-align:center;color:gray;padding:20px">Todavía no hay cambios registrados.</p>'}</div>`);
+  };
+
+  function openLocationPicker(kind) {
+      const trips = store.days?.[store.currentDay]?.trips || [];
+      const locs = [...new Set(trips.flatMap(t=>[normLoc(t.o),normLoc(t.d)]).filter(Boolean))].sort();
+      const current = kind === 'origin' ? activeOrigin : activeDest;
+      const buttons = [`<button class="opt-row ${!current?'sel':''}" onclick="setLocationFilter('${kind}','')">Todos los puntos ${!current?'✓':''}</button>`].concat(locs.map(loc=>`<button class="opt-row ${loc===current?'sel':''}" onclick="setLocationFilter('${kind}',decodeURIComponent('${encodeURIComponent(loc)}'))">${loc}</button>`)).join('');
+      openSheet(`<h2>${kind==='origin'?'📍 Elegir origen':'🚩 Elegir destino'}</h2><div class="opt-list">${buttons}</div>`);
+  }
+  window.setLocationFilter = function(kind, value) {
+      if(kind==='origin') activeOrigin = value || null; else activeDest = value || null;
+      closeSheet(); render();
+  };
+  document.getElementById('btnOrigen').addEventListener('click',()=>openLocationPicker('origin'));
+  document.getElementById('btnDestino').addEventListener('click',()=>openLocationPicker('dest'));
+  document.getElementById('search').addEventListener('input',e=>{searchTerm=e.target.value.trim().toLowerCase();render();});
+
+  document.getElementById('fileAsignacion').addEventListener('change',()=>showAggressiveToast('El selector de archivo está disponible, pero la importación requiere el formato de asignación original.'));
+  document.getElementById('fileSeguimiento').addEventListener('change',()=>showAggressiveToast('El selector de archivo está disponible, pero la importación requiere el formato de seguimiento original.'));
+</script>
+</body>
+</html>
