@@ -183,7 +183,7 @@
   .btn-small { padding: 6px 12px; font-size: 13px; margin-top: 8px; border-radius: 6px; min-height: initial;}
 
   .reason-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 5px 0 15px; }
-  .reason-chip { border: 1px solid var(--line); padding: 10px 14px; border-radius: 20px; font-size: 14px; font-weight: 500; cursor: pointer; background: var(--surface); color: var(--ink-soft); transition: 0.2s;}
+  .reason-chip { border: 1px solid var(--line); padding: 8px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; background: var(--surface); color: var(--ink-soft); transition: 0.2s;}
   .reason-chip.sel { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600;}
   
   .opt-list { display: flex; flex-direction: column; gap: 2px; }
@@ -265,6 +265,7 @@
 
 <script>
 const ESTADOS_CRITICOS = ["Siniestro", "Taller", "Falla mecánica", "Sin diésel", "Falta", "Permiso", "Incapacidad", "Baja"];
+const MOTIVOS_RAPIDOS = ["Apoyo", "Enroque", "Falla mecánica", "Sin diésel", "Taller", "Siniestro", "Falta", "Permiso", "Retraso"];
 const FLOTA_FIJA = [
   {u:"8002", p:"2MUE32"}, {u:"8003", p:"2MUE33"}, {u:"8005", p:"2MUA58"}, {u:"8008", p:"2MUE36"},
   {u:"8015", p:"2MUE41"}, {u:"8016", p:"2MUE42"}, {u:"8017", p:"2MUD53"}, {u:"8018", p:"2MUE43"},
@@ -307,7 +308,16 @@ var ICO = {
     terminal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>'
 };
 
-var store = { days: {}, state: {}, knownRoutes: {}, unassignedReasons: {}, operadoresDB: {}, globalFleet: [], currentDay: "Hoy" };
+var store = {
+    days: {},
+    state: {},
+    knownRoutes: {},
+    unassignedReasons: {},
+    operadoresDB: {},
+    globalFleet: [],
+    globalHistory: [],
+    currentDay: "Hoy"
+};
 var activeView = "activas", activeOrigin = null, activeDest = null, searchTerm = "";
 var showRevisar = false;
 var flotaSortCol = "u";
@@ -315,6 +325,8 @@ var flotaSortDir = 1;
 var db;
 var globalCollisions = []; 
 var globalAlertsData = [];
+var historyFilterDay = "ALL";
+var historySearchTerm = "";
 
 // FUNCIONES GLOBALES DE CÁLCULO DE TIEMPOS MEJORADAS (0, 40 o 55 min)
 function normLoc(loc) {
@@ -336,6 +348,66 @@ function getTripDuration(trip) {
 
 function getEmptyTravelTime(dest1, orig2) {
     return (dest1 && orig2) ? getTravelTime(dest1, orig2) : 0;
+}
+
+// BÓVEDA DE HISTORIAL HISTÓRICO PERSISTENTE
+function getGlobalHistory() {
+    if (!Array.isArray(store.globalHistory)) store.globalHistory = [];
+    let existingIds = new Set(store.globalHistory.map(h => h.id));
+
+    // Migra cualquier registro previo de unitChanges por día hacia el historial histórico global
+    if (store.state) {
+        Object.keys(store.state).forEach(dayKey => {
+            let dayChanges = (store.state[dayKey] && store.state[dayKey].unitChanges) || [];
+            dayChanges.forEach((c, idx) => {
+                let uid = c.id || `${dayKey}_${c.time || idx}_${c.tripId || c.route || idx}`;
+                if (!existingIds.has(uid)) {
+                    store.globalHistory.push({
+                        id: uid,
+                        day: c.day || dayKey,
+                        time: c.time || new Date().toISOString(),
+                        tripTime: c.tripTime || "—",
+                        clave: c.clave || "—",
+                        route: c.route || "Cambio",
+                        tripId: c.tripId || "",
+                        oldUnit: c.oldUnit || "—",
+                        newUnit: c.newUnit || "—",
+                        oldOp: c.oldOp || "—",
+                        newOp: c.newOp || c.nombre || "—",
+                        reason: c.reason || "Cambio operativo",
+                        type: c.type || "Viaje"
+                    });
+                    existingIds.add(uid);
+                }
+            });
+        });
+    }
+
+    store.globalHistory.sort((a, b) => String(a.time || "").localeCompare(String(b.time || "")));
+    return store.globalHistory;
+}
+
+function registrarEnHistorial(entry) {
+    let ds = getDayState();
+    let hist = getGlobalHistory();
+    let record = {
+        id: entry.id || `${store.currentDay || 'Hoy'}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        day: entry.day || store.currentDay || "Hoy",
+        time: entry.time || new Date().toISOString(),
+        tripTime: entry.tripTime || "—",
+        clave: entry.clave || "—",
+        route: entry.route || "Cambio",
+        tripId: entry.tripId || "",
+        oldUnit: entry.oldUnit || "S/U",
+        newUnit: entry.newUnit || "S/U",
+        oldOp: entry.oldOp || "Sin Asignar",
+        newOp: entry.newOp || "Sin Asignar",
+        reason: entry.reason || "Cambio manual",
+        type: entry.type || "Viaje"
+    };
+    ds.unitChanges = ds.unitChanges || [];
+    ds.unitChanges.push(record);
+    hist.push(record);
 }
 
 window.toggleDesktopView = function() {
@@ -381,30 +453,53 @@ try {
     db = firebase.database().ref("operaciones_v6");
     db.on("value", (snap) => {
         if(snap.val()) {
+            let prevHistLen = Array.isArray(store.globalHistory) ? store.globalHistory.length : 0;
+            let localHistoryBackup = Array.isArray(store.globalHistory) ? [...store.globalHistory] : [];
             let oldChanges = (store.state && store.state[store.currentDay] && store.state[store.currentDay].unitChanges) ? store.state[store.currentDay].unitChanges.length : 0;
+            
             store = snap.val();
-            store.days = store.days || {}; store.state = store.state || {}; store.knownRoutes = store.knownRoutes || {}; 
-            store.unassignedReasons = store.unassignedReasons || {}; store.operadoresDB = store.operadoresDB || {}; store.currentDay = store.currentDay || "Hoy";
+            store.days = store.days || {};
+            store.state = store.state || {};
+            store.knownRoutes = store.knownRoutes || {}; 
+            store.unassignedReasons = store.unassignedReasons || {};
+            store.operadoresDB = store.operadoresDB || {};
+            store.globalFleet = store.globalFleet || [];
+            store.globalHistory = Array.isArray(store.globalHistory) ? store.globalHistory : [];
+            store.currentDay = store.currentDay || "Hoy";
+
+            // Blindaje: nunca perder registros locales del historial histórico
+            if (localHistoryBackup.length > 0) {
+                let ids = new Set(store.globalHistory.map(h => h.id));
+                localHistoryBackup.forEach(item => {
+                    if (item && item.id && !ids.has(item.id)) {
+                        store.globalHistory.push(item);
+                        ids.add(item.id);
+                    }
+                });
+            }
+            getGlobalHistory();
             
             let newChanges = (store.state[store.currentDay] && store.state[store.currentDay].unitChanges) ? store.state[store.currentDay].unitChanges.length : 0;
-            if(newChanges > oldChanges) {
-                let ultCambio = store.state[store.currentDay].unitChanges.slice(-1)[0];
-                let isCritical = ESTADOS_CRITICOS.includes(ultCambio.reason);
-                let audio = document.getElementById("alertaSonido");
-                if(audio) { audio.currentTime = 0; audio.play().catch(e => {}); } 
-                
-                if (navigator.vibrate) navigator.vibrate(isCritical ? [400, 200, 400, 200, 600] : [200, 100, 200]);
+            if(newChanges > oldChanges || (store.globalHistory.length > prevHistLen && prevHistLen > 0)) {
+                let ultCambio = (store.state[store.currentDay] && store.state[store.currentDay].unitChanges && store.state[store.currentDay].unitChanges.slice(-1)[0]) || store.globalHistory.slice(-1)[0];
+                if (ultCambio) {
+                    let isCritical = ESTADOS_CRITICOS.some(est => String(ultCambio.reason || "").toLowerCase().includes(est.toLowerCase()));
+                    let audio = document.getElementById("alertaSonido");
+                    if(audio) { audio.currentTime = 0; audio.play().catch(e => {}); } 
+                    
+                    if (navigator.vibrate) navigator.vibrate(isCritical ? [400, 200, 400, 200, 600] : [200, 100, 200]);
 
-                if ("Notification" in window && Notification.permission === "granted") {
-                    new Notification(isCritical ? "⚠️ CRÍTICO: " + ultCambio.route : "🔄 Cambio: " + ultCambio.route, {
-                        body: `Unidad: ${ultCambio.newUnit === 'VACIO' ? 'S/U' : 'U-'+ultCambio.newUnit} | Op: ${ultCambio.newOp === 'VACIO' ? 'Sin Asignar' : (ultCambio.newOp || ultCambio.nombre)}\nMotivo: ${ultCambio.reason || 'N/A'}`,
-                        icon: "manifest.json",
-                        requireInteraction: true // <--- Hace la alerta persistente hasta que el operador la cierre
-                    });
-                }
-                
-                if(isCritical && !document.hidden) {
-                    showAggressiveToast(`Cambio urgente en ruta ${ultCambio.route}.<br>Revisa el historial de cambios.`);
+                    if ("Notification" in window && Notification.permission === "granted") {
+                        new Notification(isCritical ? "⚠️ CRÍTICO: " + ultCambio.route : "🔄 Cambio: " + ultCambio.route, {
+                            body: `Unidad: ${ultCambio.newUnit === 'VACIO' || ultCambio.newUnit === 'S/U' ? 'S/U' : 'U-'+ultCambio.newUnit} | Op: ${ultCambio.newOp === 'VACIO' ? 'Sin Asignar' : (ultCambio.newOp || ultCambio.nombre)}\nMotivo: ${ultCambio.reason || 'N/A'}`,
+                            icon: "manifest.json",
+                            requireInteraction: true
+                        });
+                    }
+                    
+                    if(isCritical && !document.hidden) {
+                        showAggressiveToast(`Cambio urgente en ruta ${ultCambio.route}.<br>Revisa el historial de cambios.`);
+                    }
                 }
             }
         }
@@ -420,6 +515,7 @@ function setSyncStatus(isBusy, text){
 }
 
 function saveStore() {
+    getGlobalHistory();
     if(!db) { setSyncStatus(false, "Modo sin conexión"); return; }
     setSyncStatus(true, "Guardando...");
     db.set(JSON.parse(JSON.stringify(store)), (err) => setSyncStatus(false, err ? "Error" : "En línea"));
@@ -580,11 +676,11 @@ function actualizarBadgePendientes() {
 
     (allTrips || []).forEach(t => {
         let state = getTripState(t.id);
-        let isHidden = state.hidden;
+        let isHidden = !!state.hidden;
         if (state.status === "formado" && state.formadoAt && (nowTime - state.formadoAt > 300000)) isHidden = true;
         if (isHidden) return;
         
-        if (ds.resolvedMissing && ds.resolvedMissing.includes(t.id)) return; // Skippear si ya lo marcó como resuelto
+        if (ds.resolvedMissing && ds.resolvedMissing.includes(t.id)) return;
 
         let overU = ds.tripUnitOverride[t.id] || ds.unitOverride[t.k || t.n] || ds.unitOverride[t.u];
         let finalUnit = overU === "VACIO" ? "" : (overU || t.u);
@@ -703,7 +799,7 @@ window.cambiarVista = function(vista, btn) {
     btn.classList.add("active"); activeView = vista; render();
 };
 
-function hhmmToMins(h){ var p = h.split(":"); return (+p[0])*60 + (+p[1]); }
+function hhmmToMins(h){ var p = String(h || "00:00").split(":"); return (+p[0])*60 + (+p[1] || 0); }
 function minsToHhmm(m){ let rh = Math.floor(m/60); let rm = m%60; return String(rh).padStart(2,'0') + ':' + String(rm).padStart(2,'0'); }
 
 function obtenerEmpalmesRender() {
@@ -751,7 +847,14 @@ function obtenerEmpalmesRender() {
 }
 
 function render() {
-    if(!store.days || !store.days[store.currentDay]) return;
+    if(!store.days || !store.days[store.currentDay]) {
+        document.getElementById("dayLabel").innerHTML = (store.currentDay || "Sin datos") + " <span>▼</span>";
+        document.getElementById("btnOrigen").innerHTML = ICO.pin + '<span>' + (activeOrigin ? activeOrigin : 'Origen') + '</span>';
+        document.getElementById("btnDestino").innerHTML = ICO.flag + '<span>' + (activeDest ? activeDest : 'Destino') + '</span>';
+        if(activeView === "flota") { renderFlota(); return; }
+        document.getElementById("list").innerHTML = "<div style='text-align:center;padding:40px;color:gray;'>No hay viajes cargados para esta fecha. Abre Configuración (⚙️) para importar tu Excel.</div>";
+        return;
+    }
     document.getElementById("dayLabel").innerHTML = (store.days[store.currentDay].label || store.currentDay) + " <span>▼</span>";
     document.getElementById("btnOrigen").innerHTML = ICO.pin + '<span>' + (activeOrigin ? activeOrigin : 'Origen') + '</span>';
     document.getElementById("btnOrigen").classList.toggle("active", !!activeOrigin);
@@ -774,8 +877,10 @@ function render() {
 
     sortedTrips.forEach(t => {
       let state = getTripState(t.id);
-      let isHidden = state.hidden;
-      if (state.status === "formado" && state.formadoAt && (nowTime - state.formadoAt > 300000)) isHidden = true; 
+      let isHidden = !!state.hidden;
+      if (state.status === "formado" && state.formadoAt && (nowTime - state.formadoAt > 300000)) {
+          isHidden = true;
+      }
 
       let skip = false;
       
@@ -795,7 +900,10 @@ function render() {
       let isDamagedUnit = ESTADOS_CRITICOS.includes(store.unassignedReasons[finalUnit]);
       let isDamagedOp = ESTADOS_CRITICOS.includes(store.unassignedReasons[finalOp]);
 
-      if (showRevisar) { if((!finalUnit) || (!finalOp) || isDamagedUnit || isDamagedOp || globalCollisions.some(c => c.t2Id === t.id)) {} else skip = true; }
+      if (showRevisar) {
+          if((!finalUnit) || (!finalOp) || isDamagedUnit || isDamagedOp || globalCollisions.some(c => c.t2Id === t.id)) {}
+          else skip = true;
+      }
 
       if (searchTerm){
           let hay = (t.o+" a "+t.d+" "+(finalOp||"")+" "+(finalUnit||"")+" "+(t.k||"")).toLowerCase();
@@ -803,8 +911,9 @@ function render() {
       }
       
       if(skip) return;
-      if(activeView === "activas" && isHidden && !showRevisar) return; 
-      if(activeView === "ocultas" && !isHidden && !showRevisar) return;
+      // Separación estricta entre pestañas Activas y Ocultas para evitar bloqueos visuales
+      if(activeView === "activas" && isHidden) return; 
+      if(activeView === "ocultas" && !isHidden) return;
       
       t._finalUnit = finalUnit; t._finalOp = finalOp; t._isDamagedU = isDamagedUnit; t._isDamagedOp = isDamagedOp;
       visible.push(t);
@@ -864,8 +973,8 @@ function render() {
                 </div>
                 <div class="trip-actions">
                   ${activeView === 'ocultas' ? 
-                    `<button class="icon-btn restore-btn" aria-label="Restaurar" onclick="toggleStatus('${t.id}', 'restore', event)">${ICO.restore}</button>` : 
-                    `<button class="icon-btn hide-btn" aria-label="Ocultar" onclick="toggleStatus('${t.id}', 'hide', event)">${ICO.hide}</button><button class="icon-btn terminal-btn ${state.status==='en_terminal'?'on':''}" aria-label="En Terminal" onclick="toggleStatus('${t.id}', 'en_terminal', event)">${ICO.terminal}</button><button class="icon-btn formado-btn ${state.status==='formado'?'on':''}" aria-label="Formado" onclick="toggleStatus('${t.id}', 'formado', event)">${ICO.formado}</button>`
+                    `<button type="button" class="icon-btn restore-btn" aria-label="Restaurar" onclick="toggleStatus('${t.id}', 'restore', event)">${ICO.restore}</button>` : 
+                    `<button type="button" class="icon-btn hide-btn" aria-label="Ocultar" onclick="toggleStatus('${t.id}', 'hide', event)">${ICO.hide}</button><button type="button" class="icon-btn terminal-btn ${state.status==='en_terminal'?'on':''}" aria-label="En Terminal" onclick="toggleStatus('${t.id}', 'en_terminal', event)">${ICO.terminal}</button><button type="button" class="icon-btn formado-btn ${state.status==='formado'?'on':''}" aria-label="Formado" onclick="toggleStatus('${t.id}', 'formado', event)">${ICO.formado}</button>`
                   }
                 </div>
               </div>`;
@@ -875,7 +984,7 @@ function render() {
     document.getElementById("list").innerHTML = html; actualizarUrgenciaVisual();
 }
 
-  function actualizarUrgenciaVisual() {
+function actualizarUrgenciaVisual() {
     let nowMin = new Date().getHours() * 60 + new Date().getMinutes();
     document.querySelectorAll(".trip[data-time]").forEach(card => {
       if(card.classList.contains('trip-damaged') || card.classList.contains('trip-collision') || card.classList.contains('trip-nounit')) return;
@@ -884,27 +993,66 @@ function render() {
       let parts = card.dataset.time.split(":"); let diff = (+parts[0]) * 60 + (+parts[1]) - nowMin;
       if(diff >= 0 && diff <= 10) card.classList.add("urgency-10"); else if(diff > 10 && diff <= 20) card.classList.add("urgency-20"); else if(diff > 20 && diff <= 30) card.classList.add("urgency-30");
     });
-  }
-  setInterval(actualizarUrgenciaVisual, 15000);
+}
+setInterval(actualizarUrgenciaVisual, 15000);
 
-  // LOGICA OPTIMISTA PARA ELIMINAR DELAYS VISUALES (CERO FRICCIÓN)
-  window.toggleStatus = function(id, action, event) {
-      event.stopPropagation(); let current = getTripState(id);
-      if(action === "hide") getDayState().trips[id] = Object.assign(current, { hidden: true });
-      else if(action === "restore") getDayState().trips[id] = Object.assign(current, { hidden: false });
-      else {
-          let newStatus = current.status === action ? "pendiente" : action;
-          getDayState().trips[id] = Object.assign(current, { status: newStatus, formadoAt: newStatus === "formado" ? Date.now() : null });
-      }
-      render(); // Renderiza inmediatamente eliminando lo rojo del bloque
-      saveStore(); // Luego manda la llamada a Firebase en segundo plano
-  };
+// LÓGICA OPTIMISTA DESBLOQUEADA PARA OCULTAR Y RESTAURAR HORARIOS
+window.toggleStatus = function(id, action, event) {
+    if (event) event.stopPropagation();
+    let ds = getDayState();
+    let current = Object.assign({}, getTripState(id));
 
-  window.ocultarBloque = function(hour) { let ds = getDayState(); (store.days[store.currentDay].trips || []).forEach(t => { if (t.h.slice(0,2) === hour) ds.trips[t.id] = Object.assign({}, getTripState(t.id), { hidden: true }); }); render(); saveStore(); };
-  window.restaurarBloque = function(hour) { let ds = getDayState(); (store.days[store.currentDay].trips || []).forEach(t => { if (t.h.slice(0,2) === hour) ds.trips[t.id] = Object.assign({}, getTripState(t.id), { hidden: false }); }); render(); saveStore(); };
-  window.tapTrip = function(event, card) { if(event.target.closest("button")) return; if(activeView === "activas") openChangeModal(card); };
+    if (action === "hide") {
+        current.hidden = true;
+    } else if (action === "restore") {
+        current.hidden = false;
+        // Limpia formadoAt para que no vuelva a auto-ocultarse por la regla de 5 minutos
+        current.formadoAt = null;
+        if (current.status === "formado") {
+            current.status = "pendiente";
+        }
+    } else {
+        let newStatus = current.status === action ? "pendiente" : action;
+        current.status = newStatus;
+        current.formadoAt = newStatus === "formado" ? Date.now() : null;
+        if (newStatus !== "formado") current.hidden = false;
+    }
 
-  function renderFlota() {
+    ds.trips[id] = current;
+    render();
+    saveStore();
+};
+
+window.ocultarBloque = function(hour) {
+    let ds = getDayState();
+    (store.days[store.currentDay].trips || []).forEach(t => {
+        if (t.h.slice(0,2) === hour) {
+            ds.trips[t.id] = Object.assign({}, getTripState(t.id), { hidden: true });
+        }
+    });
+    render();
+    saveStore();
+};
+
+window.restaurarBloque = function(hour) {
+    let ds = getDayState();
+    (store.days[store.currentDay].trips || []).forEach(t => {
+        if (t.h.slice(0,2) === hour) {
+            let st = Object.assign({}, getTripState(t.id), { hidden: false, formadoAt: null });
+            if (st.status === "formado") st.status = "pendiente";
+            ds.trips[t.id] = st;
+        }
+    });
+    render();
+    saveStore();
+};
+
+window.tapTrip = function(event, card) {
+    if(event.target.closest("button")) return;
+    openChangeModal(card);
+};
+
+function renderFlota() {
     let ds = getDayState();
     let opsMap = {}; if(store.operadoresDB) Object.keys(store.operadoresDB).forEach(k => opsMap[store.operadoresDB[k]] = k);
     let baselineOp = {}; if(store.globalFleet) { store.globalFleet.forEach(g => { if(g.u && g.n) baselineOp[String(g.u)] = g.n; }); }
@@ -1078,194 +1226,469 @@ function render() {
     </div>`;
 
     document.getElementById("list").innerHTML = html || "<div style='text-align:center;padding:40px;color:gray;'>Flota vacía o sin coincidencias.</div>";
-  }
+}
 
-  window.abrirModalFlotaDedicado = function(u, k, n) {
-      let known = n && store.knownRoutes[n] ? store.knownRoutes[n] : "Ninguna";
-      let trips = (store.days[store.currentDay].trips || []).filter(t => t.n === n || (u && t.u === u)).sort((a,b) => a.h.localeCompare(b.h));
-      let tripsHtml = trips.length ? trips.map(t => `<div style="padding:4px 0; border-bottom:1px solid #eee; font-size:13px;">${t.h} - ${formatRouteName(t.o, t.d)}</div>`).join('') : 'Sin rol planeado hoy';
+window.abrirModalFlotaDedicado = function(u, k, n) {
+    let trips = (store.days[store.currentDay] && store.days[store.currentDay].trips ? store.days[store.currentDay].trips : []).filter(t => t.n === n || (u && t.u === u)).sort((a,b) => a.h.localeCompare(b.h));
+    let tripsHtml = trips.length ? trips.map(t => `<div style="padding:4px 0; border-bottom:1px solid #eee; font-size:13px;">${t.h} - ${formatRouteName(t.o, t.d)}</div>`).join('') : 'Sin rol planeado hoy';
 
-      let opOptions = `<option value="VACIO">-- Sin Asignar (Separar) --</option>`;
-      if(store.operadoresDB) Object.values(store.operadoresDB).filter(v=>v).sort().forEach(name => opOptions += `<option value="${name}">`);
+    let opOptions = `<option value="VACIO">-- Sin Asignar (Separar) --</option>`;
+    if(store.operadoresDB) Object.values(store.operadoresDB).filter(v=>v).sort().forEach(name => opOptions += `<option value="${name}">`);
 
-      let uOptions = `<option value="VACIO">-- Sin Unidad (Separar) --</option>`;
-      FLOTA_FIJA.forEach(f => uOptions += `<option value="${f.u}" ${f.u === u ? 'selected' : ''}>U-${f.u} [${f.p}]</option>`);
+    let uOptions = `<option value="VACIO">-- Sin Unidad (Separar) --</option>`;
+    FLOTA_FIJA.forEach(f => uOptions += `<option value="${f.u}" ${f.u === u ? 'selected' : ''}>U-${f.u} [${f.p}]</option>`);
 
-      let estU = u ? (store.unassignedReasons[u] || 'Activa') : 'Activa';
-      let estOp = n ? (store.unassignedReasons[n] || store.unassignedReasons[k] || 'Activo') : 'Activo';
+    let estU = u ? (store.unassignedReasons[u] || 'Activa') : 'Activa';
+    let estOp = n ? (store.unassignedReasons[n] || store.unassignedReasons[k] || 'Activo') : 'Activo';
 
-      let selectUStatus = ['Activa', 'Taller', 'Siniestro', 'Falla mecánica', 'Sin diésel'].map(s => `<option value="${s}" ${s===estU?'selected':''}>${s}</option>`).join('');
-      let selectOpStatus = ['Activo', 'Falta', 'Permiso', 'Apoyo', 'Incapacidad', 'Baja'].map(s => `<option value="${s}" ${s===estOp?'selected':''}>${s}</option>`).join('');
+    let selectUStatus = ['Activa', 'Taller', 'Siniestro', 'Falla mecánica', 'Sin diésel'].map(s => `<option value="${s}" ${s===estU?'selected':''}>${s}</option>`).join('');
+    let selectOpStatus = ['Activo', 'Falta', 'Permiso', 'Apoyo', 'Incapacidad', 'Baja'].map(s => `<option value="${s}" ${s===estOp?'selected':''}>${s}</option>`).join('');
 
-      openSheet(`
-          <h2 style="margin-bottom:8px;">Edición Flota ${u ? `U-${u}` : ''} ${n ? `(${n})` : ''}</h2>
-          <div style="margin-bottom: 15px; background: var(--surface-2); padding:10px; border-radius:8px;">
-              <strong style="font-size:13px;">Rol / Rutas:</strong><div style="max-height:80px;overflow-y:auto;font-size:13px;">${tripsHtml}</div>
-          </div>
-
-          <label style="font-size:13px; font-weight:bold;">1. Unidad Asignada:</label>
-          <select id="modalU" class="input-field" style="appearance:auto; padding: 12px; margin-bottom:8px;">${uOptions}</select>
-          <label style="font-size:13px; font-weight:bold;">Estatus de Unidad:</label>
-          <select id="modalEstU" class="input-field" style="appearance:auto; padding: 12px;" onchange="if(this.value!=='Activa') document.getElementById('modalOp').value='VACIO'">
-            ${selectUStatus}
-          </select>
-
-          <label style="font-size:13px; font-weight:bold;">2. Operador Asignado:</label>
-          <input type="text" id="modalOp" list="opList" class="input-field" value="${n||''}" placeholder="Buscar o vaciar..." autocomplete="off" style="margin-bottom:8px;">
-          <datalist id="opList">${opOptions}</datalist>
-          <label style="font-size:13px; font-weight:bold;">Estatus de Operador:</label>
-          <select id="modalEstOp" class="input-field" style="appearance:auto; padding: 12px;" onchange="if(this.value!=='Activo') document.getElementById('modalU').value='VACIO'">
-            ${selectOpStatus}
-          </select>
-
-          <button class="btn-primary" onclick="guardarFlotaDedicado('${u}', '${n}', '${k}')">Guardar y Separar Automáticamente</button>
-      `);
-  }
-
-  window.guardarFlotaDedicado = function(origU, origOp, origK) {
-      let finalU = document.getElementById("modalU").value;
-      let finalOp = document.getElementById("modalOp").value.trim();
-      let stU = document.getElementById("modalEstU").value;
-      let stOp = document.getElementById("modalEstOp").value;
-      let ds = getDayState();
-      store.unassignedReasons = store.unassignedReasons || {};
-      store.operadoresDB = store.operadoresDB || {};
-      ds.opOverride = ds.opOverride || {}; ds.unitOverride = ds.unitOverride || {};
-
-      // Desvincula la asignación anterior sin borrar el historial de viajes.
-      if(origU) ds.opOverride[origU] = "VACIO";
-      if(origOp) {
-          ds.unitOverride[origOp] = "VACIO";
-          let oldCode = Object.keys(store.operadoresDB).find(k => store.operadoresDB[k] === origOp);
-          if(oldCode) ds.unitOverride[oldCode] = "VACIO";
-      }
-      if(origK) ds.unitOverride[origK] = "VACIO";
-
-      if(finalU && finalU !== "VACIO") ds.opOverride[finalU] = "VACIO";
-      if(finalOp && finalOp !== "VACIO") {
-          ds.unitOverride[finalOp] = "VACIO";
-          let opCode = Object.keys(store.operadoresDB).find(k => store.operadoresDB[k] === finalOp);
-          if(opCode) ds.unitOverride[opCode] = "VACIO";
-      }
-
-      if(finalU && finalU !== "VACIO") {
-          if(stU === "Activa") delete store.unassignedReasons[finalU];
-          else store.unassignedReasons[finalU] = stU;
-      }
-      if(finalOp && finalOp !== "VACIO") {
-          let opCode = Object.keys(store.operadoresDB).find(k => store.operadoresDB[k] === finalOp);
-          if(stOp === "Activo") {
-              delete store.unassignedReasons[finalOp];
-              if(opCode) delete store.unassignedReasons[opCode];
-          } else {
-              store.unassignedReasons[finalOp] = stOp;
-              if(opCode) store.unassignedReasons[opCode] = stOp;
-          }
-      }
-
-      // Guarda la relación elegida para la flota global.
-      store.globalFleet = store.globalFleet || [];
-      let fleetRow = store.globalFleet.find(x => String(x.u) === String(origU) || (origK && String(x.k) === String(origK)) || (origOp && x.n === origOp));
-      if(!fleetRow) { fleetRow = {}; store.globalFleet.push(fleetRow); }
-      if(finalU === "VACIO") { delete fleetRow.u; } else if(finalU) fleetRow.u = finalU;
-      if(finalOp === "VACIO") { delete fleetRow.n; } else if(finalOp) fleetRow.n = finalOp;
-      if(origK && !fleetRow.k) fleetRow.k = origK;
-      closeSheet(); render(); saveStore();
-  };
-
-  window.openChangeModal = function(card) {
-      const tripId = card?.dataset?.id;
-      const trip = (store.days?.[store.currentDay]?.trips || []).find(t => String(t.id) === String(tripId));
-      if(!trip) { openSheet('<h2>No se encontró el viaje</h2><p>Actualiza la aplicación e inténtalo de nuevo.</p>'); return; }
-      const ds = getDayState();
-      const baseU = ds.tripUnitOverride[trip.id] || ds.unitOverride[trip.k || trip.n] || ds.unitOverride[trip.u] || trip.u || '';
-      const baseOp = ds.tripOpOverride[trip.id] || ds.opOverride[baseU] || ds.opOverride[trip.n] || trip.n || '';
-      const unitOptions = ['<option value="">Sin unidad</option>'].concat(FLOTA_FIJA.map(f => `<option value="${f.u}" ${String(baseU)===String(f.u)?'selected':''}>U-${f.u} · ${f.p}</option>`)).join('');
-      const ops = [...new Set(Object.values(store.operadoresDB || {}).filter(Boolean).concat((store.days[store.currentDay].trips || []).map(t=>t.n).filter(Boolean)))].sort((a,b)=>a.localeCompare(b));
-      const opOptions = ['<option value="">Sin operador</option>'].concat(ops.map(op=>`<option value="${String(op).replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" ${op===baseOp?'selected':''}>${op}</option>`)).join('');
-      openSheet(`<h2>Modificar viaje</h2>
-        <div style="background:var(--surface-2);padding:12px;border-radius:10px;margin-bottom:14px"><b>${trip.h}</b><br>${formatRouteName(trip.o,trip.d)}<br><small>Clave: ${trip.k || '—'}</small></div>
-        <label>Unidad</label><select id="changeUnit" class="input-field" style="appearance:auto">${unitOptions}</select>
-        <label>Operador</label><select id="changeOperator" class="input-field" style="appearance:auto">${opOptions}</select>
-        <button class="btn-primary" onclick="guardarCambioViaje('${String(trip.id).replace(/'/g, '')}')">Guardar cambios</button>
-        <button class="btn-outline" onclick="closeSheet()">Cancelar</button>`);
-  };
-
-  window.guardarCambioViaje = function(tripId) {
-      const ds = getDayState();
-      const unit = document.getElementById('changeUnit')?.value || '';
-      const op = document.getElementById('changeOperator')?.value || '';
-      ds.tripUnitOverride[tripId] = unit || 'VACIO';
-      ds.tripOpOverride[tripId] = op || 'VACIO';
-      ds.unitChanges = ds.unitChanges || [];
-      const trip = (store.days?.[store.currentDay]?.trips || []).find(t => String(t.id) === String(tripId));
-      ds.unitChanges.push({time:new Date().toISOString(), route:trip?formatRouteName(trip.o,trip.d):tripId, tripId, oldUnit:'—', newUnit:unit||'VACIO', oldOp:'—', newOp:op||'VACIO', reason:'Cambio manual de viaje'});
-      closeSheet(); render(); saveStore();
-  };
-
-  window.abrirConfiguracion = function() {
-      const trips = store.days?.[store.currentDay]?.trips || [];
-      openSheet(`<h2>Configuración y datos</h2>
-        <div style="background:var(--surface-2);padding:12px;border-radius:10px;font-size:13px;line-height:1.8;margin-bottom:12px">
-          <b>Conexión:</b> ${db ? 'Firebase configurado' : 'Sin conexión'}<br>
-          <b>Fecha activa:</b> ${store.currentDay || '—'}<br>
-          <b>Viajes:</b> ${trips.length}<br><b>Unidades fijas:</b> ${FLOTA_FIJA.length}
+    openSheet(`
+        <h2 style="margin-bottom:8px;">Edición Flota ${u ? `U-${u}` : ''} ${n ? `(${n})` : ''}</h2>
+        <div style="margin-bottom: 15px; background: var(--surface-2); padding:10px; border-radius:8px;">
+            <strong style="font-size:13px;">Rol / Rutas:</strong><div style="max-height:80px;overflow-y:auto;font-size:13px;">${tripsHtml}</div>
         </div>
-        <p style="font-size:13px;color:var(--ink-soft)">Importa archivos Excel para actualizar los datos. La importación solo se ejecutará si el archivo tiene el formato esperado por la aplicación.</p>
-        <button class="btn-outline" onclick="document.getElementById('fileAsignacion').click()">📄 Cargar asignación Excel</button>
-        <button class="btn-outline" onclick="document.getElementById('fileSeguimiento').click()">📊 Cargar seguimiento Excel</button>
-        <button class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
-  };
 
-  window.verDisponibilidad = function() {
-      const trips = [...(store.days?.[store.currentDay]?.trips || [])].sort((a,b)=>a.h.localeCompare(b.h));
-      const ds = getDayState();
-      const baselineOp = {}; (store.globalFleet || []).forEach(g=>{if(g.u && g.n) baselineOp[String(g.u)] = g.n;});
-      const rows = trips.map(t=>{
-        const ovU = ds.tripUnitOverride[t.id] || ds.unitOverride[t.k || t.n] || ds.unitOverride[t.u];
-        const u = ovU === 'VACIO' ? '' : (ovU || t.u || '');
-        const ovO = ds.tripOpOverride[t.id] || ds.opOverride[u] || ds.opOverride[t.n];
-        const op = ovO === 'VACIO' ? '' : (ovO || baselineOp[u] || t.n || '');
-        const start = hhmmToMins(t.h), end = start + getTripDuration(t);
-        return {t,u,op,start,end};
-      });
-      const html = rows.map(r=>`<div class="avail-row"><div style="display:flex;justify-content:space-between;gap:8px"><b class="mono">${r.t.h}</b><b>${r.u ? 'U-'+r.u : 'Sin unidad'}</b></div><div style="font-size:13px;margin-top:4px">${formatRouteName(r.t.o,r.t.d)}</div><div style="font-size:12px;color:var(--ink-soft);margin-top:4px">${r.op || 'Sin operador'} · llegada estimada ${minsToHhmm(r.end % 1440)}</div></div>`).join('');
-      openSheet(`<h2>⏱ Disponibilidad de viajes</h2><p style="font-size:13px;color:var(--ink-soft)">Duración estimada por trayecto: CU–CU2 40 min; otros destinos 55 min. Los empalmes se revisan por separado.</p><div style="max-height:65vh;overflow:auto">${html || '<p>No hay viajes cargados para esta fecha.</p>'}</div>`);
-  };
+        <label style="font-size:13px; font-weight:bold;">1. Unidad Asignada:</label>
+        <select id="modalU" class="input-field" style="appearance:auto; padding: 12px; margin-bottom:8px;">${uOptions}</select>
+        <label style="font-size:13px; font-weight:bold;">Estatus de Unidad:</label>
+        <select id="modalEstU" class="input-field" style="appearance:auto; padding: 12px;" onchange="if(this.value!=='Activa') document.getElementById('modalOp').value='VACIO'">
+          ${selectUStatus}
+        </select>
 
-  window.verVacios = function() {
-      const trips = store.days?.[store.currentDay]?.trips || [];
-      const ds = getDayState();
-      const empty = trips.filter(t=>[normLoc(t.o),normLoc(t.d)].includes('CU2')).filter(t=>{
-        const ov = ds.tripUnitOverride[t.id] || ds.unitOverride[t.k || t.n] || ds.unitOverride[t.u];
-        return ov === 'VACIO' || !(ov || t.u);
-      }).sort((a,b)=>a.h.localeCompare(b.h));
-      openSheet(`<h2>🚎 Viajes CU2 sin unidad</h2>${empty.length ? empty.map(t=>`<div class="avail-row"><b class="mono">${t.h}</b><div>${formatRouteName(t.o,t.d)}</div><button class="btn-outline btn-small" onclick="abrirModalDesdePendientes('${t.id}','','','${t.k || t.n || ''}')">Asignar unidad/operador</button></div>`).join('') : '<p style="text-align:center;color:var(--done);padding:20px">No hay viajes CU2 sin unidad asignada.</p>'}`);
-  };
+        <label style="font-size:13px; font-weight:bold;">2. Operador Asignado:</label>
+        <input type="text" id="modalOp" list="opList" class="input-field" value="${n||''}" placeholder="Buscar o vaciar..." autocomplete="off" style="margin-bottom:8px;">
+        <datalist id="opList">${opOptions}</datalist>
+        <label style="font-size:13px; font-weight:bold;">Estatus de Operador:</label>
+        <select id="modalEstOp" class="input-field" style="appearance:auto; padding: 12px;" onchange="if(this.value!=='Activo') document.getElementById('modalU').value='VACIO'">
+          ${selectOpStatus}
+        </select>
 
-  window.verCambios = function() {
-      const changes = getDayState().unitChanges || [];
-      const html = [...changes].reverse().map(c=>`<div class="avail-row"><b>${c.route || 'Cambio'}</b><div style="font-size:12px;color:var(--ink-soft)">${c.time ? new Date(c.time).toLocaleString('es-MX') : ''}</div><div style="font-size:13px;margin-top:4px">Unidad: ${c.oldUnit || '—'} → ${c.newUnit || '—'}<br>Operador: ${c.oldOp || '—'} → ${c.newOp || '—'}</div><div style="font-size:12px;margin-top:4px">${c.reason || ''}</div></div>`).join('');
-      openSheet(`<h2>🔄 Historial de cambios</h2><div style="max-height:70vh;overflow:auto">${html || '<p style="text-align:center;color:gray;padding:20px">Todavía no hay cambios registrados.</p>'}</div>`);
-  };
+        <button class="btn-primary" onclick="guardarFlotaDedicado('${u}', '${n}', '${k}')">Guardar y Separar Automáticamente</button>
+    `);
+}
 
-  function openLocationPicker(kind) {
-      const trips = store.days?.[store.currentDay]?.trips || [];
-      const locs = [...new Set(trips.flatMap(t=>[normLoc(t.o),normLoc(t.d)]).filter(Boolean))].sort();
-      const current = kind === 'origin' ? activeOrigin : activeDest;
-      const buttons = [`<button class="opt-row ${!current?'sel':''}" onclick="setLocationFilter('${kind}','')">Todos los puntos ${!current?'✓':''}</button>`].concat(locs.map(loc=>`<button class="opt-row ${loc===current?'sel':''}" onclick="setLocationFilter('${kind}',decodeURIComponent('${encodeURIComponent(loc)}'))">${loc}</button>`)).join('');
-      openSheet(`<h2>${kind==='origin'?'📍 Elegir origen':'🚩 Elegir destino'}</h2><div class="opt-list">${buttons}</div>`);
-  }
-  window.setLocationFilter = function(kind, value) {
-      if(kind==='origin') activeOrigin = value || null; else activeDest = value || null;
-      closeSheet(); render();
-  };
-  document.getElementById('btnOrigen').addEventListener('click',()=>openLocationPicker('origin'));
-  document.getElementById('btnDestino').addEventListener('click',()=>openLocationPicker('dest'));
-  document.getElementById('search').addEventListener('input',e=>{searchTerm=e.target.value.trim().toLowerCase();render();});
+window.guardarFlotaDedicado = function(origU, origOp, origK) {
+    let finalU = document.getElementById("modalU").value;
+    let finalOp = document.getElementById("modalOp").value.trim();
+    let stU = document.getElementById("modalEstU").value;
+    let stOp = document.getElementById("modalEstOp").value;
+    let ds = getDayState();
+    store.unassignedReasons = store.unassignedReasons || {};
+    store.operadoresDB = store.operadoresDB || {};
+    ds.opOverride = ds.opOverride || {}; ds.unitOverride = ds.unitOverride || {};
 
-  document.getElementById('fileAsignacion').addEventListener('change',()=>showAggressiveToast('El selector de archivo está disponible, pero la importación requiere el formato de asignación original.'));
-  document.getElementById('fileSeguimiento').addEventListener('change',()=>showAggressiveToast('El selector de archivo está disponible, pero la importación requiere el formato de seguimiento original.'));
+    if(origU) ds.opOverride[origU] = "VACIO";
+    if(origOp) {
+        ds.unitOverride[origOp] = "VACIO";
+        let oldCode = Object.keys(store.operadoresDB).find(k => store.operadoresDB[k] === origOp);
+        if(oldCode) ds.unitOverride[oldCode] = "VACIO";
+    }
+    if(origK) ds.unitOverride[origK] = "VACIO";
+
+    if(finalU && finalU !== "VACIO") ds.opOverride[finalU] = "VACIO";
+    if(finalOp && finalOp !== "VACIO") {
+        ds.unitOverride[finalOp] = "VACIO";
+        let opCode = Object.keys(store.operadoresDB).find(k => store.operadoresDB[k] === finalOp);
+        if(opCode) ds.unitOverride[opCode] = "VACIO";
+    }
+
+    if(finalU && finalU !== "VACIO") {
+        if(stU === "Activa") delete store.unassignedReasons[finalU];
+        else store.unassignedReasons[finalU] = stU;
+    }
+    if(finalOp && finalOp !== "VACIO") {
+        let opCode = Object.keys(store.operadoresDB).find(k => store.operadoresDB[k] === finalOp);
+        if(stOp === "Activo") {
+            delete store.unassignedReasons[finalOp];
+            if(opCode) delete store.unassignedReasons[opCode];
+        } else {
+            store.unassignedReasons[finalOp] = stOp;
+            if(opCode) store.unassignedReasons[opCode] = stOp;
+        }
+    }
+
+    store.globalFleet = store.globalFleet || [];
+    let fleetRow = store.globalFleet.find(x => String(x.u) === String(origU) || (origK && String(x.k) === String(origK)) || (origOp && x.n === origOp));
+    if(!fleetRow) { fleetRow = {}; store.globalFleet.push(fleetRow); }
+    if(finalU === "VACIO") { delete fleetRow.u; } else if(finalU) fleetRow.u = finalU;
+    if(finalOp === "VACIO") { delete fleetRow.n; } else if(finalOp) fleetRow.n = finalOp;
+    if(origK && !fleetRow.k) fleetRow.k = origK;
+
+    // Registrar movimiento de Flota también en el Historial Histórico
+    let motivosFlota = [];
+    if (stU && stU !== "Activa") motivosFlota.push(stU);
+    if (stOp && stOp !== "Activo") motivosFlota.push(stOp);
+    let reasonText = motivosFlota.length ? motivosFlota.join(" / ") : "Ajuste en Flota";
+
+    registrarEnHistorial({
+        tripTime: "FLOTA",
+        clave: origK || "—",
+        route: "Ajuste de Flota",
+        oldUnit: origU || "S/U",
+        newUnit: (!finalU || finalU === "VACIO") ? "S/U" : finalU,
+        oldOp: origOp || "Sin Asignar",
+        newOp: (!finalOp || finalOp === "VACIO") ? "Sin Asignar" : finalOp,
+        reason: reasonText,
+        type: "Flota"
+    });
+
+    closeSheet(); render(); saveStore();
+};
+
+window.seleccionarChipMotivo = function(el, motivo) {
+    document.querySelectorAll('#reasonChips .reason-chip').forEach(c => c.classList.remove('sel'));
+    el.classList.add('sel');
+    let input = document.getElementById('changeReason');
+    if (input) input.value = motivo;
+};
+
+window.openChangeModal = function(card) {
+    const tripId = card?.dataset?.id;
+    const trip = (store.days?.[store.currentDay]?.trips || []).find(t => String(t.id) === String(tripId));
+    if(!trip) { openSheet('<h2>No se encontró el viaje</h2><p>Actualiza la aplicación e inténtalo de nuevo.</p>'); return; }
+    const ds = getDayState();
+    let baselineOp = {};
+    if(store.globalFleet) { store.globalFleet.forEach(g => { if(g.u && g.n) baselineOp[String(g.u)] = g.n; }); }
+
+    const overU = ds.tripUnitOverride[trip.id] || ds.unitOverride[trip.k || trip.n] || ds.unitOverride[trip.u];
+    const baseU = overU === "VACIO" ? "" : (overU || trip.u || '');
+    const overOp = ds.tripOpOverride[trip.id] || ds.opOverride[baseU] || ds.opOverride[trip.n];
+    const baseOp = overOp === "VACIO" ? "" : (overOp || baselineOp[baseU] || trip.n || '');
+
+    const unitOptions = ['<option value="">Sin unidad</option>'].concat(FLOTA_FIJA.map(f => `<option value="${f.u}" ${String(baseU)===String(f.u)?'selected':''}>U-${f.u} · ${f.p}</option>`)).join('');
+    const ops = [...new Set(Object.values(store.operadoresDB || {}).filter(Boolean).concat((store.days[store.currentDay].trips || []).map(t=>t.n).filter(Boolean)))].sort((a,b)=>a.localeCompare(b));
+    const opOptions = ['<option value="">Sin operador</option>'].concat(ops.map(op=>`<option value="${String(op).replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" ${op===baseOp?'selected':''}>${op}</option>`)).join('');
+    
+    const chipsHtml = MOTIVOS_RAPIDOS.map((m, idx) => `<span class="reason-chip ${idx===0?'sel':''}" onclick="seleccionarChipMotivo(this, '${m}')">${m}</span>`).join('');
+
+    openSheet(`<h2>Modificar viaje</h2>
+      <div style="background:var(--surface-2);padding:12px;border-radius:10px;margin-bottom:14px">
+        <b>${trip.h}</b> · ${formatRouteName(trip.o,trip.d)}<br>
+        <small>Clave: ${trip.k || '—'} | Actual: ${baseU ? 'U-'+baseU : 'S/U'} · ${baseOp || 'Sin Op'}</small>
+      </div>
+      <label style="font-size:13px;font-weight:bold;">Unidad</label>
+      <select id="changeUnit" class="input-field" style="appearance:auto">${unitOptions}</select>
+      <label style="font-size:13px;font-weight:bold;">Operador</label>
+      <select id="changeOperator" class="input-field" style="appearance:auto">${opOptions}</select>
+      <label style="font-size:13px;font-weight:bold;">Motivo rápido (1 toque)</label>
+      <div class="reason-grid" id="reasonChips">${chipsHtml}</div>
+      <input id="changeReason" type="text" class="input-field" value="${MOTIVOS_RAPIDOS[0]}" placeholder="Escribe o selecciona un motivo...">
+      <button class="btn-primary" onclick="guardarCambioViaje('${String(trip.id).replace(/'/g, '')}', '${String(baseU).replace(/'/g, '')}', '${String(baseOp).replace(/'/g, '')}')">Guardar cambios</button>
+      <button class="btn-outline" onclick="closeSheet()">Cancelar</button>`);
+};
+
+window.guardarCambioViaje = function(tripId, prevUnit, prevOp) {
+    const ds = getDayState();
+    const unit = document.getElementById('changeUnit')?.value || '';
+    const op = document.getElementById('changeOperator')?.value || '';
+    const reason = (document.getElementById('changeReason')?.value || 'Cambio manual de viaje').trim();
+
+    ds.tripUnitOverride[tripId] = unit || 'VACIO';
+    ds.tripOpOverride[tripId] = op || 'VACIO';
+
+    const trip = (store.days?.[store.currentDay]?.trips || []).find(t => String(t.id) === String(tripId));
+    
+    registrarEnHistorial({
+        tripTime: trip ? trip.h : "—",
+        clave: trip ? (trip.k || "—") : "—",
+        route: trip ? formatRouteName(trip.o, trip.d) : tripId,
+        tripId: tripId,
+        oldUnit: prevUnit || "S/U",
+        newUnit: unit || "S/U",
+        oldOp: prevOp || "Sin Asignar",
+        newOp: op || "Sin Asignar",
+        reason: reason,
+        type: "Viaje"
+    });
+
+    closeSheet(); render(); saveStore();
+};
+
+window.abrirConfiguracion = function() {
+    const trips = store.days?.[store.currentDay]?.trips || [];
+    const totalHist = getGlobalHistory().length;
+    openSheet(`<h2>Configuración y datos</h2>
+      <div style="background:var(--surface-2);padding:12px;border-radius:10px;font-size:13px;line-height:1.8;margin-bottom:12px">
+        <b>Conexión:</b> ${db ? 'Firebase configurado' : 'Sin conexión'}<br>
+        <b>Fecha activa:</b> ${store.currentDay || '—'}<br>
+        <b>Viajes en fecha activa:</b> ${trips.length}<br>
+        <b>Unidades fijas:</b> ${FLOTA_FIJA.length}<br>
+        <b>Registros en Historial Histórico:</b> ${totalHist}
+      </div>
+      <p style="font-size:13px;color:var(--ink-soft)">Importa archivos Excel para actualizar los roles o asignaciones. El <b>Historial Histórico</b> se conserva intacto aunque subas nuevos datos.</p>
+      <button class="btn-outline" onclick="document.getElementById('fileAsignacion').click()">📄 Cargar asignación / plantilla Excel</button>
+      <button class="btn-outline" onclick="document.getElementById('fileSeguimiento').click()">📊 Cargar seguimiento / corridas Excel</button>
+      <button class="btn-outline" style="border-color:var(--done);color:var(--done);" onclick="descargarHistorialExcel()">📥 Descargar Historial Histórico (.xlsx)</button>
+      <button class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
+};
+
+window.verDisponibilidad = function() {
+    const trips = [...(store.days?.[store.currentDay]?.trips || [])].sort((a,b)=>a.h.localeCompare(b.h));
+    const ds = getDayState();
+    const baselineOp = {}; (store.globalFleet || []).forEach(g=>{if(g.u && g.n) baselineOp[String(g.u)] = g.n;});
+    const rows = trips.map(t=>{
+      const ovU = ds.tripUnitOverride[t.id] || ds.unitOverride[t.k || t.n] || ds.unitOverride[t.u];
+      const u = ovU === 'VACIO' ? '' : (ovU || t.u || '');
+      const ovO = ds.tripOpOverride[t.id] || ds.opOverride[u] || ds.opOverride[t.n];
+      const op = ovO === 'VACIO' ? '' : (ovO || baselineOp[u] || t.n || '');
+      const start = hhmmToMins(t.h), end = start + getTripDuration(t);
+      return {t,u,op,start,end};
+    });
+    const html = rows.map(r=>`<div class="avail-row"><div style="display:flex;justify-content:space-between;gap:8px"><b class="mono">${r.t.h}</b><b>${r.u ? 'U-'+r.u : 'Sin unidad'}</b></div><div style="font-size:13px;margin-top:4px">${formatRouteName(r.t.o,r.t.d)}</div><div style="font-size:12px;color:var(--ink-soft);margin-top:4px">${r.op || 'Sin operador'} · llegada estimada ${minsToHhmm(r.end % 1440)}</div></div>`).join('');
+    openSheet(`<h2>⏱ Disponibilidad de viajes</h2><p style="font-size:13px;color:var(--ink-soft)">Duración estimada por trayecto: CU–CU2 40 min; otros destinos 55 min. Los empalmes se revisan por separado.</p><div style="max-height:65vh;overflow:auto">${html || '<p>No hay viajes cargados para esta fecha.</p>'}</div>`);
+};
+
+window.verVacios = function() {
+    const trips = store.days?.[store.currentDay]?.trips || [];
+    const ds = getDayState();
+    const empty = trips.filter(t=>[normLoc(t.o),normLoc(t.d)].includes('CU2')).filter(t=>{
+      const ov = ds.tripUnitOverride[t.id] || ds.unitOverride[t.k || t.n] || ds.unitOverride[t.u];
+      return ov === 'VACIO' || !(ov || t.u);
+    }).sort((a,b)=>a.h.localeCompare(b.h));
+    openSheet(`<h2>🚎 Viajes CU2 sin unidad</h2>${empty.length ? empty.map(t=>`<div class="avail-row"><b class="mono">${t.h}</b><div>${formatRouteName(t.o,t.d)}</div><button class="btn-outline btn-small" onclick="abrirModalDesdePendientes('${t.id}','','','${t.k || t.n || ''}')">Asignar unidad/operador</button></div>`).join('') : '<p style="text-align:center;color:var(--done);padding:20px">No hay viajes CU2 sin unidad asignada.</p>'}`);
+};
+
+// VISTA Y DESCARGA DE HISTORIAL HISTÓRICO PERSISTENTE
+function obtenerHistorialFiltrado() {
+    const hist = getGlobalHistory();
+    return [...hist].reverse().filter(c => {
+        if (historyFilterDay !== "ALL" && (c.day || "Hoy") !== historyFilterDay) return false;
+        if (historySearchTerm) {
+            let texto = `${c.day||''} ${c.route||''} ${c.tripTime||''} ${c.clave||''} ${c.oldUnit||''} ${c.newUnit||''} ${c.oldOp||''} ${c.newOp||''} ${c.reason||''}`.toLowerCase();
+            if (!texto.includes(historySearchTerm)) return false;
+        }
+        return true;
+    });
+}
+
+window.filtrarModalHistorial = function() {
+    const sel = document.getElementById("histDayFilter");
+    const inp = document.getElementById("histSearchInput");
+    if (sel) historyFilterDay = sel.value;
+    if (inp) historySearchTerm = inp.value.trim().toLowerCase();
+    renderListaHistorialModal();
+};
+
+function renderListaHistorialModal() {
+    const container = document.getElementById("histListContainer");
+    const countLabel = document.getElementById("histCountLabel");
+    if (!container) return;
+    const filtrados = obtenerHistorialFiltrado();
+    if (countLabel) countLabel.innerText = `${filtrados.length} registro(s)`;
+
+    if (!filtrados.length) {
+        container.innerHTML = '<p style="text-align:center;color:gray;padding:20px">No hay cambios que coincidan con el filtro.</p>';
+        return;
+    }
+
+    container.innerHTML = filtrados.map(c => {
+        const uAnt = (!c.oldUnit || c.oldUnit === 'VACIO' || c.oldUnit === 'S/U' || c.oldUnit === '—') ? 'S/U' : `U-${String(c.oldUnit).replace(/^U-/i,'')}`;
+        const uNue = (!c.newUnit || c.newUnit === 'VACIO' || c.newUnit === 'S/U' || c.newUnit === '—') ? 'S/U' : `U-${String(c.newUnit).replace(/^U-/i,'')}`;
+        const opAnt = (!c.oldOp || c.oldOp === 'VACIO') ? 'Sin Asignar' : c.oldOp;
+        const opNue = (!c.newOp || c.newOp === 'VACIO') ? 'Sin Asignar' : c.newOp;
+
+        return `
+        <div class="avail-row">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <b>${c.tripTime && c.tripTime !== '—' ? `[${c.tripTime}] ` : ''}${c.route || 'Cambio'}</b>
+                <span style="font-size:11px;background:var(--surface-2);padding:3px 8px;border-radius:6px;font-weight:700;color:var(--accent);">${c.day || 'Histórico'}</span>
+            </div>
+            <div style="font-size:12px;color:var(--ink-soft);margin-top:3px;">
+                ${c.time ? new Date(c.time).toLocaleString('es-MX') : ''} ${c.clave && c.clave !== '—' ? `· Clave: <b>${c.clave}</b>` : ''}
+            </div>
+            <div style="font-size:13px;margin-top:6px;line-height:1.5;">
+                <b>Unidad:</b> ${uAnt} → <span style="color:var(--accent);font-weight:700;">${uNue}</span><br>
+                <b>Operador:</b> ${opAnt} → <span style="color:var(--accent);font-weight:700;">${opNue}</span>
+            </div>
+            <div style="font-size:12px;margin-top:5px;padding-top:4px;border-top:1px dashed var(--line);color:var(--ink-soft);">
+                <b>Motivo:</b> <span style="color:var(--ink);font-weight:600;">${c.reason || 'Cambio operativo'}</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+window.verCambios = function() {
+    const hist = getGlobalHistory();
+    const daysSet = [...new Set(hist.map(h => h.day || "Hoy"))];
+    const dayOpts = [`<option value="ALL" ${historyFilterDay==='ALL'?'selected':''}>📚 Todo el Historial Histórico (${hist.length})</option>`]
+        .concat(daysSet.map(d => `<option value="${d}" ${historyFilterDay===d?'selected':''}>📅 Solo ${d}</option>`))
+        .join('');
+
+    openSheet(`
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <h2 style="margin:0;">🔄 Historial Histórico</h2>
+            <span id="histCountLabel" style="font-size:12px;font-weight:700;color:var(--ink-soft);"></span>
+        </div>
+        <button class="btn-primary" style="background:var(--done);box-shadow:none;margin-top:0;margin-bottom:12px;padding:12px;" onclick="descargarHistorialExcel()">
+            📥 Descargar Historial en Excel (.xlsx)
+        </button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+            <select id="histDayFilter" class="input-field" style="margin-bottom:0;padding:10px;font-size:13px;appearance:auto;" onchange="filtrarModalHistorial()">
+                ${dayOpts}
+            </select>
+            <input id="histSearchInput" type="text" class="input-field" style="margin-bottom:0;padding:10px;font-size:13px;" placeholder="🔍 Buscar unidad, op, ruta..." value="${historySearchTerm}" oninput="filtrarModalHistorial()">
+        </div>
+        <div id="histListContainer" style="max-height:58vh;overflow:auto;"></div>
+    `);
+    renderListaHistorialModal();
+};
+
+window.descargarHistorialExcel = function() {
+    const registros = obtenerHistorialFiltrado();
+    if (!registros.length) {
+        showAggressiveToast("No hay registros en el historial para exportar a Excel.");
+        return;
+    }
+
+    const filasExcel = registros.map(c => ({
+        "Fecha Operativa": c.day || "—",
+        "Fecha y Hora del Cambio": c.time ? new Date(c.time).toLocaleString('es-MX') : "—",
+        "Tipo": c.type || "Viaje",
+        "Hora Corrida": c.tripTime || "—",
+        "Ruta": c.route || "—",
+        "Clave": c.clave || "—",
+        "Unidad Anterior": (!c.oldUnit || c.oldUnit === "VACIO" || c.oldUnit === "S/U") ? "S/U" : String(c.oldUnit),
+        "Unidad Nueva": (!c.newUnit || c.newUnit === "VACIO" || c.newUnit === "S/U") ? "S/U" : String(c.newUnit),
+        "Operador Anterior": (!c.oldOp || c.oldOp === "VACIO") ? "Sin Asignar" : String(c.oldOp),
+        "Operador Nuevo": (!c.newOp || c.newOp === "VACIO") ? "Sin Asignar" : String(c.newOp),
+        "Motivo / Estatus": c.reason || "—"
+    }));
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(filasExcel);
+    ws['!cols'] = [
+        { wch: 16 }, { wch: 22 }, { wch: 10 }, { wch: 12 },
+        { wch: 22 }, { wch: 10 }, { wch: 15 }, { wch: 15 },
+        { wch: 28 }, { wch: 28 }, { wch: 26 }
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, "Historial_Historico");
+    const fechaArchivo = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `Historial_Operativo_STU_${fechaArchivo}.xlsx`);
+};
+
+function openLocationPicker(kind) {
+    const trips = store.days?.[store.currentDay]?.trips || [];
+    const locs = [...new Set(trips.flatMap(t=>[normLoc(t.o),normLoc(t.d)]).filter(Boolean))].sort();
+    const current = kind === 'origin' ? activeOrigin : activeDest;
+    const buttons = [`<button class="opt-row ${!current?'sel':''}" onclick="setLocationFilter('${kind}','')">Todos los puntos ${!current?'✓':''}</button>`].concat(locs.map(loc=>`<button class="opt-row ${loc===current?'sel':''}" onclick="setLocationFilter('${kind}',decodeURIComponent('${encodeURIComponent(loc)}'))">${loc}</button>`)).join('');
+    openSheet(`<h2>${kind==='origin'?'📍 Elegir origen':'🚩 Elegir destino'}</h2><div class="opt-list">${buttons}</div>`);
+}
+
+window.setLocationFilter = function(kind, value) {
+    if(kind==='origin') activeOrigin = value || null; else activeDest = value || null;
+    closeSheet(); render();
+};
+
+document.getElementById('btnOrigen').addEventListener('click',()=>openLocationPicker('origin'));
+document.getElementById('btnDestino').addEventListener('click',()=>openLocationPicker('dest'));
+document.getElementById('search').addEventListener('input',e=>{searchTerm=e.target.value.trim().toLowerCase();render();});
+
+// IMPORTADOR DE EXCEL QUE CONSERVA INTACTO EL HISTORIAL HISTÓRICO
+function normalizarHoraExcel(val) {
+    if (val === undefined || val === null || val === "") return "";
+    if (typeof val === "number") {
+        let totalMins = Math.round(val * 24 * 60);
+        let hh = Math.floor(totalMins / 60) % 24;
+        let mm = totalMins % 60;
+        return String(hh).padStart(2, '0') + ":" + String(mm).padStart(2, '0');
+    }
+    let s = String(val).trim();
+    let m = s.match(/(\d{1,2}):(\d{2})/);
+    if (m) return String(m[1]).padStart(2, '0') + ":" + m[2];
+    return "";
+}
+
+function procesarExcelCarga(file, tipo) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        try {
+            const data = new Uint8Array(evt.target.result);
+            const wb = XLSX.read(data, { type: 'array' });
+            const historialProtegido = [...getGlobalHistory()];
+
+            if (tipo === 'asignacion') {
+                // Lee relación de Unidad - Clave - Operador sin borrar historial
+                wb.SheetNames.forEach(sheetName => {
+                    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: "" });
+                    rows.forEach(r => {
+                        const keys = Object.keys(r);
+                        const kU = keys.find(k => /unidad|eco|autobus/i.test(k));
+                        const kC = keys.find(k => /clave|id|nomina/i.test(k));
+                        const kN = keys.find(k => /operador|nombre|chofer|conductor/i.test(k));
+                        let u = kU ? String(r[kU]).replace(/\D/g, '') : "";
+                        let c = kC ? String(r[kC]).trim() : "";
+                        let n = kN ? String(r[kN]).trim() : "";
+                        if (c && n) store.operadoresDB[c] = n;
+                        if (u && n) {
+                            let existing = store.globalFleet.find(f => String(f.u) === u);
+                            if (existing) { existing.n = n; if (c) existing.k = c; }
+                            else store.globalFleet.push({ u: u, k: c, n: n });
+                        }
+                    });
+                });
+            } else if (tipo === 'seguimiento') {
+                // Lee hojas de corridas / seguimiento conservando store.globalHistory
+                wb.SheetNames.forEach(sheetName => {
+                    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: "" });
+                    let parsedTrips = [];
+                    rows.forEach((r, idx) => {
+                        const keys = Object.keys(r);
+                        const kH = keys.find(k => /hora|salida|horario/i.test(k));
+                        const kO = keys.find(k => /origen|salida_de/i.test(k));
+                        const kD = keys.find(k => /destino|llegada/i.test(k));
+                        const kU = keys.find(k => /unidad|eco/i.test(k));
+                        const kC = keys.find(k => /clave|rol/i.test(k));
+                        const kN = keys.find(k => /operador|nombre|chofer/i.test(k));
+
+                        let h = normalizarHoraExcel(kH ? r[kH] : "");
+                        let o = kO ? String(r[kO]).trim() : "";
+                        let d = kD ? String(r[kD]).trim() : "";
+                        if (h && (o || d)) {
+                            let u = kU ? String(r[kU]).replace(/\D/g, '') : "";
+                            let k = kC ? String(r[kC]).trim() : "";
+                            let n = kN ? String(r[kN]).trim() : "";
+                            if (k && n) store.operadoresDB[k] = n;
+                            parsedTrips.push({
+                                id: `${sheetName}_${idx}_${h.replace(':','')}`,
+                                h: h,
+                                o: o || "CU",
+                                d: d || "CU2",
+                                u: u,
+                                k: k,
+                                n: n
+                            });
+                        }
+                    });
+                    if (parsedTrips.length > 0) {
+                        store.days[sheetName] = { label: sheetName, trips: parsedTrips };
+                        store.currentDay = sheetName;
+                    }
+                });
+            }
+
+            // Re-asigna y protege el historial histórico antes de guardar en Firebase
+            store.globalHistory = historialProtegido;
+            saveStore();
+            render();
+            closeSheet();
+        } catch (err) {
+            showAggressiveToast("No se pudo leer el archivo Excel. Verifica el formato.");
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+document.getElementById('fileAsignacion').addEventListener('change', function(e) {
+    procesarExcelCarga(e.target.files[0], 'asignacion');
+    e.target.value = "";
+});
+document.getElementById('fileSeguimiento').addEventListener('change', function(e) {
+    procesarExcelCarga(e.target.files[0], 'seguimiento');
+    e.target.value = "";
+});
 </script>
 </body>
 </html>
