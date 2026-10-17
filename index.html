@@ -41,7 +41,7 @@
   .mono { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; }
   
   /* MARCA DE AGUA */
-  .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 380px; height: 50vh; opacity: 0.05; pointer-events: none; z-index: 0; background-image: url("Logo%20Estrella%20Roja.webp"); background-size: contain; background-repeat: no-repeat; background-position: center; mix-blend-mode: multiply;}
+  .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 380px; height: 50vh; opacity: 0.06; pointer-events: none; z-index: 0; background-image: url("Logo%20Estrella%20Roja.webp"); background-size: contain; background-repeat: no-repeat; background-position: center; mix-blend-mode: multiply;}
 
   .shell { max-width: 480px; margin: 0 auto; position: relative; z-index: 1; transition: max-width 0.3s ease; }
   body.pc-view .shell { max-width: 1400px; padding: 0 20px; }
@@ -164,16 +164,66 @@
   .icon-btn.terminal-btn.on svg { fill: var(--accent); color: var(--accent); }
   .icon-btn.restore-btn { color: var(--accent); }
 
-  .overlay { position: fixed; inset: 0; background: rgba(18, 24, 38, 0.7); z-index: 100; opacity: 0; pointer-events: none; transition: 0.2s; display: flex; align-items: flex-end; visibility: hidden; }
-  .overlay.show { opacity: 1; pointer-events: auto; visibility: visible; }
-  body.pc-view .overlay { align-items: center; justify-content: center; }
+  /* SISTEMA UNIFICADO DE VENTANAS EMERGENTES (FUNCIONA IGUAL EN CELULAR Y EN PC) */
+  .overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(18, 24, 38, 0.72);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+  }
+  .overlay.show {
+    display: flex !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+  }
+  body.pc-view .overlay {
+    align-items: center;
+    justify-content: center;
+  }
 
-  .sheet { background: var(--surface); width: 100%; max-width: 480px; margin: 0 auto; border-radius: 18px 18px 0 0; padding: 20px; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1); max-height: 90vh; overflow-y: auto; pointer-events: auto; box-shadow: 0 -10px 20px rgba(0,0,0,0.1); position: absolute; bottom: 0;}
-  body.pc-view .sheet { max-width: 600px; border-radius: 18px; margin: auto; transform: scale(0.95); opacity: 0; transition: all 0.2s; position: relative;}
-  body.pc-view .overlay.show .sheet { transform: scale(1); opacity: 1; }
+  .sheet {
+    background: var(--surface);
+    width: 100%;
+    max-width: 480px;
+    border-radius: 18px;
+    margin: auto;
+    padding: 20px;
+    max-height: 86vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    pointer-events: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.28);
+    position: relative;
+    z-index: 10000;
+    transform: scale(1) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  body.pc-view .sheet {
+    max-width: 600px;
+  }
+  .overlay.show .sheet,
+  body.pc-view .overlay.show .sheet {
+    transform: scale(1) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
   
   .sheet h2 { margin: 0 0 12px; font-size: 18px; color: var(--accent); }
-  .input-field { width: 100%; padding: 14px 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 16px; margin-bottom: 15px; outline: none; background-color: var(--surface-2); color: var(--ink); font-family: inherit; font-weight: 500; min-height: 44px; }
+  .input-field { width: 100%; padding: 13px 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 16px; margin-bottom: 14px; outline: none; background-color: var(--surface-2); color: var(--ink); font-family: inherit; font-weight: 500; min-height: 44px; }
   .input-field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
 
   .btn-primary { display: block; width: 100%; padding: 14px; background: var(--bad); color: #fff; font-weight: bold; font-size: 16px; border: none; border-radius: 12px; margin-top: 15px; cursor: pointer; box-shadow: 0 4px 12px rgba(216, 26, 50, 0.3); transition: 0.2s; min-height: 48px; }
@@ -183,7 +233,7 @@
   .btn-small { padding: 6px 12px; font-size: 13px; margin-top: 8px; border-radius: 6px; min-height: initial;}
 
   .reason-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 5px 0 15px; }
-  .reason-chip { border: 1px solid var(--line); padding: 8px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; background: var(--surface); color: var(--ink-soft); transition: 0.2s;}
+  .reason-chip { border: 1px solid var(--line); padding: 9px 13px; border-radius: 20px; font-size: 13.5px; font-weight: 500; cursor: pointer; background: var(--surface); color: var(--ink-soft); transition: 0.2s;}
   .reason-chip.sel { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600;}
   
   .opt-list { display: flex; flex-direction: column; gap: 2px; }
@@ -192,6 +242,11 @@
   .opt-row.sel { color: var(--accent); font-weight: 600; background: color-mix(in srgb, var(--accent) 10%, transparent); }
   .opt-row .ck { width: 15px; height: 15px; flex: 0 0 auto; display: inline-flex; pointer-events: none;}
   .avail-row { padding: 12px 10px; border-radius: 12px; margin-bottom: 8px; border: 1px solid var(--line); background: var(--surface); transition: opacity 0.2s; }
+  .avail-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-weight: 700; font-size: 14px; }
+  .avail-unit { background: var(--surface-2); padding: 2px 8px; border-radius: 6px; font-size: 12px; color: var(--ink); }
+  .avail-status { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 6px; margin-bottom: 6px; }
+  .avail-status.ok { background: var(--done-bg); color: var(--done); }
+  .avail-status.warn { background: var(--pend-bg); color: var(--pend); }
   
   /* TOAST AGRESIVO */
   @keyframes popToast { 0% { top: -50px; opacity: 0; } 100% { top: max(20px, env(safe-area-inset-top)); opacity: 1; } }
@@ -208,10 +263,10 @@
     <div class="clock-container">
         <div class="clock mono" id="liveClock">00:00:00</div>
         <div class="header-actions">
-            <button class="icon-btn-top" id="btnToggleView" aria-label="Cambiar a vista de PC" onclick="toggleDesktopView()">
+            <button type="button" class="icon-btn-top" id="btnToggleView" aria-label="Cambiar a vista de PC" onclick="toggleDesktopView()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
             </button>
-            <button class="icon-btn-top" id="btnUploadGlobal" aria-label="Configuración" onclick="abrirConfiguracion()">
+            <button type="button" class="icon-btn-top" id="btnUploadGlobal" aria-label="Configuración" onclick="abrirConfiguracion()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
             </button>
         </div>
@@ -232,9 +287,9 @@
           <span style="color:var(--bad)">⚠️ Pendientes</span> 
           <span id="badgeAlerts" class="badge-alert">0</span>
       </button>
-      <button class="tbtn" id="btnAvail" onclick="verDisponibilidad()">⏱ Disponibilidad</button>
-      <button class="tbtn" id="btnVacios" onclick="verVacios()">🚎 Vacíos CU2</button>
-      <button class="tbtn" id="btnCambios" onclick="verCambios()">🔄 Historial</button>
+      <button type="button" class="tbtn" id="btnAvail" onclick="verDisponibilidad()">⏱ Disponibilidad</button>
+      <button type="button" class="tbtn" id="btnVacios" onclick="verVacios()">🚎 Vacíos CU2</button>
+      <button type="button" class="tbtn" id="btnCambios" onclick="verCambios()">🔄 Historial</button>
     </div>
 
     <div class="search-wrap" id="searchWrap">
@@ -243,9 +298,9 @@
 
     <div class="seg-wrap">
       <div class="seg" id="seg">
-        <button class="active btn-activas" data-view="activas" onclick="cambiarVista('activas', this)">Activas</button>
-        <button class="btn-flota" data-view="flota" onclick="cambiarVista('flota', this)">Flota</button>
-        <button class="btn-ocultas" data-view="ocultas" onclick="cambiarVista('ocultas', this)">Ocultas</button>
+        <button type="button" class="active btn-activas" data-view="activas" onclick="cambiarVista('activas', this)">Activas</button>
+        <button type="button" class="btn-flota" data-view="flota" onclick="cambiarVista('flota', this)">Flota</button>
+        <button type="button" class="btn-ocultas" data-view="ocultas" onclick="cambiarVista('ocultas', this)">Ocultas</button>
       </div>
     </div>
   </header>
@@ -265,7 +320,7 @@
 
 <script>
 const ESTADOS_CRITICOS = ["Siniestro", "Taller", "Falla mecánica", "Sin diésel", "Falta", "Permiso", "Incapacidad", "Baja"];
-const MOTIVOS_RAPIDOS = ["Apoyo", "Enroque", "Falla mecánica", "Sin diésel", "Taller", "Siniestro", "Falta", "Permiso", "Retraso"];
+const MOTIVOS_RAPIDOS = ["Falta", "Permiso", "Siniestro", "Falla mecánica", "Operación", "Programación", "Sin diésel", "Apoyo", "Enroque"];
 const FLOTA_FIJA = [
   {u:"8002", p:"2MUE32"}, {u:"8003", p:"2MUE33"}, {u:"8005", p:"2MUA58"}, {u:"8008", p:"2MUE36"},
   {u:"8015", p:"2MUE41"}, {u:"8016", p:"2MUE42"}, {u:"8017", p:"2MUD53"}, {u:"8018", p:"2MUE43"},
@@ -336,10 +391,10 @@ function normLoc(loc) {
 function getTravelTime(orig, dest) {
     let o = normLoc(orig);
     let d = normLoc(dest);
-    if (o === d) return 0; // CU a CU = 0
+    if (o === d) return 0;
     let isCuCu2 = (o === "CU" && d === "CU2") || (o === "CU2" && d === "CU");
-    if (isCuCu2) return 40; // CU a CU2 = 40 min
-    return 55; // Cualquier otro punto a CU (ej. Amalucan) = 55 min
+    if (isCuCu2) return 40;
+    return 55;
 }
 
 function getTripDuration(trip) {
@@ -355,20 +410,21 @@ function getGlobalHistory() {
     if (!Array.isArray(store.globalHistory)) store.globalHistory = [];
     let existingIds = new Set(store.globalHistory.map(h => h.id));
 
-    // Migra cualquier registro previo de unitChanges por día hacia el historial histórico global
     if (store.state) {
         Object.keys(store.state).forEach(dayKey => {
             let dayChanges = (store.state[dayKey] && store.state[dayKey].unitChanges) || [];
             dayChanges.forEach((c, idx) => {
-                let uid = c.id || `${dayKey}_${c.time || idx}_${c.tripId || c.route || idx}`;
+                let timeVal = c.time || (c.changeAt ? new Date(c.changeAt).toISOString() : new Date().toISOString());
+                let uid = c.id || `${dayKey}_${c.changeAt || c.time || idx}_${c.tripId || c.route || idx}`;
                 if (!existingIds.has(uid)) {
                     store.globalHistory.push({
                         id: uid,
                         day: c.day || dayKey,
-                        time: c.time || new Date().toISOString(),
+                        time: timeVal,
                         tripTime: c.tripTime || "—",
                         clave: c.clave || "—",
                         route: c.route || "Cambio",
+                        scope: c.scope || "Horario individual",
                         tripId: c.tripId || "",
                         oldUnit: c.oldUnit || "—",
                         newUnit: c.newUnit || "—",
@@ -390,18 +446,22 @@ function getGlobalHistory() {
 function registrarEnHistorial(entry) {
     let ds = getDayState();
     let hist = getGlobalHistory();
+    let nowIso = entry.time || new Date().toISOString();
     let record = {
         id: entry.id || `${store.currentDay || 'Hoy'}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         day: entry.day || store.currentDay || "Hoy",
-        time: entry.time || new Date().toISOString(),
+        time: nowIso,
+        changeAt: Date.now(),
         tripTime: entry.tripTime || "—",
         clave: entry.clave || "—",
         route: entry.route || "Cambio",
+        scope: entry.scope || "Horario individual",
         tripId: entry.tripId || "",
         oldUnit: entry.oldUnit || "S/U",
         newUnit: entry.newUnit || "S/U",
         oldOp: entry.oldOp || "Sin Asignar",
         newOp: entry.newOp || "Sin Asignar",
+        nombre: entry.newOp || "Sin Asignar",
         reason: entry.reason || "Cambio manual",
         type: entry.type || "Viaje"
     };
@@ -442,7 +502,7 @@ function showAggressiveToast(msg) {
     let t = document.createElement("div");
     t.id = "agg-toast";
     t.innerHTML = `🚨 ${msg}`;
-    t.style.cssText = "position:fixed; top:env(safe-area-inset-top, 20px); left:50%; transform:translateX(-50%); width: 90%; max-width: 400px; background:var(--bad); color:white; padding:16px; border-radius:12px; z-index:9999; font-weight:bold; box-shadow:0 10px 25px rgba(216,26,50,0.6); font-size: 15px; text-align:center; animation: popToast 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, shake 0.5s ease-in-out;";
+    t.style.cssText = "position:fixed; top:env(safe-area-inset-top, 20px); left:50%; transform:translateX(-50%); width: 90%; max-width: 400px; background:var(--bad); color:white; padding:16px; border-radius:12px; z-index:10001; font-weight:bold; box-shadow:0 10px 25px rgba(216,26,50,0.6); font-size: 15px; text-align:center; animation: popToast 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, shake 0.5s ease-in-out;";
     document.body.appendChild(t);
     setTimeout(() => { t.style.animation = "fadeToast 0.3s ease forwards"; setTimeout(()=>t.remove(),300); }, 6000);
 }
@@ -467,7 +527,6 @@ try {
             store.globalHistory = Array.isArray(store.globalHistory) ? store.globalHistory : [];
             store.currentDay = store.currentDay || "Hoy";
 
-            // Blindaje: nunca perder registros locales del historial histórico
             if (localHistoryBackup.length > 0) {
                 let ids = new Set(store.globalHistory.map(h => h.id));
                 localHistoryBackup.forEach(item => {
@@ -538,23 +597,37 @@ function formatRouteName(o, d) {
     return `${orig} - ${dest}`; 
 }
 
-function openSheet(html) { document.getElementById("sheetContent").innerHTML = html; document.getElementById("overlay").classList.add("show"); }
-window.closeSheet = function() { document.getElementById("overlay").classList.remove("show"); }
-document.getElementById("overlay").addEventListener("click", function(e){ if(e.target.id === "overlay") closeSheet(); });
+window.openSheet = function(html) {
+    const content = document.getElementById("sheetContent");
+    const overlay = document.getElementById("overlay");
+    const sheet = document.getElementById("sheet");
+    if (content) content.innerHTML = html;
+    if (sheet) sheet.scrollTop = 0;
+    if (overlay) overlay.classList.add("show");
+};
+
+window.closeSheet = function() {
+    const overlay = document.getElementById("overlay");
+    if (overlay) overlay.classList.remove("show");
+};
+
+document.getElementById("overlay").addEventListener("click", function(e){
+    if(e.target.id === "overlay") closeSheet();
+});
 
 window.ignorarEmpalme = function(overlapId, view) {
     let ds = getDayState();
     if(!ds.resolvedOverlaps) ds.resolvedOverlaps = [];
     if(!ds.resolvedOverlaps.includes(overlapId)) { ds.resolvedOverlaps.push(overlapId); saveStore(); }
     render(); setTimeout(() => { if(view === 'pendientes') verPendientes(); if(view === 'empalmes') verEmpalmesRuta(); }, 50);
-}
+};
 
 window.ignorarFalta = function(tripId) {
     let ds = getDayState();
     if(!ds.resolvedMissing) ds.resolvedMissing = [];
     if(!ds.resolvedMissing.includes(tripId)) { ds.resolvedMissing.push(tripId); saveStore(); }
     render(); setTimeout(() => verPendientes(), 50);
-}
+};
 
 function actualizarBadgePendientes() {
     let ds = getDayState(); let cardsArr = []; let alertCount = 0;
@@ -639,6 +712,10 @@ function actualizarBadgePendientes() {
             `).join('');
             if(!sug) sug = `<div style="font-size:12px; color:var(--bad); padding: 8px; text-align: center;">Ningún operador libre para esta hora</div>`;
 
+            let safeEnt = encodeURIComponent(c.entity || '');
+            let safeT2H = encodeURIComponent(c.t2.h || '');
+            let safeCId = encodeURIComponent(c.id || '');
+
             return `
             <div style="background: var(--surface); border: 1px solid #eadbc8; border-radius: 12px; padding: 14px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--surface-2); padding-bottom: 10px; margin-bottom: 10px;">
@@ -662,8 +739,8 @@ function actualizarBadgePendientes() {
                     </div>
                 </div>
                 <div style="display:flex; gap:8px;">
-                    <button class="btn-outline" style="flex:2; border-color:var(--pend); color:var(--pend); padding: 10px; margin: 0; border-radius: 8px; font-size:14px;" onclick="resolverEmpalmeRuta('${c.entity}', '${c.t2.h}')">Reasignar Viaje 2</button>
-                    <button class="btn-outline" style="flex:1; border-color:var(--ink-faint); color:var(--ink-soft); padding: 10px; margin: 0; border-radius: 8px; font-size:14px;" onclick="ignorarEmpalme('${c.id}', 'pendientes')">✓ Resuelto</button>
+                    <button type="button" class="btn-outline" style="flex:2; border-color:var(--pend); color:var(--pend); padding: 10px; margin: 0; border-radius: 8px; font-size:14px;" onclick="resolverEmpalmeRuta(decodeURIComponent('${safeEnt}'), decodeURIComponent('${safeT2H}'))">Reasignar Viaje 2</button>
+                    <button type="button" class="btn-outline" style="flex:1; border-color:var(--ink-faint); color:var(--ink-soft); padding: 10px; margin: 0; border-radius: 8px; font-size:14px;" onclick="ignorarEmpalme(decodeURIComponent('${safeCId}'), 'pendientes')">✓ Resuelto</button>
                 </div>
             </div>`;
         });
@@ -698,7 +775,12 @@ function actualizarBadgePendientes() {
 
     if (missing.length > 0) {
         alertCount += missing.length;
-        let mappedMissing = missing.map(m => `
+        let mappedMissing = missing.map(m => {
+            let safeId = encodeURIComponent(m.trip.id || '');
+            let safeU = encodeURIComponent(m.unit || '');
+            let safeOp = encodeURIComponent(m.op || '');
+            let safeK = encodeURIComponent(m.trip.k || m.trip.n || '');
+            return `
             <div style="background: var(--surface); border: 1px solid var(--bad-bg); border-radius: 12px; padding: 14px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--surface-2); padding-bottom: 10px; margin-bottom: 10px;">
                     <div style="display:flex; align-items:center; gap:6px;">
@@ -710,11 +792,11 @@ function actualizarBadgePendientes() {
                     <strong style="color:var(--ink)">Ruta:</strong> ${formatRouteName(m.trip.o, m.trip.d)}
                 </div>
                 <div style="display:flex; gap:8px;">
-                    <button class="btn-outline" style="flex:2; border-color:var(--ink); color:var(--ink); padding: 10px; margin: 0; border-radius: 8px; font-size:14px;" onclick="abrirModalDesdePendientes('${m.trip.id}', '${m.unit}', '${m.op}', '${m.trip.k || m.trip.n || ""}')">Asignar ahora</button>
-                    <button class="btn-outline" style="flex:1; border-color:var(--ink-faint); color:var(--ink-soft); padding: 10px; margin: 0; border-radius: 8px; font-size:14px;" onclick="ignorarFalta('${m.trip.id}')">✓ Resuelto</button>
+                    <button type="button" class="btn-outline" style="flex:2; border-color:var(--ink); color:var(--ink); padding: 10px; margin: 0; border-radius: 8px; font-size:14px;" onclick="abrirModalDesdePendientes(decodeURIComponent('${safeId}'), decodeURIComponent('${safeU}'), decodeURIComponent('${safeOp}'), decodeURIComponent('${safeK}'))">Asignar ahora</button>
+                    <button type="button" class="btn-outline" style="flex:1; border-color:var(--ink-faint); color:var(--ink-soft); padding: 10px; margin: 0; border-radius: 8px; font-size:14px;" onclick="ignorarFalta(decodeURIComponent('${safeId}'))">✓ Resuelto</button>
                 </div>
-            </div>
-        `);
+            </div>`;
+        });
         cardsArr.push(...mappedMissing);
     }
 
@@ -729,12 +811,15 @@ window.abrirModalDesdePendientes = function(tripId, unit, op, k) {
     fakeCard.setAttribute('data-k', k);
     fakeCard.setAttribute('data-u', unit || "");
     fakeCard.setAttribute('data-n', op || "");
-    closeSheet();
-    setTimeout(() => openChangeModal(fakeCard), 250);
-}
+    openChangeModal(fakeCard);
+};
 
 window.verEmpalmesRuta = function() {
-    let html = globalCollisions.length ? globalCollisions.map(o => `
+    let html = globalCollisions.length ? globalCollisions.map(o => {
+        let safeEnt = encodeURIComponent(o.entity || '');
+        let safeT2H = encodeURIComponent(o.t2.h || '');
+        let safeId = encodeURIComponent(o.id || '');
+        return `
         <div style="background: var(--surface); border: 1px solid #eadbc8; border-radius: 12px; padding: 14px; margin-bottom: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--surface-2); padding-bottom: 10px; margin-bottom: 10px;">
                 <b style="color:var(--pend); font-size: 15px;">${o.entity}</b>
@@ -751,14 +836,14 @@ window.verEmpalmesRuta = function() {
                 </div>
             </div>
             <div style="display:flex; gap:8px;">
-                <button class="btn-outline" style="flex:2; border-color:var(--pend); color:var(--pend); padding: 10px; margin: 0; border-radius: 8px; font-size:14px;" onclick="resolverEmpalmeRuta('${o.entity}', '${o.t2.h}')">Reasignar Viaje 2</button>
-                <button class="btn-outline" style="flex:1; border-color:var(--ink-faint); color:var(--ink-soft); padding: 10px; margin: 0; border-radius: 8px; font-size:14px;" onclick="ignorarEmpalme('${o.id}', 'empalmes')">✓ Resuelto</button>
+                <button type="button" class="btn-outline" style="flex:2; border-color:var(--pend); color:var(--pend); padding: 10px; margin: 0; border-radius: 8px; font-size:14px;" onclick="resolverEmpalmeRuta(decodeURIComponent('${safeEnt}'), decodeURIComponent('${safeT2H}'))">Reasignar Viaje 2</button>
+                <button type="button" class="btn-outline" style="flex:1; border-color:var(--ink-faint); color:var(--ink-soft); padding: 10px; margin: 0; border-radius: 8px; font-size:14px;" onclick="ignorarEmpalme(decodeURIComponent('${safeId}'), 'empalmes')">✓ Resuelto</button>
             </div>
-        </div>
-    `).join('') : '<div style="padding:20px; text-align:center; color:gray;">✅ Excelente, no hay empalmes detectados.</div>';
+        </div>`;
+    }).join('') : '<div style="padding:20px; text-align:center; color:gray;">✅ Excelente, no hay empalmes detectados.</div>';
 
-    openSheet(`<h2>🔀 Empalmes de Ruta</h2><div class="desc" style="font-size:13px; color:gray; margin-bottom:10px;">Estima tiempos exactos según la logística. Se ignoran choques de 15 min o menos.</div>${html}`);
-}
+    openSheet(`<h2>🔀 Empalmes de Ruta</h2><div class="desc" style="font-size:13px; color:gray; margin-bottom:10px;">Estima tiempos exactos según la logística. Se ignoran choques de 15 min o menos.</div>${html}<button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
+};
 
 window.resolverEmpalmeRuta = function(val, time) {
     let ds = getDayState(); let trips = store.days[store.currentDay].trips || [];
@@ -773,23 +858,37 @@ window.resolverEmpalmeRuta = function(val, time) {
     });
 
     if(tripToFix) {
-        let fakeCard = document.createElement('div'); fakeCard.setAttribute('data-id', tripToFix.id); fakeCard.setAttribute('data-k', tripToFix.k);
-        let overU = ds.tripUnitOverride[tripToFix.id] || ds.unitOverride[tripToFix.k || tripToFix.n] || ds.unitOverride[tripToFix.u]; let finalU = overU==="VACIO"?"":(overU || tripToFix.u);
-        let overOp = ds.tripOpOverride[tripToFix.id] || ds.opOverride[finalU] || ds.opOverride[tripToFix.n]; let finalOp = overOp==="VACIO"?"":(overOp || baselineOp[finalU] || tripToFix.n);
-        fakeCard.setAttribute('data-u', finalU); fakeCard.setAttribute('data-n', finalOp);
-        closeSheet(); setTimeout(() => openChangeModal(fakeCard), 250); 
+        let fakeCard = document.createElement('div');
+        fakeCard.setAttribute('data-id', tripToFix.id);
+        fakeCard.setAttribute('data-k', tripToFix.k || "");
+        let overU = ds.tripUnitOverride[tripToFix.id] || ds.unitOverride[tripToFix.k || tripToFix.n] || ds.unitOverride[tripToFix.u];
+        let finalU = overU === "VACIO" ? "" : (overU || tripToFix.u || "");
+        let overOp = ds.tripOpOverride[tripToFix.id] || ds.opOverride[finalU] || ds.opOverride[tripToFix.n];
+        let finalOp = overOp === "VACIO" ? "" : (overOp || baselineOp[finalU] || tripToFix.n || "");
+        fakeCard.setAttribute('data-u', finalU);
+        fakeCard.setAttribute('data-n', finalOp);
+        openChangeModal(fakeCard);
     }
-}
+};
 
 window.verPendientes = function() {
-    if(globalAlertsData.length === 0) { openSheet(`<h2>⚠ Tareas Pendientes</h2><p style="text-align:center; color:gray; padding:20px;">Todo en orden. No hay alertas accionables en este momento.</p>`); return; }
-    openSheet(`<h2>⚠ Tareas Pendientes</h2><div style="font-size:13px; color:gray; margin-bottom:15px;">Gestiona choques físicos y falta de asignaciones al instante.</div><div style="max-height: 70vh; overflow-y:auto; padding-bottom: 20px;">${globalAlertsData.join('')}</div>`);
-}
+    if(globalAlertsData.length === 0) {
+        openSheet(`<h2>⚠ Tareas Pendientes</h2><p style="text-align:center; color:gray; padding:20px;">Todo en orden. No hay alertas accionables en este momento.</p><button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
+        return;
+    }
+    openSheet(`<h2>⚠ Tareas Pendientes</h2><div style="font-size:13px; color:gray; margin-bottom:15px;">Gestiona choques físicos y falta de asignaciones al instante.</div><div style="max-height: 62vh; overflow-y:auto; padding-bottom: 10px;">${globalAlertsData.join('')}</div><button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
+};
 
 window.abrirMenuDias = function() {
-    if(!store.days || Object.keys(store.days).length === 0) return;
-    let options = Object.keys(store.days).map(day => `<button type="button" class="opt-row${day===store.currentDay?' sel':''}" onclick="seleccionarDia('${day}')">${day}${day===store.currentDay?`<span class="ck">${ICO.check}</span>`:''}</button>`).join('');
-    openSheet(`<h2>Seleccionar Fecha</h2><div class="opt-list">${options}</div>`);
+    if(!store.days || Object.keys(store.days).length === 0) {
+        openSheet(`<h2>Seleccionar Fecha</h2><p style="color:gray;font-size:13px;">Aún no hay días cargados. Abre Configuración (⚙️) para importar tu archivo Excel.</p><button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
+        return;
+    }
+    let options = Object.keys(store.days).map(day => {
+        let safeDay = encodeURIComponent(day);
+        return `<button type="button" class="opt-row${day===store.currentDay?' sel':''}" onclick="seleccionarDia(decodeURIComponent('${safeDay}'))">${day}${day===store.currentDay?`<span class="ck">${ICO.check}</span>`:''}</button>`;
+    }).join('');
+    openSheet(`<h2>Seleccionar Fecha</h2><div class="opt-list">${options}</div><button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
 };
 
 window.seleccionarDia = function(day) { store.currentDay = day; saveStore(); render(); closeSheet(); };
@@ -852,7 +951,7 @@ function render() {
         document.getElementById("btnOrigen").innerHTML = ICO.pin + '<span>' + (activeOrigin ? activeOrigin : 'Origen') + '</span>';
         document.getElementById("btnDestino").innerHTML = ICO.flag + '<span>' + (activeDest ? activeDest : 'Destino') + '</span>';
         if(activeView === "flota") { renderFlota(); return; }
-        document.getElementById("list").innerHTML = "<div style='text-align:center;padding:40px;color:gray;'>No hay viajes cargados para esta fecha. Abre Configuración (⚙️) para importar tu Excel.</div>";
+        document.getElementById("list").innerHTML = "<div style='text-align:center;padding:40px;color:gray;'>No hay viajes cargados para esta fecha. Toca Configuración (⚙️) arriba a la derecha para importar tus archivos Excel.</div>";
         return;
     }
     document.getElementById("dayLabel").innerHTML = (store.days[store.currentDay].label || store.currentDay) + " <span>▼</span>";
@@ -911,7 +1010,6 @@ function render() {
       }
       
       if(skip) return;
-      // Separación estricta entre pestañas Activas y Ocultas para evitar bloqueos visuales
       if(activeView === "activas" && isHidden) return; 
       if(activeView === "ocultas" && !isHidden) return;
       
@@ -961,8 +1059,13 @@ function render() {
             if(t._isDamagedU) reasonStr = store.unassignedReasons[t._finalUnit];
             else if(t._isDamagedOp) reasonStr = store.unassignedReasons[t._finalOp];
 
+            let attrK = String(t.k !== null && t.k !== undefined ? t.k : "").replace(/"/g, '&quot;');
+            let attrU = String(t._finalUnit || "").replace(/"/g, '&quot;');
+            let attrN = String(opName || "").replace(/"/g, '&quot;');
+            let attrOrigU = String(t.u || "").replace(/"/g, '&quot;');
+
             html += `
-              <div class="trip status-${state.status} ${extraClasses}" onclick="tapTrip(event, this)" data-id="${t.id}" data-k="${t.k}" data-u="${t._finalUnit}" data-n="${opName}" data-time="${t.h}" data-status="${state.status}">
+              <div class="trip status-${state.status} ${extraClasses}" onclick="tapTrip(event, this)" data-id="${t.id}" data-k="${attrK}" data-origu="${attrOrigU}" data-u="${attrU}" data-n="${attrN}" data-time="${t.h}" data-status="${state.status}">
                 <div class="trip-time mono">${t.h}</div>
                 <div class="trip-main"><div class="trip-route">${routeLabel}</div>
                   <div class="trip-sub"><span class="unit">${unitName}</span><span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px;">${opName}</span>
@@ -1006,7 +1109,6 @@ window.toggleStatus = function(id, action, event) {
         current.hidden = true;
     } else if (action === "restore") {
         current.hidden = false;
-        // Limpia formadoAt para que no vuelva a auto-ocultarse por la regla de 5 minutos
         current.formadoAt = null;
         if (current.status === "formado") {
             current.status = "pendiente";
@@ -1197,15 +1299,19 @@ function renderFlota() {
         return String(valA).localeCompare(String(valB)) * flotaSortDir;
     });
 
-    let trs = rows.map(r => `
-        <tr class="${r.cat}" onclick="abrirModalFlotaDedicado('${r.u}', '${r.k}', '${r.n}')">
+    let trs = rows.map(r => {
+        let safeU = encodeURIComponent(r.u || '');
+        let safeK = encodeURIComponent(r.k || '');
+        let safeN = encodeURIComponent(r.n || '');
+        return `
+        <tr class="${r.cat}" onclick="abrirModalFlotaDedicado(decodeURIComponent('${safeU}'), decodeURIComponent('${safeK}'), decodeURIComponent('${safeN}'))">
             <td>${r.u ? 'U-'+r.u : '---'}</td>
             <td>${r.k || '---'}</td>
             <td>${r.n || '---'}</td>
             <td style="text-align:center; font-weight:bold; color:var(--accent); font-size:14px;">${r.v}</td>
             <td>${r.st}</td>
-        </tr>
-    `).join('');
+        </tr>`;
+    }).join('');
 
     let html = `
     <div style="padding: 0 14px 14px;">
@@ -1229,14 +1335,15 @@ function renderFlota() {
 }
 
 window.abrirModalFlotaDedicado = function(u, k, n) {
-    let trips = (store.days[store.currentDay] && store.days[store.currentDay].trips ? store.days[store.currentDay].trips : []).filter(t => t.n === n || (u && t.u === u)).sort((a,b) => a.h.localeCompare(b.h));
+    window._flotaCtx = { origU: u || "", origK: k || "", origOp: n || "" };
+    let trips = (store.days[store.currentDay] && store.days[store.currentDay].trips ? store.days[store.currentDay].trips : []).filter(t => t.n === n || (u && String(t.u) === String(u))).sort((a,b) => a.h.localeCompare(b.h));
     let tripsHtml = trips.length ? trips.map(t => `<div style="padding:4px 0; border-bottom:1px solid #eee; font-size:13px;">${t.h} - ${formatRouteName(t.o, t.d)}</div>`).join('') : 'Sin rol planeado hoy';
 
     let opOptions = `<option value="VACIO">-- Sin Asignar (Separar) --</option>`;
     if(store.operadoresDB) Object.values(store.operadoresDB).filter(v=>v).sort().forEach(name => opOptions += `<option value="${name}">`);
 
     let uOptions = `<option value="VACIO">-- Sin Unidad (Separar) --</option>`;
-    FLOTA_FIJA.forEach(f => uOptions += `<option value="${f.u}" ${f.u === u ? 'selected' : ''}>U-${f.u} [${f.p}]</option>`);
+    FLOTA_FIJA.forEach(f => uOptions += `<option value="${f.u}" ${String(f.u) === String(u) ? 'selected' : ''}>U-${f.u} [${f.p}]</option>`);
 
     let estU = u ? (store.unassignedReasons[u] || 'Activa') : 'Activa';
     let estOp = n ? (store.unassignedReasons[n] || store.unassignedReasons[k] || 'Activo') : 'Activo';
@@ -1265,11 +1372,17 @@ window.abrirModalFlotaDedicado = function(u, k, n) {
           ${selectOpStatus}
         </select>
 
-        <button class="btn-primary" onclick="guardarFlotaDedicado('${u}', '${n}', '${k}')">Guardar y Separar Automáticamente</button>
+        <button type="button" class="btn-primary" onclick="guardarFlotaDedicado()">Guardar y Separar Automáticamente</button>
+        <button type="button" class="btn-outline" onclick="closeSheet()">Cancelar</button>
     `);
-}
+};
 
-window.guardarFlotaDedicado = function(origU, origOp, origK) {
+window.guardarFlotaDedicado = function() {
+    let ctx = window._flotaCtx || {};
+    let origU = ctx.origU || "";
+    let origOp = ctx.origOp || "";
+    let origK = ctx.origK || "";
+
     let finalU = document.getElementById("modalU").value;
     let finalOp = document.getElementById("modalOp").value.trim();
     let stU = document.getElementById("modalEstU").value;
@@ -1309,6 +1422,13 @@ window.guardarFlotaDedicado = function(origU, origOp, origK) {
         }
     }
 
+    if(finalU !== "VACIO" && finalOp !== "" && finalOp !== "VACIO") {
+        ds.opOverride[finalU] = finalOp;
+        ds.unitOverride[finalOp] = finalU;
+        let opC = Object.keys(store.operadoresDB).find(k => store.operadoresDB[k] === finalOp);
+        if (opC) ds.unitOverride[opC] = finalU;
+    }
+
     store.globalFleet = store.globalFleet || [];
     let fleetRow = store.globalFleet.find(x => String(x.u) === String(origU) || (origK && String(x.k) === String(origK)) || (origOp && x.n === origOp));
     if(!fleetRow) { fleetRow = {}; store.globalFleet.push(fleetRow); }
@@ -1316,16 +1436,16 @@ window.guardarFlotaDedicado = function(origU, origOp, origK) {
     if(finalOp === "VACIO") { delete fleetRow.n; } else if(finalOp) fleetRow.n = finalOp;
     if(origK && !fleetRow.k) fleetRow.k = origK;
 
-    // Registrar movimiento de Flota también en el Historial Histórico
     let motivosFlota = [];
     if (stU && stU !== "Activa") motivosFlota.push(stU);
     if (stOp && stOp !== "Activo") motivosFlota.push(stOp);
-    let reasonText = motivosFlota.length ? motivosFlota.join(" / ") : "Ajuste en Flota";
+    let reasonText = motivosFlota.length ? motivosFlota.join(" / ") : "Cambio de asignación en Flota";
 
     registrarEnHistorial({
-        tripTime: "FLOTA",
+        tripTime: "Todo el día",
         clave: origK || "—",
-        route: "Ajuste de Flota",
+        route: "Edición de Flota",
+        scope: "Impacta a todas las vueltas planeadas",
         oldUnit: origU || "S/U",
         newUnit: (!finalU || finalU === "VACIO") ? "S/U" : finalU,
         oldOp: origOp || "Sin Asignar",
@@ -1337,117 +1457,239 @@ window.guardarFlotaDedicado = function(origU, origOp, origK) {
     closeSheet(); render(); saveStore();
 };
 
-window.seleccionarChipMotivo = function(el, motivo) {
-    document.querySelectorAll('#reasonChips .reason-chip').forEach(c => c.classList.remove('sel'));
-    el.classList.add('sel');
-    let input = document.getElementById('changeReason');
-    if (input) input.value = motivo;
-};
-
+// MODAL DE CAMBIO EN RUTA (CERO FRICCIÓN COGNITIVA, FUNCIONA EN CELULAR Y PC)
 window.openChangeModal = function(card) {
-    const tripId = card?.dataset?.id;
-    const trip = (store.days?.[store.currentDay]?.trips || []).find(t => String(t.id) === String(tripId));
-    if(!trip) { openSheet('<h2>No se encontró el viaje</h2><p>Actualiza la aplicación e inténtalo de nuevo.</p>'); return; }
-    const ds = getDayState();
+    let tripId = card.getAttribute("data-id") || "";
+    let trip = (store.days?.[store.currentDay]?.trips || []).find(t => String(t.id) === String(tripId));
+    let ds = getDayState();
     let baselineOp = {};
     if(store.globalFleet) { store.globalFleet.forEach(g => { if(g.u && g.n) baselineOp[String(g.u)] = g.n; }); }
 
-    const overU = ds.tripUnitOverride[trip.id] || ds.unitOverride[trip.k || trip.n] || ds.unitOverride[trip.u];
-    const baseU = overU === "VACIO" ? "" : (overU || trip.u || '');
-    const overOp = ds.tripOpOverride[trip.id] || ds.opOverride[baseU] || ds.opOverride[trip.n];
-    const baseOp = overOp === "VACIO" ? "" : (overOp || baselineOp[baseU] || trip.n || '');
+    let oldU = card.getAttribute("data-u") || "";
+    let oldOp = card.getAttribute("data-n") || "";
+    if (oldOp === "Sin asignar") oldOp = "";
 
-    const unitOptions = ['<option value="">Sin unidad</option>'].concat(FLOTA_FIJA.map(f => `<option value="${f.u}" ${String(baseU)===String(f.u)?'selected':''}>U-${f.u} · ${f.p}</option>`)).join('');
-    const ops = [...new Set(Object.values(store.operadoresDB || {}).filter(Boolean).concat((store.days[store.currentDay].trips || []).map(t=>t.n).filter(Boolean)))].sort((a,b)=>a.localeCompare(b));
-    const opOptions = ['<option value="">Sin operador</option>'].concat(ops.map(op=>`<option value="${String(op).replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" ${op===baseOp?'selected':''}>${op}</option>`)).join('');
-    
-    const chipsHtml = MOTIVOS_RAPIDOS.map((m, idx) => `<span class="reason-chip ${idx===0?'sel':''}" onclick="seleccionarChipMotivo(this, '${m}')">${m}</span>`).join('');
+    if (trip) {
+        let overU = ds.tripUnitOverride[trip.id] || ds.unitOverride[trip.k || trip.n] || ds.unitOverride[trip.u];
+        oldU = overU === "VACIO" ? "" : (overU || trip.u || "");
+        let overOp = ds.tripOpOverride[trip.id] || ds.opOverride[oldU] || ds.opOverride[trip.n];
+        oldOp = overOp === "VACIO" ? "" : (overOp || baselineOp[oldU] || trip.n || "");
+    }
 
-    openSheet(`<h2>Modificar viaje</h2>
-      <div style="background:var(--surface-2);padding:12px;border-radius:10px;margin-bottom:14px">
-        <b>${trip.h}</b> · ${formatRouteName(trip.o,trip.d)}<br>
-        <small>Clave: ${trip.k || '—'} | Actual: ${baseU ? 'U-'+baseU : 'S/U'} · ${baseOp || 'Sin Op'}</small>
-      </div>
-      <label style="font-size:13px;font-weight:bold;">Unidad</label>
-      <select id="changeUnit" class="input-field" style="appearance:auto">${unitOptions}</select>
-      <label style="font-size:13px;font-weight:bold;">Operador</label>
-      <select id="changeOperator" class="input-field" style="appearance:auto">${opOptions}</select>
-      <label style="font-size:13px;font-weight:bold;">Motivo rápido (1 toque)</label>
-      <div class="reason-grid" id="reasonChips">${chipsHtml}</div>
-      <input id="changeReason" type="text" class="input-field" value="${MOTIVOS_RAPIDOS[0]}" placeholder="Escribe o selecciona un motivo...">
-      <button class="btn-primary" onclick="guardarCambioViaje('${String(trip.id).replace(/'/g, '')}', '${String(baseU).replace(/'/g, '')}', '${String(baseOp).replace(/'/g, '')}')">Guardar cambios</button>
-      <button class="btn-outline" onclick="closeSheet()">Cancelar</button>`);
+    let fleetKey = card.getAttribute("data-k") || card.getAttribute("data-origu") || (trip ? (trip.k || trip.n || trip.u || "") : "");
+    window._changeModalCtx = {
+        fleetKey: String(fleetKey || ""),
+        tripId: String(tripId || ""),
+        oldU: String(oldU || ""),
+        oldOp: String(oldOp || "")
+    };
+
+    let opOptions = `<option value="VACIO">-- Sin Asignar (Vaciar) --</option>`;
+    let allOpNames = new Set();
+    if(store.operadoresDB) Object.values(store.operadoresDB).filter(Boolean).forEach(name => allOpNames.add(name));
+    if(store.days && store.days[store.currentDay] && store.days[store.currentDay].trips) {
+        store.days[store.currentDay].trips.forEach(t => { if(t.n) allOpNames.add(t.n); });
+    }
+    [...allOpNames].sort((a,b) => a.localeCompare(b)).forEach(name => {
+        opOptions += `<option value="${String(name).replace(/"/g, '&quot;')}">`;
+    });
+
+    let selectOptions = `<option value="VACIO">-- Sin Asignar (Quitar Carro) --</option>`;
+    FLOTA_FIJA.forEach(f => {
+        selectOptions += `<option value="${f.u}" ${String(f.u) === String(oldU) ? 'selected' : ''}>U-${f.u} [${f.p}]</option>`;
+    });
+
+    window._selectedReason = "";
+    let reasonsHtml = MOTIVOS_RAPIDOS.map(r => `<button type="button" class="reason-chip" onclick="seleccionarMotivo(this, '${r}')">${r}</button>`).join('');
+
+    let headerInfo = trip ? `
+      <div style="background:var(--surface-2);padding:10px 12px;border-radius:10px;margin-bottom:12px;font-size:13px;">
+        <b>${trip.h}</b> · ${formatRouteName(trip.o, trip.d)}<br>
+        <small style="color:var(--ink-soft);">Clave: ${trip.k || '—'} | Actual: ${oldU ? 'U-'+oldU : 'S/U'} · ${oldOp || 'Sin Op'}</small>
+      </div>` : '';
+
+    openSheet(`
+      <h2>Asignar / Cambiar en Ruta</h2>
+      ${headerInfo}
+      <label style="font-size:13px; font-weight:bold;">Unidad (Flota Autorizada):</label>
+      <select id="newUInput" class="input-field" style="appearance:auto; padding: 12px;">${selectOptions}</select>
+      <label style="font-size:13px; font-weight:bold;">Operador:</label>
+      <input type="text" id="newOpInput" list="opList" class="input-field" value="${String(oldOp).replace(/"/g, '&quot;')}" placeholder="Escribe para buscar o vacía..." autocomplete="off">
+      <datalist id="opList">${opOptions}</datalist>
+      <p style="margin:6px 0 5px; font-weight:bold; font-size:13px;">Motivo del cambio:</p>
+      <div class="reason-grid">${reasonsHtml}</div>
+      ${(tripId && tripId !== 'null') ? `<label style="font-size:13px; font-weight:bold;">¿Aplica para?</label><select id="scopeSelect" class="input-field" style="appearance:auto; padding: 12px; margin-top:5px;"><option value="all" selected>Todas las vueltas del día (Recomendado)</option><option value="one">Solo para ESTE horario</option></select>` : ''}
+      <button type="button" class="btn-primary" onclick="procesarCambio()">Guardar Cambios y Notificar</button>
+      <button type="button" class="btn-outline" onclick="closeSheet()">Cancelar</button>
+    `);
 };
 
-window.guardarCambioViaje = function(tripId, prevUnit, prevOp) {
-    const ds = getDayState();
-    const unit = document.getElementById('changeUnit')?.value || '';
-    const op = document.getElementById('changeOperator')?.value || '';
-    const reason = (document.getElementById('changeReason')?.value || 'Cambio manual de viaje').trim();
+window.seleccionarMotivo = function(btn, motivo) {
+    document.querySelectorAll(".reason-chip").forEach(b => b.classList.remove("sel"));
+    btn.classList.add("sel");
+    window._selectedReason = motivo;
+};
 
-    ds.tripUnitOverride[tripId] = unit || 'VACIO';
-    ds.tripOpOverride[tripId] = op || 'VACIO';
+window.procesarCambio = function() {
+    let ctx = window._changeModalCtx || {};
+    let fleetKey = ctx.fleetKey || "";
+    let tripId = ctx.tripId || "";
+    let oldU = ctx.oldU || "";
+    let oldOp = ctx.oldOp || "";
 
-    const trip = (store.days?.[store.currentDay]?.trips || []).find(t => String(t.id) === String(tripId));
+    let newU = document.getElementById("newUInput").value;
+    let newOp = document.getElementById("newOpInput").value.trim();
+    if(newOp === "") newOp = "VACIO";
+    let reason = window._selectedReason || "Reasignación manual";
+    let ds = getDayState();
+    let scopeEl = document.getElementById("scopeSelect");
+    let scope = (tripId && tripId !== 'null' && scopeEl) ? scopeEl.value : 'all';
     
+    if(scope === 'all' && fleetKey) {
+        ds.unitOverride[fleetKey] = newU === "" ? "VACIO" : newU;
+        ds.opOverride[fleetKey] = newOp === "" ? "VACIO" : newOp;
+        if (tripId) {
+            delete ds.tripUnitOverride[tripId];
+            delete ds.tripOpOverride[tripId];
+        }
+    } else if (tripId) {
+        ds.tripUnitOverride[tripId] = newU === "" ? "VACIO" : newU;
+        ds.tripOpOverride[tripId] = newOp === "" ? "VACIO" : newOp;
+    }
+
+    let changedTrip = (tripId && tripId !== 'null') ? (store.days[store.currentDay].trips || []).find(x => String(x.id) === String(tripId)) : null;
     registrarEnHistorial({
-        tripTime: trip ? trip.h : "—",
-        clave: trip ? (trip.k || "—") : "—",
-        route: trip ? formatRouteName(trip.o, trip.d) : tripId,
+        tripTime: changedTrip ? changedTrip.h : "N/A",
+        clave: changedTrip ? (changedTrip.k || fleetKey || "—") : (fleetKey || "—"),
+        route: changedTrip ? formatRouteName(changedTrip.o, changedTrip.d) : "Ruta General",
+        scope: scope === "all" ? "Todas las vueltas de este operador" : "Solo este horario",
         tripId: tripId,
-        oldUnit: prevUnit || "S/U",
-        newUnit: unit || "S/U",
-        oldOp: prevOp || "Sin Asignar",
-        newOp: op || "Sin Asignar",
+        oldUnit: oldU || "S/U",
+        newUnit: (!newU || newU === "VACIO") ? "S/U" : newU,
+        oldOp: oldOp || "Sin Asignar",
+        newOp: (!newOp || newOp === "VACIO") ? "Sin Asignar" : newOp,
         reason: reason,
         type: "Viaje"
     });
 
-    closeSheet(); render(); saveStore();
+    closeSheet();
+    render();
+    saveStore();
 };
 
 window.abrirConfiguracion = function() {
     const trips = store.days?.[store.currentDay]?.trips || [];
     const totalHist = getGlobalHistory().length;
-    openSheet(`<h2>Configuración y datos</h2>
+    openSheet(`<h2>Configuración / Archivos</h2>
       <div style="background:var(--surface-2);padding:12px;border-radius:10px;font-size:13px;line-height:1.8;margin-bottom:12px">
-        <b>Conexión:</b> ${db ? 'Firebase configurado' : 'Sin conexión'}<br>
-        <b>Fecha activa:</b> ${store.currentDay || '—'}<br>
-        <b>Viajes en fecha activa:</b> ${trips.length}<br>
+        <b>Conexión:</b> ${db ? 'Firebase En Línea' : 'Sin conexión'}<br>
+        <b>Fecha activa:</b> ${store.currentDay || '—'} (${trips.length} viajes)<br>
         <b>Unidades fijas:</b> ${FLOTA_FIJA.length}<br>
-        <b>Registros en Historial Histórico:</b> ${totalHist}
+        <b>Historial Histórico:</b> ${totalHist} registro(s) protegidos
       </div>
-      <p style="font-size:13px;color:var(--ink-soft)">Importa archivos Excel para actualizar los roles o asignaciones. El <b>Historial Histórico</b> se conserva intacto aunque subas nuevos datos.</p>
-      <button class="btn-outline" onclick="document.getElementById('fileAsignacion').click()">📄 Cargar asignación / plantilla Excel</button>
-      <button class="btn-outline" onclick="document.getElementById('fileSeguimiento').click()">📊 Cargar seguimiento / corridas Excel</button>
-      <button class="btn-outline" style="border-color:var(--done);color:var(--done);" onclick="descargarHistorialExcel()">📥 Descargar Historial Histórico (.xlsx)</button>
-      <button class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
+      <div style="background:var(--surface-2); padding:14px; border-radius:12px; margin-bottom:10px;">
+        <strong style="display:block;margin-bottom:4px;">1. Archivo: "datos"</strong>
+        <span style="font-size:12px;color:gray;">Carga la base de operadores y unidades primero (conserva el historial).</span>
+        <button type="button" class="btn-outline" onclick="document.getElementById('fileSeguimiento').click()">Seleccionar Excel "datos"</button>
+      </div>
+      <div style="background:var(--surface-2); padding:14px; border-radius:12px; margin-bottom:10px;">
+        <strong style="display:block;margin-bottom:4px;">2. Archivo: "rol"</strong>
+        <span style="font-size:12px;color:gray;">Asigna las rutas a la flota (conserva el historial).</span>
+        <button type="button" class="btn-outline" onclick="document.getElementById('fileAsignacion').click()">Seleccionar Excel "rol"</button>
+      </div>
+      <div id="uploadMsg" style="margin-top:10px;font-size:13px;font-weight:bold;color:var(--accent);text-align:center;"></div>
+      <button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
 };
 
 window.verDisponibilidad = function() {
-    const trips = [...(store.days?.[store.currentDay]?.trips || [])].sort((a,b)=>a.h.localeCompare(b.h));
-    const ds = getDayState();
-    const baselineOp = {}; (store.globalFleet || []).forEach(g=>{if(g.u && g.n) baselineOp[String(g.u)] = g.n;});
-    const rows = trips.map(t=>{
-      const ovU = ds.tripUnitOverride[t.id] || ds.unitOverride[t.k || t.n] || ds.unitOverride[t.u];
-      const u = ovU === 'VACIO' ? '' : (ovU || t.u || '');
-      const ovO = ds.tripOpOverride[t.id] || ds.opOverride[u] || ds.opOverride[t.n];
-      const op = ovO === 'VACIO' ? '' : (ovO || baselineOp[u] || t.n || '');
-      const start = hhmmToMins(t.h), end = start + getTripDuration(t);
-      return {t,u,op,start,end};
+    let trips = store.days[store.currentDay] ? store.days[store.currentDay].trips : [];
+    let ds = getDayState(); var groups = {};
+    let baselineOp = {}; if(store.globalFleet) { store.globalFleet.forEach(g => { if(g.u && g.n) baselineOp[String(g.u)] = g.n; }); }
+
+    trips.forEach(t => {
+      let overU = ds.tripUnitOverride[t.id] || ds.unitOverride[t.k || t.n] || ds.unitOverride[t.u];
+      let finalUnit = overU === "VACIO" ? "" : (overU || t.u);
+      let overOp = ds.tripOpOverride[t.id] || ds.opOverride[finalUnit] || ds.opOverride[t.n];
+      let finalOp = overOp === "VACIO" ? "" : (overOp || baselineOp[finalUnit] || t.n);
+      if(finalOp) {
+          if (!groups[finalOp]) groups[finalOp] = { nombre: finalOp, unidad: finalUnit, trips: [] };
+          groups[finalOp].trips.push(t);
+      }
     });
-    const html = rows.map(r=>`<div class="avail-row"><div style="display:flex;justify-content:space-between;gap:8px"><b class="mono">${r.t.h}</b><b>${r.u ? 'U-'+r.u : 'Sin unidad'}</b></div><div style="font-size:13px;margin-top:4px">${formatRouteName(r.t.o,r.t.d)}</div><div style="font-size:12px;color:var(--ink-soft);margin-top:4px">${r.op || 'Sin operador'} · llegada estimada ${minsToHhmm(r.end % 1440)}</div></div>`).join('');
-    openSheet(`<h2>⏱ Disponibilidad de viajes</h2><p style="font-size:13px;color:var(--ink-soft)">Duración estimada por trayecto: CU–CU2 40 min; otros destinos 55 min. Los empalmes se revisan por separado.</p><div style="max-height:65vh;overflow:auto">${html || '<p>No hay viajes cargados para esta fecha.</p>'}</div>`);
+
+    var rows = []; var nowMin = new Date().getHours()*60 + new Date().getMinutes();
+
+    Object.keys(groups).forEach(k => {
+      var g = groups[k]; g.trips.sort((a,b) => a.h.localeCompare(b.h));
+      var prev = null, next = null;
+      g.trips.forEach(t => { if(hhmmToMins(t.h) <= nowMin) prev = t; else if(!next) next = t; });
+
+      if(prev && next) {
+          let startMins = hhmmToMins(prev.h);
+          let baseDest = normLoc(prev.d);
+          let nextOrig = normLoc(next.o);
+          let arrivalMins = startMins + getTripDuration(prev);
+          let finalPos = baseDest;
+          if(baseDest !== nextOrig) {
+              arrivalMins += getEmptyTravelTime(baseDest, nextOrig);
+              finalPos = nextOrig;
+          }
+          let freeMins = hhmmToMins(next.h) - arrivalMins;
+
+          if(nowMin < arrivalMins) {
+              rows.push({ nombre: g.nombre, unidad: g.unidad, sortFree: -1, status: `En ruta / traslado`, badge: 'warn', detail: `Se desocupa en <b>${finalPos}</b> a las <b>${minsToHhmm(arrivalMins)}</b>.`, proxima: `${next.h} (${formatRouteName(next.o, next.d)})` });
+          } else if(freeMins > 0) {
+              let remMins = hhmmToMins(next.h) - nowMin;
+              rows.push({ nombre: g.nombre, unidad: g.unidad, sortFree: remMins, status: `En base (${remMins} min libres ahora)`, badge: 'ok', detail: `Disponible en <b>${finalPos}</b> desde las <b>${minsToHhmm(arrivalMins)}</b>.`, proxima: `${next.h} (${formatRouteName(next.o, next.d)})` });
+          } else {
+              rows.push({ nombre: g.nombre, unidad: g.unidad, sortFree: 0, status: "Sin tiempo libre", badge: 'warn', detail: `Termina justo a las <b>${minsToHhmm(arrivalMins)}</b>.`, proxima: `${next.h} (${formatRouteName(next.o, next.d)})` });
+          }
+      } else if (!next && prev) {
+          let endTurn = hhmmToMins(prev.h) + getTripDuration(prev);
+          rows.push({ nombre: g.nombre, unidad: g.unidad, sortFree: 999, status: "Terminó turno", badge: 'ok', detail: `Último viaje salió a las ${prev.h} (fin aprox. ${minsToHhmm(endTurn)})`, proxima: "Sin más vueltas hoy" });
+      } else if (next) {
+          let remStart = hhmmToMins(next.h) - nowMin;
+          rows.push({ nombre: g.nombre, unidad: g.unidad, sortFree: remStart, status: `Por iniciar (${remStart} min libres)`, badge: 'ok', detail: `Inicia a las ${next.h}`, proxima: `${next.h} (${formatRouteName(next.o, next.d)})` });
+      }
+    });
+
+    rows.sort((a,b) => b.sortFree - a.sortFree);
+    let html = rows.map(r => `<div class="avail-row"><div class="avail-top"><span class="avail-name">${r.nombre}</span><span class="avail-unit">${r.unidad ? 'U-'+r.unidad : 'S/U'}</span></div><span class="avail-status ${r.badge}">${r.status}</span><div class="avail-detail" style="margin-bottom: 5px; font-size:13px;">${r.detail}</div><div class="avail-next" style="font-size:12px; color:var(--ink-soft);">Siguiente: ${r.proxima}</div></div>`).join('');
+    openSheet(`<h2>⏱ Disponibilidad / Tiempos Muertos</h2><div class="desc" style="font-size:13px; color:gray; margin-bottom:10px;">Calcula el tiempo libre del operador descontando tiempos de ruta y traslados en vacío.</div><div style="max-height:60vh;overflow-y:auto;">${html || '<p style="text-align:center;color:gray;padding:20px;">No hay viajes cargados para esta fecha.</p>'}</div><button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
 };
 
 window.verVacios = function() {
-    const trips = store.days?.[store.currentDay]?.trips || [];
-    const ds = getDayState();
-    const empty = trips.filter(t=>[normLoc(t.o),normLoc(t.d)].includes('CU2')).filter(t=>{
-      const ov = ds.tripUnitOverride[t.id] || ds.unitOverride[t.k || t.n] || ds.unitOverride[t.u];
-      return ov === 'VACIO' || !(ov || t.u);
-    }).sort((a,b)=>a.h.localeCompare(b.h));
-    openSheet(`<h2>🚎 Viajes CU2 sin unidad</h2>${empty.length ? empty.map(t=>`<div class="avail-row"><b class="mono">${t.h}</b><div>${formatRouteName(t.o,t.d)}</div><button class="btn-outline btn-small" onclick="abrirModalDesdePendientes('${t.id}','','','${t.k || t.n || ''}')">Asignar unidad/operador</button></div>`).join('') : '<p style="text-align:center;color:var(--done);padding:20px">No hay viajes CU2 sin unidad asignada.</p>'}`);
+    let trips = store.days[store.currentDay] ? store.days[store.currentDay].trips : [];
+    let ds = getDayState(); var groups = {};
+    let baselineOp = {}; if(store.globalFleet) { store.globalFleet.forEach(g => { if(g.u && g.n) baselineOp[String(g.u)] = g.n; }); }
+
+    trips.forEach(t => {
+      let overU = ds.tripUnitOverride[t.id] || ds.unitOverride[t.k || t.n] || ds.unitOverride[t.u];
+      let finalUnit = overU === "VACIO" ? "" : (overU || t.u);
+      let overOp = ds.tripOpOverride[t.id] || ds.opOverride[finalUnit] || ds.opOverride[t.n];
+      let finalOp = overOp === "VACIO" ? "" : (overOp || baselineOp[finalUnit] || t.n);
+      if(finalOp) { if (!groups[finalOp]) groups[finalOp] = { nombre: finalOp, unidad: finalUnit, trips: [] }; groups[finalOp].trips.push(t); }
+    });
+    
+    var results = [];
+    Object.keys(groups).forEach(g => {
+      var list = groups[g].trips.slice().sort((a,b) => a.h.localeCompare(b.h));
+      for (var i=0; i<list.length-1; i++){
+        var cur = list[i], nxt = list[i+1];
+        let curDest = normLoc(cur.d), nxtOrig = normLoc(nxt.o);
+        if (curDest !== nxtOrig) {
+          if(curDest.includes("CU2") || nxtOrig.includes("CU2")) {
+              results.push({ nombre: groups[g].nombre, unidad: groups[g].unidad, viajeActual: `${cur.o} a ${cur.d}`, horaActual: cur.h, viajeProximo: `${nxt.o} a ${nxt.d}`, horaProximo: nxt.h, vacioFrom: curDest, vacioTo: nxtOrig });
+          }
+        }
+      }
+    });
+
+    var nowMin = new Date().getHours()*60 + new Date().getMinutes();
+    var upcoming = results.filter(r => hhmmToMins(r.horaProximo) > nowMin).sort((a,b) => hhmmToMins(a.horaProximo) - hhmmToMins(b.horaProximo));
+    
+    var upcomingHtml = upcoming.length ? upcoming.map(r => `<div class="avail-row"><div class="avail-top"><span class="avail-name" style="color:var(--pend)">🚎 Vacío: ${r.vacioFrom} ➔ ${r.vacioTo}</span><span class="avail-unit">${r.unidad ? 'U-'+r.unidad : 'S/U'}</span></div><div class="avail-detail" style="font-size:13px;"><b>Operador:</b> ${r.nombre}</div><div class="avail-detail" style="margin-top:6px;font-size:13px;"><b>Viaje Actual:</b> ${formatRouteName(r.viajeActual.split(' a ')[0], r.viajeActual.split(' a ')[1])} (${r.horaActual})</div><div class="avail-next" style="color:var(--bad);font-size:13px;margin-top:3px;"><b>Próximo Viaje:</b> ${formatRouteName(r.viajeProximo.split(' a ')[0], r.viajeProximo.split(' a ')[1])} (${r.horaProximo})</div></div>`).join("") : '<div class="empty"><div class="big" style="padding: 20px; text-align: center; color: gray;">No hay vacíos pendientes para CU2</div></div>';
+    openSheet(`<h2>🚎 Traslados en Vacío (Solo CU2)</h2><div class="desc" style="font-size:13px; color:gray; margin-bottom:10px;">Vueltas donde el operador termina y debe trasladarse hacia o desde CU2.</div><div style="max-height:60vh;overflow-y:auto;">${upcomingHtml}</div><button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
 };
 
 // VISTA Y DESCARGA DE HISTORIAL HISTÓRICO PERSISTENTE
@@ -1488,9 +1730,10 @@ function renderListaHistorialModal() {
         const uNue = (!c.newUnit || c.newUnit === 'VACIO' || c.newUnit === 'S/U' || c.newUnit === '—') ? 'S/U' : `U-${String(c.newUnit).replace(/^U-/i,'')}`;
         const opAnt = (!c.oldOp || c.oldOp === 'VACIO') ? 'Sin Asignar' : c.oldOp;
         const opNue = (!c.newOp || c.newOp === 'VACIO') ? 'Sin Asignar' : c.newOp;
+        const isCrit = ESTADOS_CRITICOS.includes(c.reason);
 
         return `
-        <div class="avail-row">
+        <div class="avail-row" style="${isCrit ? 'background:#fae3e6;border-color:var(--bad);' : ''}">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
                 <b>${c.tripTime && c.tripTime !== '—' ? `[${c.tripTime}] ` : ''}${c.route || 'Cambio'}</b>
                 <span style="font-size:11px;background:var(--surface-2);padding:3px 8px;border-radius:6px;font-weight:700;color:var(--accent);">${c.day || 'Histórico'}</span>
@@ -1503,7 +1746,7 @@ function renderListaHistorialModal() {
                 <b>Operador:</b> ${opAnt} → <span style="color:var(--accent);font-weight:700;">${opNue}</span>
             </div>
             <div style="font-size:12px;margin-top:5px;padding-top:4px;border-top:1px dashed var(--line);color:var(--ink-soft);">
-                <b>Motivo:</b> <span style="color:var(--ink);font-weight:600;">${c.reason || 'Cambio operativo'}</span>
+                <b style="color:${isCrit ? 'var(--bad)' : 'var(--accent)'};">Motivo:</b> <span style="color:var(--ink);font-weight:600;">${c.reason || 'Cambio operativo'}</span> ${c.scope ? `· (${c.scope})` : ''}
             </div>
         </div>`;
     }).join('');
@@ -1512,7 +1755,7 @@ function renderListaHistorialModal() {
 window.verCambios = function() {
     const hist = getGlobalHistory();
     const daysSet = [...new Set(hist.map(h => h.day || "Hoy"))];
-    const dayOpts = [`<option value="ALL" ${historyFilterDay==='ALL'?'selected':''}>📚 Todo el Historial Histórico (${hist.length})</option>`]
+    const dayOpts = [`<option value="ALL" ${historyFilterDay==='ALL'?'selected':''}>📚 Todo el Historial (${hist.length})</option>`]
         .concat(daysSet.map(d => `<option value="${d}" ${historyFilterDay===d?'selected':''}>📅 Solo ${d}</option>`))
         .join('');
 
@@ -1521,7 +1764,7 @@ window.verCambios = function() {
             <h2 style="margin:0;">🔄 Historial Histórico</h2>
             <span id="histCountLabel" style="font-size:12px;font-weight:700;color:var(--ink-soft);"></span>
         </div>
-        <button class="btn-primary" style="background:var(--done);box-shadow:none;margin-top:0;margin-bottom:12px;padding:12px;" onclick="descargarHistorialExcel()">
+        <button type="button" class="btn-primary" style="background:var(--done);box-shadow:none;margin-top:0;margin-bottom:12px;padding:12px;" onclick="descargarHistorialExcel()">
             📥 Descargar Historial en Excel (.xlsx)
         </button>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
@@ -1530,7 +1773,8 @@ window.verCambios = function() {
             </select>
             <input id="histSearchInput" type="text" class="input-field" style="margin-bottom:0;padding:10px;font-size:13px;" placeholder="🔍 Buscar unidad, op, ruta..." value="${historySearchTerm}" oninput="filtrarModalHistorial()">
         </div>
-        <div id="histListContainer" style="max-height:58vh;overflow:auto;"></div>
+        <div id="histListContainer" style="max-height:52vh;overflow-y:auto;"></div>
+        <button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>
     `);
     renderListaHistorialModal();
 };
@@ -1546,6 +1790,7 @@ window.descargarHistorialExcel = function() {
         "Fecha Operativa": c.day || "—",
         "Fecha y Hora del Cambio": c.time ? new Date(c.time).toLocaleString('es-MX') : "—",
         "Tipo": c.type || "Viaje",
+        "Alcance": c.scope || "Horario individual",
         "Hora Corrida": c.tripTime || "—",
         "Ruta": c.route || "—",
         "Clave": c.clave || "—",
@@ -1559,7 +1804,7 @@ window.descargarHistorialExcel = function() {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(filasExcel);
     ws['!cols'] = [
-        { wch: 16 }, { wch: 22 }, { wch: 10 }, { wch: 12 },
+        { wch: 16 }, { wch: 22 }, { wch: 10 }, { wch: 24 }, { wch: 12 },
         { wch: 22 }, { wch: 10 }, { wch: 15 }, { wch: 15 },
         { wch: 28 }, { wch: 28 }, { wch: 26 }
     ];
@@ -1568,127 +1813,253 @@ window.descargarHistorialExcel = function() {
     XLSX.writeFile(wb, `Historial_Operativo_STU_${fechaArchivo}.xlsx`);
 };
 
-function openLocationPicker(kind) {
-    const trips = store.days?.[store.currentDay]?.trips || [];
-    const locs = [...new Set(trips.flatMap(t=>[normLoc(t.o),normLoc(t.d)]).filter(Boolean))].sort();
-    const current = kind === 'origin' ? activeOrigin : activeDest;
-    const buttons = [`<button class="opt-row ${!current?'sel':''}" onclick="setLocationFilter('${kind}','')">Todos los puntos ${!current?'✓':''}</button>`].concat(locs.map(loc=>`<button class="opt-row ${loc===current?'sel':''}" onclick="setLocationFilter('${kind}',decodeURIComponent('${encodeURIComponent(loc)}'))">${loc}</button>`)).join('');
-    openSheet(`<h2>${kind==='origin'?'📍 Elegir origen':'🚩 Elegir destino'}</h2><div class="opt-list">${buttons}</div>`);
+function uniqueSorted(trips, prop) {
+    return [...new Set((trips || []).map(t => t && t[prop]).filter(v => v !== null && v !== undefined && String(v).trim() !== "").map(v => normLoc(v)))].sort((a, b) => a.localeCompare(b, "es", { numeric: true, sensitivity: "base" }));
 }
 
-window.setLocationFilter = function(kind, value) {
-    if(kind==='origin') activeOrigin = value || null; else activeDest = value || null;
-    closeSheet(); render();
-};
-
-document.getElementById('btnOrigen').addEventListener('click',()=>openLocationPicker('origin'));
-document.getElementById('btnDestino').addEventListener('click',()=>openLocationPicker('dest'));
-document.getElementById('search').addEventListener('input',e=>{searchTerm=e.target.value.trim().toLowerCase();render();});
-
-// IMPORTADOR DE EXCEL QUE CONSERVA INTACTO EL HISTORIAL HISTÓRICO
-function normalizarHoraExcel(val) {
-    if (val === undefined || val === null || val === "") return "";
-    if (typeof val === "number") {
-        let totalMins = Math.round(val * 24 * 60);
-        let hh = Math.floor(totalMins / 60) % 24;
-        let mm = totalMins % 60;
-        return String(hh).padStart(2, '0') + ":" + String(mm).padStart(2, '0');
-    }
-    let s = String(val).trim();
-    let m = s.match(/(\d{1,2}):(\d{2})/);
-    if (m) return String(m[1]).padStart(2, '0') + ":" + m[2];
-    return "";
+function crearFiltroSheet(title, options, selected, onPick){
+    var rows = '<button type="button" class="opt-row'+(!selected?' sel':'')+'" data-val="">Todos'+(!selected?'<span class="ck">'+ICO.check+'</span>':'')+'</button>';
+    options.forEach(function(o){ rows += `<button type="button" class="opt-row${o===selected?' sel':''}" data-val="${o}">${o}${o===selected?`<span class="ck">${ICO.check}</span>`:''}</button>`; });
+    openSheet(`<h2>${title}</h2><div class="opt-list">${rows}</div><button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
+    document.querySelectorAll("#sheetContent .opt-row").forEach(btn => {
+        btn.addEventListener("click", function(){
+            onPick(btn.getAttribute("data-val") || null);
+            closeSheet();
+        });
+    });
 }
 
-function procesarExcelCarga(file, tipo) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-        try {
-            const data = new Uint8Array(evt.target.result);
-            const wb = XLSX.read(data, { type: 'array' });
-            const historialProtegido = [...getGlobalHistory()];
+document.getElementById("btnOrigen").addEventListener("click", function(){
+    let trips = store.days[store.currentDay] ? store.days[store.currentDay].trips : [];
+    let unique = uniqueSorted(trips, "o");
+    let top = [], rest = [];
+    unique.forEach(o => { if(o === "CU" || o === "CU2") top.push(o); else rest.push(o); });
+    crearFiltroSheet("📍 Punto de inicio", top.concat(rest), activeOrigin, v => { activeOrigin = v; render(); });
+});
 
-            if (tipo === 'asignacion') {
-                // Lee relación de Unidad - Clave - Operador sin borrar historial
-                wb.SheetNames.forEach(sheetName => {
-                    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: "" });
-                    rows.forEach(r => {
-                        const keys = Object.keys(r);
-                        const kU = keys.find(k => /unidad|eco|autobus/i.test(k));
-                        const kC = keys.find(k => /clave|id|nomina/i.test(k));
-                        const kN = keys.find(k => /operador|nombre|chofer|conductor/i.test(k));
-                        let u = kU ? String(r[kU]).replace(/\D/g, '') : "";
-                        let c = kC ? String(r[kC]).trim() : "";
-                        let n = kN ? String(r[kN]).trim() : "";
-                        if (c && n) store.operadoresDB[c] = n;
-                        if (u && n) {
-                            let existing = store.globalFleet.find(f => String(f.u) === u);
-                            if (existing) { existing.n = n; if (c) existing.k = c; }
-                            else store.globalFleet.push({ u: u, k: c, n: n });
-                        }
-                    });
-                });
-            } else if (tipo === 'seguimiento') {
-                // Lee hojas de corridas / seguimiento conservando store.globalHistory
-                wb.SheetNames.forEach(sheetName => {
-                    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: "" });
-                    let parsedTrips = [];
-                    rows.forEach((r, idx) => {
-                        const keys = Object.keys(r);
-                        const kH = keys.find(k => /hora|salida|horario/i.test(k));
-                        const kO = keys.find(k => /origen|salida_de/i.test(k));
-                        const kD = keys.find(k => /destino|llegada/i.test(k));
-                        const kU = keys.find(k => /unidad|eco/i.test(k));
-                        const kC = keys.find(k => /clave|rol/i.test(k));
-                        const kN = keys.find(k => /operador|nombre|chofer/i.test(k));
+document.getElementById("btnDestino").addEventListener("click", function(){
+    let trips = store.days[store.currentDay] ? store.days[store.currentDay].trips : [];
+    let unique = uniqueSorted(trips, "d");
+    let top = [], rest = [];
+    unique.forEach(o => { if(o === "CU" || o === "CU2") top.push(o); else rest.push(o); });
+    crearFiltroSheet("🚩 Punto final", top.concat(rest), activeDest, v => { activeDest = v; render(); });
+});
 
-                        let h = normalizarHoraExcel(kH ? r[kH] : "");
-                        let o = kO ? String(r[kO]).trim() : "";
-                        let d = kD ? String(r[kD]).trim() : "";
-                        if (h && (o || d)) {
-                            let u = kU ? String(r[kU]).replace(/\D/g, '') : "";
-                            let k = kC ? String(r[kC]).trim() : "";
-                            let n = kN ? String(r[kN]).trim() : "";
-                            if (k && n) store.operadoresDB[k] = n;
-                            parsedTrips.push({
-                                id: `${sheetName}_${idx}_${h.replace(':','')}`,
-                                h: h,
-                                o: o || "CU",
-                                d: d || "CU2",
-                                u: u,
-                                k: k,
-                                n: n
-                            });
-                        }
-                    });
-                    if (parsedTrips.length > 0) {
-                        store.days[sheetName] = { label: sheetName, trips: parsedTrips };
-                        store.currentDay = sheetName;
-                    }
+document.getElementById('search').addEventListener('input', e => {
+    searchTerm = e.target.value.trim().toLowerCase();
+    render();
+});
+
+// LECTOR DE ARCHIVOS EXCEL ("datos" Y "rol") PROTEGIENDO EL HISTORIAL HISTÓRICO
+document.getElementById("fileAsignacion").addEventListener("change", e => handleExcel(e.target.files[0], 'asignacion', e.target));
+document.getElementById("fileSeguimiento").addEventListener("change", e => handleExcel(e.target.files[0], 'seguimiento', e.target));
+
+function handleExcel(file, type, inputEl) {
+    if(!file) return;
+    let msgBox = document.getElementById("uploadMsg");
+    if(msgBox) msgBox.innerHTML = `<span style="color:var(--pend)">Procesando ${file.name}...</span>`;
+    let reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const backupHistory = [...getGlobalHistory()];
+        let wb = XLSX.read(e.target.result, {type: 'array'});
+
+        if(type === 'seguimiento') {
+            store.operadoresDB = {}; 
+            store.globalFleet = [];
+            store.unassignedReasons = {};
+            
+            if(store.state) {
+                Object.keys(store.state).forEach(day => {
+                    store.state[day].unitOverride = {};
+                    store.state[day].opOverride = {};
+                    store.state[day].tripUnitOverride = {};
+                    store.state[day].tripOpOverride = {};
                 });
             }
 
-            // Re-asigna y protege el historial histórico antes de guardar en Firebase
-            store.globalHistory = historialProtegido;
+            let opSheetName = wb.SheetNames.find(n => n.toUpperCase().includes("OP") || n.toUpperCase().includes("DATOS")) || wb.SheetNames[0];
+            if(opSheetName) {
+                let rawData = XLSX.utils.sheet_to_json(wb.Sheets[opSheetName], {header:1, defval: null});
+                let hRow = -1;
+                for(let r=0; r<rawData.length; r++) {
+                    if((rawData[r]||[]).some(c => String(c).toUpperCase().includes("NOMBRE OPERADOR") || String(c).toUpperCase().includes("NOMBRE") || String(c).toUpperCase().includes("OPERADOR"))) { hRow = r; break; }
+                }
+
+                if(hRow !== -1) {
+                    let headers = rawData[hRow].map(h => String(h||"").trim());
+                    let colNombre = headers.findIndex(h => h.toUpperCase().includes("NOMBRE OPERADOR") || h.toUpperCase() === "NOMBRE" || h.toUpperCase().includes("OPERADOR"));
+                    let colClave = headers.findIndex(h => h.toUpperCase().includes("CLAVE") || h.toUpperCase() === "ID");
+                    let colUnidad = headers.findIndex(h => h.toUpperCase().includes("UNIDAD") || h.toUpperCase() === "ECON");
+                    
+                    if(colNombre !== -1) {
+                        for(let i=hRow+1; i<rawData.length; i++) {
+                            let row = rawData[i];
+                            let opName = row[colNombre];
+                            if(!opName || String(opName).trim() === "") continue;
+                            
+                            let opClave = colClave !== -1 ? row[colClave] : null;
+                            let opUnit = colUnidad !== -1 ? row[colUnidad] : null;
+                            
+                            opName = String(opName).trim();
+                            if(opClave) {
+                                opClave = String(opClave).trim();
+                                store.operadoresDB[opClave] = opName;
+                            } else {
+                                store.operadoresDB[opName] = opName; 
+                            }
+                            
+                            if(opUnit || opName) store.globalFleet.push({ u: opUnit, k: opClave || opName, n: opName, estatus: "Activa", rutaFija: "", motivo: null });
+                        }
+                    }
+                }
+            }
+            let fleetSheetName = wb.SheetNames.find(n => n.toUpperCase().includes("PARQUE") || n.toUpperCase().includes("FLOTA") || n.toUpperCase().includes("UNIDAD"));
+            if(fleetSheetName) {
+                let fData = XLSX.utils.sheet_to_json(wb.Sheets[fleetSheetName], {header:1});
+                let hRow = fData.findIndex(row => (row||[]).some(c => String(c).toUpperCase().includes("UNIDAD") || String(c).toUpperCase().includes("ECON")));
+                if(hRow !== -1) {
+                    let headers = fData[hRow].map(h => String(h||"").toUpperCase());
+                    let colUnidad = headers.findIndex(h => h.includes("UNIDAD") || h.includes("ECON") || h.includes("NUM"));
+                    let colMotivo = headers.findIndex(h => h.includes("MOTIVO") || h.includes("ESTADO") || h.includes("OBSERV"));
+                    if(colUnidad !== -1 && colMotivo !== -1) {
+                        for(let i=hRow+1; i<fData.length; i++) {
+                            if(fData[i][colUnidad]) {
+                                let unit = String(fData[i][colUnidad]).trim();
+                                let mot = fData[i][colMotivo];
+                                store.unassignedReasons[unit] = (mot !== undefined && mot !== null) ? mot : "Taller / Detenida";
+                            }
+                        }
+                    }
+                }
+            }
+            store.globalHistory = backupHistory;
+            if(msgBox) msgBox.innerHTML = `<span style="color:var(--done)">¡Archivo "datos" guardado en la nube! Historial Histórico conservado.</span>`;
             saveStore();
             render();
-            closeSheet();
-        } catch (err) {
-            showAggressiveToast("No se pudo leer el archivo Excel. Verifica el formato.");
+        } else {
+            let result = parseWorkbook(e.target.result);
+            if (!result.days.length) throw new Error("No se encontraron horarios en el archivo.");
+            
+            store.days = {};
+            result.days.forEach(function(d){ 
+                store.days[d.key] = { label: d.key, trips: d.trips, fleet: [] }; 
+                let oldUnitChanges = (store.state && store.state[d.key] && store.state[d.key].unitChanges) ? store.state[d.key].unitChanges : [];
+                store.state[d.key] = { trips: {}, unitOverride: {}, tripUnitOverride: {}, unitChanges: oldUnitChanges, opOverride: {}, tripOpOverride: {}, resolvedOverlaps: [], resolvedMissing: [] }; 
+            });
+            store.currentDay = result.days[0].key;
+            store.globalHistory = backupHistory;
+            saveStore();
+            render();
+            if(msgBox) msgBox.innerHTML = `<span style="color:var(--done)">¡Archivo "rol" cargado con éxito! Historial Histórico conservado.</span>`;
         }
+        setTimeout(closeSheet, 1200);
+      } catch (err) {
+          if(msgBox) msgBox.innerHTML = `<span style="color:var(--bad)">Error: ${err.message}</span>`;
+      }
+      inputEl.value = ""; 
     };
     reader.readAsArrayBuffer(file);
 }
 
-document.getElementById('fileAsignacion').addEventListener('change', function(e) {
-    procesarExcelCarga(e.target.files[0], 'asignacion');
-    e.target.value = "";
-});
-document.getElementById('fileSeguimiento').addEventListener('change', function(e) {
-    procesarExcelCarga(e.target.files[0], 'seguimiento');
-    e.target.value = "";
-});
+function parseWorkbook(arrayBuffer){
+    var wb = XLSX.read(new Uint8Array(arrayBuffer), {type:'array'});
+    var grids = {}, hrCounts = {}, opSheetName = null;
+    wb.SheetNames.forEach(function(name){
+        var grid = XLSX.utils.sheet_to_json(wb.Sheets[name], {header:1, raw:true, defval:null});
+        grids[name] = grid;
+        var cnt = 0;
+        grid.forEach(function(row){ (row||[]).forEach(function(v){ if (v === 'HR') cnt++; }); });
+        hrCounts[name] = cnt;
+        if (!opSheetName && /operador/i.test(name)) opSheetName = name;
+    });
+    
+    var claveToName = {}, unidadToName = {};
+    if (opSheetName && Object.keys(store.operadoresDB || {}).length === 0){
+      var opGrid = grids[opSheetName];
+      for (var i=1;i<opGrid.length;i++){
+        var row = opGrid[i] || [];
+        var unidad = row[0], clave = row[1], nombre = row[2];
+        var nm = nombre ? String(nombre).replace(/\s+/g,' ').trim() : null;
+        var unidadNum = (unidad != null && !isNaN(Number(unidad))) ? Math.round(Number(unidad)) : null;
+        var claveNum = (clave != null && !isNaN(Number(clave))) ? Math.round(Number(clave)) : null;
+        let finalName = nm || (store.operadoresDB && store.operadoresDB[claveNum] ? store.operadoresDB[claveNum] : null);
+        if (claveNum != null) claveToName[claveNum] = finalName;
+        if (unidadNum != null) unidadToName[unidadNum] = finalName; 
+      }
+    }
+
+    var days = [];
+    wb.SheetNames.forEach(function(name){
+      if (hrCounts[name] < 3) return;
+      var grid = grids[name];
+      var hrCells = [];
+      for (var r=0;r<grid.length;r++) for (var c=0;c<(grid[r]||[]).length;c++) if (grid[r][c] === 'HR') hrCells.push([r,c]);
+      var records = [];
+      hrCells.forEach(function(hc){
+        var r = hc[0], c = hc[1];
+        function getVal(ro,co) {
+            for(let i=ro-1; i>=Math.max(ro-8,0); i--) {
+                for(let j=co-3; j<co+7; j++) {
+                    if(grid[i] && typeof grid[i][j] === 'string' && grid[i][j].includes('/')) return grid[i][j];
+                }
+            }
+            return null;
+        }
+        var label = getVal(r, c);
+        var od = label ? label.split('/') : ['Bloque '+c, ''];
+        var rr = r+1;
+        while (rr < grid.length){
+          var hrVal = grid[rr] ? grid[rr][c] : null, busVal = grid[rr] ? grid[rr][c+1] : null, claveVal = grid[rr] ? grid[rr][c+2] : null;
+          if (hrVal == null && busVal == null) break;
+          
+          var hStr = null;
+          if (typeof hrVal === 'number' && hrVal >= 0){
+            var min = Math.round((hrVal - Math.floor(hrVal))*24*60); 
+            hStr = String(Math.floor(min/60)).padStart(2,'0') + ':' + String(min%60).padStart(2,'0'); 
+          } else if (typeof hrVal === 'string' && hrVal.trim().includes(':')) {
+            var parts = hrVal.trim().split(':');
+            if (parts.length >= 2 && !isNaN(parseInt(parts[0])) && !isNaN(parseInt(parts[1]))) {
+                hStr = String(parseInt(parts[0])).padStart(2,'0') + ':' + String(parseInt(parts[1])).padStart(2,'0');
+            }
+          }
+
+          if (hStr != null){
+            var busNum = (typeof busVal === 'number') ? Math.round(busVal) : (busVal ? String(busVal).trim() : null); 
+            var claveNum2 = (typeof claveVal === 'number') ? Math.round(claveVal) : (claveVal ? String(claveVal).trim() : null);
+            
+            var nameOp = null; 
+            if (claveNum2 != null && store.operadoresDB && store.operadoresDB[claveNum2]) nameOp = store.operadoresDB[claveNum2]; 
+            else if (claveNum2 != null && claveToName[claveNum2] !== undefined) nameOp = claveToName[claveNum2]; 
+            else if (busNum != null && unidadToName[busNum] !== undefined) nameOp = unidadToName[busNum];
+            
+            if (!nameOp && claveNum2 != null) {
+                let possibleName = String(claveNum2).trim();
+                let foundKey = Object.keys(store.operadoresDB || {}).find(k => store.operadoresDB[k] === possibleName);
+                if (foundKey) nameOp = possibleName;
+                else nameOp = possibleName; 
+            }
+
+            records.push({
+                id: 'u'+r+'_'+c+'_'+rr,
+                o: (od[0]||'').trim() || "Desconocido",
+                d: (od[1]||'').trim() || "Desconocido",
+                h: hStr || "00:00",
+                u: busNum != null ? busNum : null,
+                k: claveNum2 != null ? claveNum2 : null,
+                n: nameOp || null
+            });
+          }
+          rr++;
+        }
+      });
+      if (records.length) {
+          records.sort((a,b)=>a.h.localeCompare(b.h));
+          days.push({ key: name, trips: records });
+      }
+    });
+    return { days: days, fleet: [] }; 
+}
 </script>
 </body>
 </html>
