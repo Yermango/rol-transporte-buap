@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tus kilómetros rinden operación — STU BUAP</title>
+  <!-- Librería SheetJS para leer archivos Excel (.xlsx) directamente en el navegador -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg-blue: #0055d4;
+      --bg-blue-dark: #0044ab;
+      --navy-text: #0f2942;
+      --muted-text: #64748b;
+      --card-bg: #ffffff;
+      --track-bg: #e2e8f0;
+      --red-accent: #e11d48;
+      --amber-accent: #b45309;
+      --green-accent: #15803d;
+      --cyan-border: #38bdf8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(160deg, #005ce6 0%, #004ec4 55%, #0041a8 100%);
+      color: var(--navy-text);
+      min-height: 100vh;
+      padding: 18px 22px 36px 22px;
+    }
+
+    /* Insignia superior izquierda */
+    .top-brand-pill {
+      display: inline-block;
+      background: #ffffff;
+      border: 3px solid #60a5fa;
+      border-radius: 22px;
+      padding: 14px 26px;
+      margin-bottom: 16px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+    }
+    .top-brand-pill .line1 {
+      display: block;
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: #0055d4;
+      line-height: 1.15;
+    }
+    .top-brand-pill .line2 {
+      display: block;
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: #0f2942;
+      line-height: 1.15;
+    }
+
+    /* Barra de filtros blanca */
+    .filter-bar {
+      background: #ffffff;
+      border: 2px solid #93c5fd;
+      border-radius: 18px;
+      padding: 12px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: flex-end;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+    }
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 125px;
+      flex: 1;
+    }
+    .filter-group label {
+      font-size: 0.72rem;
+      color: #64748b;
+      font-weight: 600;
+    }
+    .filter-group select,
+    .filter-group input {
+      height: 32px;
+      border: 1px solid #cbd5e1;
+      border-radius: 9px;
+      padding: 0 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #0f2942;
+      background: #f8fafc;
+      outline: none;
+    }
+    .filter-group select:focus,
+    .filter-group input:focus {
+      border-color: #0055d4;
+      background: #ffffff;
+    }
+
+    /* Botones Ocultar menú / Ocultar filtros */
+    .toggle-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+      align-items: center;
+    }
+    .pill-btn {
+      background: #ffffff;
+      color: #0f2942;
+      border: none;
+      border-radius: 11px;
+      padding: 7px 14px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      transition: transform 0.1s, background 0.15s;
+    }
+    .pill-btn:hover { background: #f1f5f9; transform: translateY(-1px); }
+    .status-badge {
+      margin-left: auto;
+      background: rgba(255,255,255,0.16);
+      color: #ffffff;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+
+    /* Layout Principal: Sidebar Izquierdo + Contenido Derecho */
+    .main-layout {
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+    }
+
+    /* Menú lateral con línea vertical y rombos */
+    .sidebar {
+      width: 195px;
+      flex-shrink: 0;
+      position: relative;
+      padding-top: 6px;
+      user-select: none;
+    }
+    .sidebar::before {
+      content: "";
+      position: absolute;
+      left: 11px;
+      top: 18px;
+      bottom: 18px;
+      width: 2px;
+      background: rgba(147, 197, 253, 0.55);
+      z-index: 1;
+    }
+    .nav-item {
+      position: relative;
+       z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 6px 10px 2px;
+      cursor: pointer;
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 0.86rem;
+      font-weight: 600;
+      transition: color 0.15s;
+    }
+    .nav-item:hover { color: #ffffff; }
+    .diamond {
+      width: 14px;
+      height: 14px;
+      transform: rotate(45deg);
+      border: 2.5px solid var(--red-accent);
+      background: #004ec4;
+      flex-shrink: 0;
+      margin-left: 3px;
+      transition: background 0.15s, transform 0.15s;
+    }
+    .nav-item.active {
+      color: #ffffff;
+      font-weight: 800;
+    }
+    .nav-item.active .diamond {
+      background: var(--red-accent);
+      box-shadow: 0 0 8px rgba(225, 29, 72, 0.65);
+      transform: rotate(45deg) scale(1.1);
+    }
+
+    /* Contenedor derecho */
+    .content-area {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Fila de 6 tarjetas KPI */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 1280px) {
+      .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .main-layout { flex-direction: column; }
+      .sidebar { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; }
+      .sidebar::before { display: none; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .kpi-card {
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 14px 16px;
+      border: 2px solid #dbeafe;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 108px;
+    }
+    .kpi-card.border-red { border-color: #fda4af; }
+    .kpi-card.border-green { border-color: #86efac; }
+    .kpi-card.border-cyan { border-color: #7dd3fc; }
+    .kpi-title {
+      font-size: 0.74rem;
+      color: #64748b;
+      font-weight: 600;
+    }
+    .kpi-value {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #0f2942;
+      margin: 4px 0;
+      letter-spacing: -0.5px;
+    }
+    .kpi-sub {
+      font-size: 0.71rem;
+      color: #64748b;
+      line-height: 1.25;
+    }
+
+    /* Tarjetas centrales de barras horizontales */
+    .two-col-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 1024px) {
+      .two-col-grid { grid-template-columns: 1fr; }
+    }
+    .white-panel {
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 18px 20px;
+      border: 2px solid #dbeafe;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.11);
+    }
+    .panel-title {
+      font-size: 0.96rem;
+      font-weight: 800;
+      color: #0f2942;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .bar-list {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 165px 1fr 78px;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.76rem;
+    }
+    .bar-label {
+      color: #334155;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .bar-track {
+      height: 10px;
+      background: var(--track-bg);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: var(--red-accent);
+      transition: width 0.35s ease;
+    }
+    .bar-fill.amber { background: var(--amber-accent); }
+    .bar-fill.green { background: var(--green-accent); }
+    .bar-fill.blue  { background: #0284c7; }
+    .bar-val {
+      text-align: right;
+      color: #475569;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Semáforo inferior */
+    .semaforo-row {
+      display: grid;
+      grid-template-columns: 190px 1fr 48px;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.78rem;
+      margin-bottom: 9px;
+    }
+    .semaforo-note {
+      font-size: 0.74rem;
+      color: #64748b;
+      margin-top: 8px;
+    }
+
+    /* Tablas limpias para las demás pestañas */
+    .table-wrap {
+      max-height: 480px;
+      overflow-y: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+    }
+    thead th {
+      position: sticky;
+      top: 0;
+      background: #0f2942;
+      color: #ffffff;
+      text-align: left;
+      padding: 10px 12px;
+      font-weight: 700;
+      z-index: 5;
+    }
+    tbody td {
+      padding: 9px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #1e293b;
+    }
+    tbody tr:hover { background: #f1f5f9; }
+    .text-right { text-align: right; }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.69rem;
+      font-weight: 700;
+    }
+    .tag-red { background: #ffe4e6; color: #be123c; }
+    .tag-amber { background: #fef3c7; color: #b45309; }
+    .tag-green { background: #dcfce7; color: #15803d; }
+    .tag-purple { background: #f3e8ff; color: #6b21a8; }
+    .hidden { display: none !important; }
+
+    /* Cajas de carga de archivos */
+    .upload-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 14px;
+      margin-top: 10px;
+    }
+    .upload-box {
+      border: 2px dashed #93c5fd;
+      background: #f8fafc;
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .upload-box h4 { font-size: 0.85rem; color: #0f2942; margin-bottom: 6px; }
+    .upload-box p { font-size: 0.73rem; color: #64748b; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+
+  <!-- INSIGNIA SUPERIOR IZQUIERDA -->
+  <div class="top-brand-pill">
+    <span class="line1">Tus kilómetros</span>
+    <span class="line2">rinden operación</span>
+  </div>
+
+  <!-- BARRA DE FILTROS BLANCA -->
+  <div id="filter-bar" class="filter-bar">
+    <div class="filter-group">
+      <label>Periodo / Corte</label>
+      <select id="f-periodo" onchange="actualizarVista()">
+        <option value="TODAS">Todo el día (04:30 - 22:15)</option>
+        <option value="CU2">Solo Lanzadera CU ↔ CU2</option>
+        <option value="PERIFERICAS">Solo 22 Rutas Periféricas</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Meta de cumplimiento</label>
+      <select id="f-meta" onchange="actualizarVista()">
+        <option value="95">≥ meta al 95%</option>
+        <option value="90" selected>≥ meta al 90%</option>
+        <option value="85">≥ meta al 85%</option>
+      </select>
+    </div>
+    <div class="filter-group" style="max-width: 145px;">
+      <label>Tolerancia km extra %</label>
+      <input type="number" id="f-tol" value="5" min="1" max="50" step="1" oninput="actualizarVista()" />
+    </div>
+    <div class="filter-group">
+      <label>GPS sin rol / Taller</label>
+      <select id="f-taller" onchange="actualizarVista()">
+        <option value="DESCONTAR" selected>Descontar de cobro (-64.5 km)</option>
+        <option value="INCLUIR">Incluir en totales brutos</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Mostrar</label>
+      <select id="f-mostrar" onchange="actualizarVista()">
+        <option value="KM_ROL" selected>Solo kilómetros (vs Rol Total)</option>
+        <option value="KM_COM">Solo kilómetros (vs Comercial)</option>
+        <option value="PESOS">Impacto en pesos ($ MXN)</option>
+      </select>
+    </div>
+    <div class="filter-group" style="max-width: 120px;">
+      <label>Tarifa BUAP $/km</label>
+      <input type="number" id="f-tarifa" value="18" step="0.5" oninput="actualizarVista()" />
+    </div>
+    <div class="filter-group" style="max-width: 145px;">
+      <label>Km 2ª Plat (8105-8127)</label>
+      <input type="number" id="f-plat2" value="3189" step="1" oninput="actualizarVista()" />
+    </div>
+    <div class="filter-group">
+      <label>Buscar</label>
+      <input type="text" id="f-buscar" placeholder="8033, clave o nombre" oninput="actualizarVista()" />
+    </div>
+  </div>
+
+  <!-- BOTONES OCULTAR MENÚ / OCULTAR FILTROS -->
+  <div class="toggle-row">
+    <button class="pill-btn" onclick="toggleMenu()">☰ Ocultar menú</button>
+    <button class="pill-btn" onclick="toggleFiltros()">Ocultar filtros</button>
+    <button class="pill-btn" onclick="descargarCSV()">📥 Exportar CSV</button>
+    <span id="badge-archivo" class="status-badge">Corte Activo: Lunes 19/10/2026 (Sem 43) · 108 Unidades</span>
+  </div>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <div class="main-layout">
+
+    <!-- MENÚ LATERAL CON LÍNEA Y ROMBOS -->
+    <nav id="sidebar" class="sidebar">
+      <div class="nav-item active" onclick="irSeccion('sec-resumen', this)">
+        <span class="diamond"></span><span>Resumen</span>
+      </div>
+      <div class="nav-item" onclick="irSeccion('sec-planeado', this)">
+        <span class="diamond"></span><span>Planeado vs real</span>
+      </div>
+      <div class="nav-item" onclick="irSeccion('sec-operadores', this)">
+        <span class="diamond"></span><span>Operadores</span>
+      </div>
+      <div class="nav-item" onclick="irSeccion('sec-viajes', this)">
+        <span class="diamond"></span><span>Viajes por operador</span>
+      </div>
+      <div class="nav-item" onclick="irSeccion('sec-rutas', this)">
+        <span class="diamond"></span><span>Rutas y metas</span>
+      </div>
+      <div class="nav-item" onclick="irSeccion('sec-cambios', this)">
+        <span class="diamond"></span><span>Cambios de rol</span>
+      </div>
+      <div class="nav-item" onclick="irSeccion('sec-gps-malo', this)">
+        <span class="diamond"></span><span>GPS malo</span>
+      </div>
+      <div class="nav-item" onclick="irSeccion('sec-como-se-mide', this)">
+        <span class="diamond"></span><span>Cómo se mide</span>
+      </div>
+      <div class="nav-item" onclick="irSeccion('sec-archivos', this)">
+        <span class="diamond"></span><span>Archivos</span>
+      </div>
+    </nav>
+
+    <!-- ÁREA DE CONTENIDO DERECHA -->
+    <main class="content-area">
+
+      <!-- FILA SUPERIOR DE 6 TARJETAS KPI (Visible siempre) -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-title">Km programados (rol)</div>
+          <div id="kpi-1-val" class="kpi-value">17,552</div>
+          <div id="kpi-1-sub" class="kpi-sub">según la asignación (lleno + vacío)</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-title">Km reales (GPS)</div>
+          <div id="kpi-2-val" class="kpi-value">17,531</div>
+          <div id="kpi-2-sub" class="kpi-sub">-20 km (-0.1%) vs programa</div>
+        </div>
+        <div class="kpi-card border-red">
+          <div class="kpi-title">Km recorridos de más</div>
+          <div id="kpi-3-val" class="kpi-value">658</div>
+          <div id="kpi-3-sub" class="kpi-sub">suma de unidades que se pasaron del programa</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-title">Km sin reportar / taller</div>
+          <div id="kpi-4-val" class="kpi-value">691</div>
+          <div id="kpi-4-sub" class="kpi-sub">3 uds. sin GPS (466 km) + taller</div>
+        </div>
+        <div class="kpi-card border-cyan">
+          <div class="kpi-title">Cumplimiento general</div>
+          <div id="kpi-5-val" class="kpi-value">98.87%</div>
+          <div id="kpi-5-sub" class="kpi-sub">700 realizadas de 708 · 11,553 km com.</div>
+        </div>
+        <div class="kpi-card border-green">
+          <div class="kpi-title">Unidades en meta</div>
+          <div id="kpi-6-val" class="kpi-value">58 / 83</div>
+          <div id="kpi-6-sub" class="kpi-sub">con GPS Webfleet dentro de meta</div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN 1: RESUMEN (2 Paneles de Barras Horizontales + Semáforo Inferior) -->
+      <section id="sec-resumen" class="space-y-4" style="display:flex; flex-direction:column; gap:14px;">
+        <div class="two-col-grid">
+          <div class="white-panel">
+            <div class="panel-title">
+              <span id="titulo-barra-izq">Operadores con más km de más (GPS vs Rol)</span>
+            </div>
+            <div id="lista-exceso" class="bar-list"></div>
+          </div>
+
+          <div class="white-panel">
+            <div class="panel-title">
+              <span id="titulo-barra-der">Operadores con km no reportados / en taller</span>
+            </div>
+            <div id="lista-faltante" class="bar-list"></div>
+          </div>
+        </div>
+
+        <div class="white-panel">
+          <div class="panel-title">
+            <span>Semáforo de operadores y unidades</span>
+          </div>
+          <div id="contenedor-semaforo"></div>
+          <div id="nota-semaforo" class="semaforo-note"></div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 2: PLANEADO VS REAL -->
+      <section id="sec-planeado" class="white-panel hidden">
+        <div class="panel-title">
+          <span>Conciliación Planeado (Sábana 19 Oct Sem 43) vs. Monitor vs. GPS Real</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Concepto de Conciliación</th>
+                <th class="text-right">Corridas / Unidades</th>
+                <th class="text-right">Kilómetros (km)</th>
+                <th class="text-right">Monto ($ MXN)</th>
+                <th>Observación Operativa para BUAP</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-planeado"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 3: OPERADORES Y UNIDADES -->
+      <section id="sec-operadores" class="white-panel hidden">
+        <div class="panel-title">
+          <span>Auditoría por Operador y Unidad (108 Unidades)</span>
+          <span style="font-size:0.75rem; color:#64748b; font-weight:600;">Usa el cuadro "Buscar" arriba para filtrar por económico, clave o nombre</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Unidad</th>
+                <th>Clave</th>
+                <th>Operador (Monitor)</th>
+                <th class="text-right">Corridas</th>
+                <th class="text-right">Km Comercial</th>
+                <th class="text-right">Km Rol (Lleno+Vacío)</th>
+                <th class="text-right">Km GPS</th>
+                <th class="text-right">Dif. vs Rol</th>
+                <th>Semáforo / Estado</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-operadores"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 4: VIAJES POR OPERADOR -->
+      <section id="sec-viajes" class="white-panel hidden">
+        <div class="panel-title">
+          <span>Productividad: Corridas Realizadas y Eventos Webfleet por Operador</span>
+        </div>
+        <div id="lista-viajes-op" class="bar-list"></div>
+      </section>
+
+      <!-- SECCIÓN 5: RUTAS Y METAS (23 TRONCALES + GUARDIAS/TP) -->
+      <section id="sec-rutas" class="white-panel hidden">
+        <div class="panel-title">
+          <span>Desempeño de las 23 Rutas Troncales + Guardias y Apoyo TP</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Corredor / Ruta Troncal</th>
+                <th class="text-right">Salidas Prog.</th>
+                <th class="text-right">Realizadas</th>
+                <th class="text-right">Canc. / Pend.</th>
+                <th class="text-right">% Cumpl.</th>
+                <th class="text-right">Km Lleno (Sábana)</th>
+                <th class="text-right">Km Vacío (BUAP)</th>
+                <th class="text-right">Tot Kms Proyecto</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-rutas"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 6: CAMBIOS DE ROL (75) E INCIDENCIAS (8) -->
+      <section id="sec-cambios" class="white-panel hidden">
+        <div class="panel-title">
+          <span>Incidencias de Despacho (8 Folios) y Relevos de Rol Durante el Día (75 Corridas)</span>
+        </div>
+        <div class="table-wrap" style="margin-bottom:16px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Folio Monitor</th>
+                <th>Estatus</th>
+                <th>Ruta</th>
+                <th>Hora</th>
+                <th>Bus en Sábana</th>
+                <th>Bus en Monitor</th>
+                <th>Operador</th>
+                <th class="text-right">Km Comercial</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-incidencias"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 7: GPS MALO / PUNTOS CIEGOS / TALLER -->
+      <section id="sec-gps-malo" class="white-panel hidden">
+        <div class="panel-title">
+          <span>Unidades con GPS sin Reportar, Cuentakilómetros Corregido o Movimientos en Taller</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Unidad</th>
+                <th>Clave / Operador</th>
+                <th>Anomalía Detectada</th>
+                <th class="text-right">Km en Rol</th>
+                <th class="text-right">Km en Webfleet</th>
+                <th>Acción Correctiva</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>8074</strong></td>
+                <td>305147 · Juan Carlos Candia de Ita</td>
+                <td><span class="tag tag-red">Punto Ciego GPS</span></td>
+                <td class="text-right">275.0 km</td>
+                <td class="text-right">0.0 km</td>
+                <td>Hizo 6 corridas en Cuautlancingo/San Diego. No aparece en Webfleet ni en el bloque 8105–8127.</td>
+              </tr>
+              <tr>
+                <td><strong>8104</strong></td>
+                <td>304528 · Juan Valentín Meneses</td>
+                <td><span class="tag tag-red">Punto Ciego GPS</span></td>
+                <td class="text-right">135.4 km</td>
+                <td class="text-right">0.0 km</td>
+                <td>Hizo 7 corridas (Amalucan / CU2). Quedó fuera de Webfleet (corta en 8103) y del bloque 8105–8127.</td>
+              </tr>
+              <tr>
+                <td><strong>8038</strong></td>
+                <td>303111 · Noé Flores Escudero</td>
+                <td><span class="tag tag-red">Punto Ciego GPS</span></td>
+                <td class="text-right">56.0 km</td>
+                <td class="text-right">0.0 km</td>
+                <td>Hizo 2 corridas matutinas en Maravillas antes de cambiar al bus 8085. Sin lectura en Webfleet.</td>
+              </tr>
+              <tr>
+                <td><strong>8045</strong></td>
+                <td>16123 · Ignacio Palma Martínez</td>
+                <td><span class="tag tag-amber">En Taller II con Viajes en Monitor</span></td>
+                <td class="text-right">72.6 km</td>
+                <td class="text-right">0.5 km</td>
+                <td>Estuvo parada 2h 37m en TALLER II. Reasignar en Monitor sus 3 corridas matutinas de CAPU.</td>
+              </tr>
+              <tr>
+                <td><strong>8030</strong></td>
+                <td>15378 · Víctor Manuel Romero</td>
+                <td><span class="tag tag-purple">Cuentakilómetros Corregido</span></td>
+                <td class="text-right">174.0 km</td>
+                <td class="text-right">85.9 km</td>
+                <td>5 eventos de reconexión GPS (81.0 km). Sí son cobrables a BUAP por pérdida temporal de señal.</td>
+              </tr>
+              <tr>
+                <td><strong>8021, 8023, 8032, 8034, 8035</strong></td>
+                <td>Sin operador en Monitor</td>
+                <td><span class="tag tag-amber">Movimientos Taller / Diésel sin Rol</span></td>
+                <td class="text-right">0.0 km</td>
+                <td class="text-right">64.0 km</td>
+                <td>Recorridos entre Taller II, Terminal STU y carga de diésel. Descontar del cobro a BUAP.</td>
+              </tr>
+              <tr>
+                <td><strong>8065 y 8068</strong></td>
+                <td>303422 / 302772</td>
+                <td><span class="tag tag-red">Geocerca DOMICILIO</span></td>
+                <td class="text-right">358.6 km</td>
+                <td class="text-right">358.8 km</td>
+                <td>Registros de parada en geocercas registradas como DOMICILIO particular. Revisar con operadores.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 8: CÓMO SE MIDE -->
+      <section id="sec-como-se-mide" class="white-panel hidden">
+        <div class="panel-title"><span>Reglas de Negocio y Metodología de Conciliación STU – BUAP</span></div>
+        <div style="font-size:0.83rem; line-height:1.65; color:#334155; display:flex; flex-direction:column; gap:10px;">
+          <p><strong>1. Kilometraje Programado Total (Rol):</strong> Suma los <code>Kms Lleno</code> (comerciales) más los <code>Kms Vac</code> (traslados de encierro a punto de inicio y retornos autorizados) de las <strong>708 corridas comerciales</strong> más los <strong>8 servicios especiales</strong> (6 Guardias matutinas 05:40–05:50 y 2 Apoyos de Transporte de Personal Norte y Sur 04:30).</p>
+          <p><strong>2. Corte de Viaje en Webfleet (Regla de los 5 minutos):</strong> Webfleet genera un corte de viaje cuando la unidad permanece detenida <strong>≥ 5 minutos</strong>. Por ello, en horas punta un solo renglón del archivo GPS agrupa varias corridas continuas. La conciliación correcta se realiza comparando el <strong>acumulado diario por unidad</strong>.</p>
+          <p><strong>3. Kilometraje Neto Cobrable a BUAP:</strong> Suma los kilómetros de Webfleet (<code>U-8002 a U-8103</code>, incluyendo <code>cuentakilómetros corregido</code>) más los kilómetros de la 2ª plataforma (<code>U-8105 a U-8127</code>), y <strong>resta automáticamente</strong> los traslados a <code>TALLER II</code> y movimientos de carga de diésel de unidades sin rol activo en el Monitor.</p>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 9: ARCHIVOS (SUBIR EXCEL) -->
+      <section id="sec-archivos" class="white-panel hidden">
+        <div class="panel-title"><span>Cargar Archivos Diarios de Excel (.xlsx)</span></div>
+        <p style="font-size:0.8rem; color:#64748b; margin-bottom:12px;">
+          El tablero ya tiene cargados todos los datos del <strong>19/10/2026</strong>. Si deseas analizar un nuevo día, sube aquí tus archivos y todo el diseño se actualizará al instante sin salir del navegador:
+        </p>
+        <div class="upload-grid">
+          <div class="upload-box">
+            <h4>1. Monitor de Servicio (.xlsx)</h4>
+            <p>Archivo diario con las ~708 corridas, estatus (REALIZADA / CANCELADA), Ruta, Operador y Unidad.</p>
+            <input type="file" id="up-monitor" accept=".xlsx,.xls,.csv" />
+          </div>
+          <div class="upload-box">
+            <h4>2. STU Informe de Viajes Webfleet (.xlsx)</h4>
+            <p>Reporte GPS de Webfleet. El sistema elimina automáticamente las últimas 2 filas de totales.</p>
+            <input type="file" id="up-gps" accept=".xlsx,.xls,.csv" />
+          </div>
+          <div class="upload-box">
+            <h4>3. Sábana de Asignación Semanal (.xlsx)</h4>
+            <p>Archivo con pestañas semanales (Kms Lleno, Kms Vacío, Clave y Guardias/Apoyo TP).</p>
+            <input type="file" id="up-asig" accept=".xlsx,.xls" />
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- DATOS REALES DEL 19/10/2026 Y MOTOR INTERACTIVO -->
+  <script>
+    // [Unidad, Operador, Clave, Corridas_Monitor, Km_Comercial_Monitor, Km_Rol_Total_Sabana, Km_GPS_Webfleet, Eventos_GPS, Categoria]
+    const UNIDADES_BASE = [
+      [8002, "Jorge Contreras Gutiérrez", "200619", 11, 132.98, 167.5, 153.5, 14, "WEBFLEET"],
+      [8003, "Rafael Velazco Flores", "306457", 1, 10.55, 20.9, 23.2, 1, "WEBFLEET"],
+      [8005, "Jose Luis Vazquez Gonzales", "305995", 10, 116.52, 149.8, 166.9, 11, "WEBFLEET"],
+      [8008, "Francisco Daniel Cuautle Pérez", "306731", 6, 65.23, 106.9, 118.0, 7, "WEBFLEET"],
+      [8015, "JESUS GIOVANNI PIMENTEL CEREZO", "305969", 8, 159.6, 240.8, 246.3, 6, "WEBFLEET"],
+      [8016, "JOSE JUAREZ ESCALERA", "306059", 10, 119.8, 163.0, 146.3, 17, "WEBFLEET"],
+      [8017, "Francisco Daniel Cuautle Pérez", "306731", 7, 100.27, 105.4, 132.7, 11, "WEBFLEET"],
+      [8018, "Israel Ortiz Diaz", "306536", 5, 77.72, 137.0, 136.1, 5, "WEBFLEET"],
+      [8019, "LUIS GERARDO LOZANO PARRA", "306333", 7, 83.66, 128.9, 137.8, 10, "WEBFLEET"],
+      [8021, "Sin operador en Monitor (Taller/Diésel)", "S/R", 0, 0.0, 0.0, 14.2, 4, "TALLER_SIN_ROL"],
+      [8023, "Sin operador en Monitor (Patio CU)", "S/R", 0, 0.0, 0.0, 1.6, 4, "TALLER_SIN_ROL"],
+      [8024, "Eduardo Sánchez Velazquez", "306673", 7, 76.99, 129.5, 142.6, 12, "WEBFLEET"],
+      [8025, "Gustavo Olmedo Reta", "306756", 7, 121.59, 177.0, 196.7, 9, "WEBFLEET"],
+      [8026, "Luis Fernando Fernandez Hernandez", "305624", 8, 162.52, 302.0, 274.9, 10, "WEBFLEET"],
+      [8027, "JOSE BERNARDINO DIAZ PRESA", "306220", 5, 76.28, 135.5, 171.1, 11, "WEBFLEET"],
+      [8028, "Orley Ramirez", "16599", 8, 138.61, 207.3, 207.9, 6, "WEBFLEET"],
+      [8030, "VICTOR MANUEL ROMERO COSME", "15378", 6, 103.74, 174.0, 85.9, 10, "WEBFLEET"],
+      [8031, "Juan Carlos Vargas Gonzales", "306077", 6, 66.93, 130.5, 142.1, 11, "WEBFLEET"],
+      [8032, "Sin operador en Monitor (Baja de rol)", "S/R", 0, 0.0, 0.0, 1.9, 3, "TALLER_SIN_ROL"],
+      [8033, "Saúl Ordóñez Valencia", "306544", 6, 92.4, 139.5, 131.5, 9, "WEBFLEET"],
+      [8034, "Sin operador en Monitor (Baja de rol)", "S/R", 0, 0.0, 0.0, 46.1, 3, "TALLER_SIN_ROL"],
+      [8035, "Sin operador en Monitor (Taller II)", "S/R", 0, 0.0, 0.0, 0.2, 1, "TALLER_SIN_ROL"],
+      [8036, "Francisco Miguel Hernandez Garcia", "13257", 7, 109.13, 160.4, 168.9, 6, "WEBFLEET"],
+      [8037, "Cristian Eduardo Mendez Hernandez", "306713", 6, 92.4, 139.5, 144.7, 12, "WEBFLEET"],
+      [8038, "Noe Flores Escudero", "303111", 2, 32.24, 56.0, 0.0, 0, "PUNTO_CIEGO"],
+      [8041, "Isaac Munive Hernández", "304501", 7, 110.04, 264.2, 221.5, 9, "WEBFLEET"],
+      [8042, "Cristian Arturo Marcelino Romero", "306736", 3, 50.19, 81.0, 202.3, 5, "WEBFLEET"],
+      [8043, "Javier Velázquez Bautista", "306537", 8, 114.69, 132.3, 158.0, 6, "WEBFLEET"],
+      [8044, "Heremio Osorio Navor", "301716", 8, 108.04, 142.8, 147.9, 9, "WEBFLEET"],
+      [8045, "Ignacio Palma Martinez (En Taller II)", "16123", 3, 41.19, 72.6, 0.5, 1, "TALLER_SIN_ROL"],
+      [8046, "Jorge Hernan Carrillo Zambrano", "306633", 7, 120.47, 190.0, 195.4, 5, "WEBFLEET"],
+      [8047, "Dario Hernández Flores", "306730", 6, 172.3, 275.0, 265.6, 5, "WEBFLEET"],
+      [8048, "Cristian Gomez Diego", "306569", 7, 184.69, 293.5, 272.8, 7, "WEBFLEET"],
+      [8049, "ELIEL MEDRANO GALICIA", "304566", 6, 172.3, 274.98, 254.3, 5, "WEBFLEET"],
+      [8050, "JOSE FELIPE MORALES FLORES", "16594", 7, 120.47, 175.0, 194.9, 7, "WEBFLEET"],
+      [8051, "José Armando Hernandes Delgado", "305399", 6, 108.19, 157.2, 159.0, 10, "WEBFLEET"],
+      [8052, "Marcos Meza Torres", "302548", 7, 94.31, 143.7, 147.3, 5, "WEBFLEET"],
+      [8053, "Jesus Ceron Zompance", "300629", 5, 147.88, 276.3, 245.4, 12, "WEBFLEET"],
+      [8056, "Jose Ubaldo Gonzalez Gonzalez", "304886", 6, 109.41, 163.6, 222.7, 8, "WEBFLEET"],
+      [8057, "Elías Alejandro Martínez Rosas", "200619", 7, 127.45, 168.2, 209.3, 7, "WEBFLEET"],
+      [8058, "Luis Manuel Quintero Contreras", "306540", 6, 147.71, 233.7, 269.0, 5, "WEBFLEET"],
+      [8059, "JUAN DANIEL GOMEZ REBOLLEDO", "301440", 7, 88.31, 147.42, 167.1, 6, "WEBFLEET"],
+      [8060, "ISAAC HUERTA CASTILLO", "305792", 8, 154.62, 249.1, 246.3, 6, "WEBFLEET"],
+      [8062, "Andres Lira Badillo", "306513", 6, 174.34, 279.5, 275.4, 7, "WEBFLEET"],
+      [8063, "Francisco Alejandro Zepeda Arce", "306474", 6, 152.05, 290.3, 271.7, 6, "WEBFLEET"],
+      [8064, "Rolando Crescencio Vallejo", "17525", 5, 141.5, 294.2, 267.9, 5, "WEBFLEET"],
+      [8065, "JOSE MAXIMO PEREZ ROMERO", "303422", 6, 77.21, 95.1, 114.5, 58, "WEBFLEET"],
+      [8066, "ERICK ALEJANDRO ROMERO CORDERO", "306478", 6, 77.21, 95.1, 117.9, 9, "WEBFLEET"],
+      [8067, "Julian Garcia Arrazola", "305797", 5, 126.01, 268.9, 255.5, 6, "WEBFLEET"],
+      [8068, "Jose Luis Cuaya Lopez", "302772", 7, 122.06, 263.5, 244.3, 13, "WEBFLEET"],
+      [8069, "CARLOS MUÑOZ GOMEZ", "302612", 6, 174.34, 305.9, 277.2, 13, "WEBFLEET"],
+      [8070, "Leopoldo Muñoz Ramirez", "305157", 7, 101.92, 128.4, 153.5, 14, "WEBFLEET"],
+      [8071, "Josue Perez Lopez", "17021", 9, 142.58, 199.7, 210.7, 5, "WEBFLEET"],
+      [8072, "LUIS FERNANDO ZAPATA HERNANDEZ", "301912", 8, 108.48, 198.5, 223.9, 2, "WEBFLEET"],
+      [8073, "Mario Vazquez Salazar", "306332", 6, 157.24, 258.7, 255.9, 6, "WEBFLEET"],
+      [8074, "Juan Carlos Candia de Ita", "305147", 6, 172.3, 275.0, 0.0, 0, "PUNTO_CIEGO"],
+      [8075, "Fernando del Razo Cortez", "302506", 7, 189.03, 295.9, 285.2, 6, "WEBFLEET"],
+      [8076, "Jose Enrique Garcia Flores", "17345", 7, 91.58, 135.5, 143.2, 6, "WEBFLEET"],
+      [8077, "Javier Rubín Juarez", "304498", 8, 130.8, 244.6, 228.2, 7, "WEBFLEET"],
+      [8078, "Alejandro Rodriguez Aquino", "304787", 7, 175.82, 288.9, 274.7, 5, "WEBFLEET"],
+      [8079, "Gustavo Vargas Lucero", "17027", 9, 139.72, 173.5, 186.1, 5, "WEBFLEET"],
+      [8080, "Jose Vicente Conde Ortega", "305977", 8, 129.17, 173.6, 195.0, 7, "WEBFLEET"],
+      [8081, "Jose Miguel Rodriguez Mendoza", "306726", 8, 116.42, 114.3, 179.2, 7, "WEBFLEET"],
+      [8082, "Alfonso Cortez de Jesus", "306892", 8, 129.37, 159.5, 182.2, 6, "WEBFLEET"],
+      [8083, "Fernando Romero Garcia", "302296", 7, 94.82, 177.1, 164.8, 7, "WEBFLEET"],
+      [8084, "Jesus Alberto Zavala Huerta", "306845", 9, 113.01, 170.98, 175.8, 5, "WEBFLEET"],
+      [8085, "Noe Flores Escudero", "303111", 4, 60.16, 83.5, 143.4, 5, "WEBFLEET"],
+      [8086, "Hector Alfonso Martinez Barreda", "302088", 8, 116.42, 156.3, 178.2, 6, "WEBFLEET"],
+      [8087, "SAMUEL IVAN RUIZ MARTINEZ", "17246", 7, 98.57, 125.3, 151.8, 7, "WEBFLEET"],
+      [8088, "ABEL MENDEZ CAMARGO", "305560", 7, 104.14, 132.4, 156.8, 6, "WEBFLEET"],
+      [8089, "Oscar Alducin Acevedo", "201988", 8, 122.99, 173.6, 199.4, 6, "WEBFLEET"],
+      [8090, "GREGORIO URBANO GONZALEZ MUÑOZ", "12475", 6, 66.93, 130.5, 140.1, 5, "WEBFLEET"],
+      [8091, "Roberto Saynos Zepeda", "304072", 7, 110.6, 159.7, 189.1, 7, "WEBFLEET"],
+      [8092, "Hazel Patricio Rodríguez", "306561", 8, 109.12, 125.2, 154.3, 3, "WEBFLEET"],
+      [8093, "JOSE FELIX ERNESTO SANTIAGO SUAREZ", "17514", 7, 98.57, 125.3, 155.7, 4, "WEBFLEET"],
+      [8094, "GUILLERMO TORIZ ROJAS", "303713", 8, 112.47, 180.3, 180.1, 6, "WEBFLEET"],
+      [8095, "SERGIO MARQUEZ RODRIGUEZ", "17096", 7, 98.57, 153.3, 175.3, 6, "WEBFLEET"],
+      [8096, "MANUEL CAMPOS CASTAÑEDA", "302584", 7, 98.57, 147.3, 177.1, 7, "WEBFLEET"],
+      [8097, "Cristian Brayan Osorno Lima", "305947", 6, 100.05, 188.8, 146.0, 1, "WEBFLEET"],
+      [8098, "Gerardo Chavez Quiterio", "303603", 6, 88.02, 125.4, 148.0, 8, "WEBFLEET"],
+      [8099, "Cristhian Jaffet Alvarez Martínez", "16446", 8, 129.37, 180.5, 206.9, 6, "WEBFLEET"],
+      [8100, "Antonio Sánchez Arroyo", "15956", 6, 89.14, 135.5, 158.9, 7, "WEBFLEET"],
+      [8101, "PASCUAL LOPEZ MENDOZA", "303837", 6, 89.14, 136.7, 140.0, 5, "WEBFLEET"],
+      [8102, "EDGAR SANCHEZ FLORES", "17056", 7, 100.82, 159.7, 194.1, 4, "WEBFLEET"],
+      [8103, "Victor Hugo Santos Jiménez", "13360", 6, 90.27, 135.8, 158.5, 4, "WEBFLEET"],
+      [8104, "Juan Valentin Meneses Jimenez", "304528", 7, 99.69, 135.4, 0.0, 0, "PUNTO_CIEGO"],
+      [8105, "GUSTAVO GARCIA FLORES", "15379", 7, 91.9, 125.9, 0.0, 0, "PLAT2"],
+      [8106, "RAFAEL RAMOS ROBLES", "16154", 9, 142.16, 204.1, 0.0, 0, "PLAT2"],
+      [8107, "Ricardo Moreno Cuautle", "303425", 7, 110.6, 159.7, 0.0, 0, "PLAT2"],
+      [8109, "Edmundo Armando Arenas Pouchoulen", "302576", 8, 104.64, 126.3, 0.0, 0, "PLAT2"],
+      [8110, "Israel Vázquez Ypatlan", "306762", 7, 110.6, 159.7, 0.0, 0, "PLAT2"],
+      [8111, "Mario Vazquez Salazar", "305933", 7, 113.32, 168.6, 0.0, 0, "PLAT2"],
+      [8112, "LUIS ENRIQUE LOBATO LARA", "17221", 7, 97.96, 132.4, 0.0, 0, "PLAT2"],
+      [8113, "Cristian Arturo Marcelino Romero", "306736", 8, 123.85, 165.3, 0.0, 0, "PLAT2"],
+      [8114, "MOISES ROMERO HERNANDEZ", "200640", 9, 150.05, 197.2, 0.0, 0, "PLAT2"],
+      [8115, "Rodrigo Mazapila Reyes", "306714", 7, 120.47, 175.0, 0.0, 0, "PLAT2"],
+      [8116, "Primitivo Castillo", "17047", 7, 98.19, 140.5, 0.0, 0, "PLAT2"],
+      [8117, "Armando Lopez Munguia", "306126", 7, 118.82, 159.6, 0.0, 0, "PLAT2"],
+      [8118, "MIGUEL SANCHEZ GAMBOA", "305330", 8, 141.2, 208.0, 0.0, 0, "PLAT2"],
+      [8119, "MELESIO DE LA LUZ GUZMAN", "306457", 8, 137.09, 154.0, 0.0, 0, "PLAT2"],
+      [8120, "Eliseo Serrano Rodriguez", "306797", 8, 118.48, 154.5, 0.0, 0, "PLAT2"],
+      [8121, "Cesar Aguilar Fermin", "302567", 7, 98.3, 132.7, 0.0, 0, "PLAT2"],
+      [8122, "Roberto Rivera Ochoa", "306726", 6, 97.02, 161.0, 0.0, 0, "PLAT2"],
+      [8123, "MARCOS ORTEGA CUEVAS", "201448", 8, 121.15, 149.1, 0.0, 0, "PLAT2"],
+      [8124, "Jeronimo Pedro Lopez Vazquez", "303865", 8, 129.37, 159.5, 0.0, 0, "PLAT2"],
+      [8125, "Hugo Ariel Aguirre Diaz", "304886", 5, 74.61, 84.4, 0.0, 0, "PLAT2"],
+      [8126, "Juan Carlos Tovar Lima", "303837", 2, 33.46, 41.8, 0.0, 0, "PLAT2"],
+      [8127, "Juan Carlos Tovar Lima", "303837", 6, 88.02, 104.4, 0.0, 0, "PLAT2"]
+    ];
+
+    const RUTAS_BASE = [
+      ["01. CU ↔ CU2 (Ecocampus)", 316, 310, 6, 3286.40, 2079.00, 5365.40],
+      ["02. Cuautlancingo ↔ CU", 77, 75, 2, 2345.90, 1499.98, 3845.88],
+      ["03. Amalucan ↔ CU", 70, 70, 0, 1110.00, 754.00, 1864.00],
+      ["04. San Ramón ↔ CU", 46, 46, 0, 491.50, 374.00, 865.50],
+      ["05. Maravillas ↔ CU", 38, 38, 0, 582.50, 360.00, 942.50],
+      ["06. CAPU ↔ CU", 32, 32, 0, 451.60, 167.00, 618.60],
+      ["07. Héroes ↔ CU", 22, 22, 0, 253.00, 96.00, 349.00],
+      ["08. San Diego → CU", 21, 21, 0, 525.00, 489.30, 1014.30],
+      ["09. Tlaxcalancingo → CU", 14, 14, 0, 221.20, 170.50, 391.70],
+      ["10. Amozoc ↔ CU", 12, 12, 0, 297.60, 123.40, 421.00],
+      ["11. Camino Real ↔ CU", 6, 6, 0, 73.20, 64.80, 138.00],
+      ["12. Zacachimalpa (Bach. Tec.) ↔ CU", 6, 6, 0, 66.30, 31.20, 97.50],
+      ["13. Cholula ↔ Área de la Salud", 6, 6, 0, 83.70, 103.50, 187.20],
+      ["14. Bachillerato 5 de Mayo ↔ CU", 5, 5, 0, 120.00, 9.60, 129.60],
+      ["15. San Ramón ↔ Lenguas", 5, 5, 0, 71.00, 91.00, 162.00],
+      ["16. Cholula ↔ Lenguas", 5, 5, 0, 78.60, 134.60, 213.20],
+      ["17. Cholula ↔ Prepa Lázaro Cárdenas", 4, 4, 0, 62.00, 103.00, 165.00],
+      ["18. Cd. Judicial ↔ Área de la Salud", 4, 4, 0, 43.98, 54.80, 98.78],
+      ["19. Entronque ↔ Área de la Salud", 4, 4, 0, 38.62, 57.00, 95.62],
+      ["20. Guadalupe Hidalgo ↔ CCU", 4, 4, 0, 43.00, 58.00, 101.00],
+      ["21. Amalucan ↔ CCU", 4, 4, 0, 81.20, 60.50, 141.70],
+      ["22. Sanctorum ↔ CCU", 4, 4, 0, 89.80, 104.80, 194.60],
+      ["23. Entronque → CU", 3, 3, 0, 45.00, 27.00, 72.00],
+      ["24. Guardias y Apoyo TP (04:30-05:50)", 8, 8, 0, 89.00, 126.80, 215.80]
+    ];
+
+    const INCIDENCIAS_BASE = [
+      ["1286963", "CANCELADA", "CU - CU2", "06:40:00", "8081", "-", "Sin operador", 10.55],
+      ["1286986", "CANCELADA", "CU - CU2", "07:20:00", "SIN ASIGNAR", "-", "Sin operador", 10.55],
+      ["1286993", "CANCELADA", "CU - CU2", "07:30:00", "SIN ASIGNAR", "-", "Sin operador", 10.55],
+      ["1287006", "PROGRAMADA", "CU - CU2", "07:50:00", "8086", "8081", "Jose Miguel Rodriguez Mendoza", 10.55],
+      ["1287009", "CANCELADA", "CU - CU2", "07:50:00", "8088", "-", "Sin operador", 10.55],
+      ["1286839", "PROGRAMADA", "CU - CUAUTLANCINGO", "15:55:00", "8061", "8058", "Luis Manuel Quintero Contreras", 28.76],
+      ["1287269", "CANCELADA", "CU2 - CU", "18:20:00", "8017", "8017", "Ivan Yair Flores Serrano", 16.73],
+      ["1286868", "EN PROCESO", "CU - CUAUTLANCINGO", "21:15:00", "8067", "8067", "Julian Garcia Arrazola", 28.76]
+    ];
+
+    let estado = {
+      corrProg: 708,
+      corrReal: 700,
+      corrCanc: 5,
+      kmComercialMonitor: 11553.27,
+      kmLlenoSabana: 10465.10,
+      kmVacioSabana: 7086.78,
+      kmRolTotal: 17551.88,
+      kmWebfleetBruto: 14406.90,
+      kmTallerDescuento: 64.50,
+      unidades: UNIDADES_BASE.map(u => ({
+        u: u[0], op: u[1], clave: u[2], corr: u[3], kmCom: u[4], kmRol: u[5], kmGps: u[6], ev: u[7], cat: u[8]
+      })),
+      rutas: RUTAS_BASE,
+      incidencias: INCIDENCIAS_BASE
+    };
+
+    function fmt(n, d = 0) {
+      return Number(n || 0).toLocaleString("es-MX", { minimumFractionDigits: d, maximumFractionDigits: d });
+    }
+
+    function toggleMenu() {
+      document.getElementById("sidebar").classList.toggle("hidden");
+    }
+
+    function toggleFiltros() {
+      document.getElementById("filter-bar").classList.toggle("hidden");
+    }
+
+    function irSeccion(secId, el) {
+      ["sec-resumen","sec-planeado","sec-operadores","sec-viajes","sec-rutas","sec-cambios","sec-gps-malo","sec-como-se-mide","sec-archivos"].forEach(id => {
+        document.getElementById(id).classList.add("hidden");
+      });
+      document.getElementById(secId).classList.remove("hidden");
+      document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+      if (el) el.classList.add("active");
+    }
+
+    function actualizarVista() {
+      const tol = parseFloat(document.getElementById("f-tol").value) || 5;
+      const modoTaller = document.getElementById("f-taller").value;
+      const modoMostrar = document.getElementById("f-mostrar").value;
+      const tarifa = parseFloat(document.getElementById("f-tarifa").value) || 18;
+      const kmPlat2 = parseFloat(document.getElementById("f-plat2").value) || 3189;
+      const q = (document.getElementById("f-buscar").value || "").toLowerCase().trim();
+      const factor = modoMostrar === "PESOS" ? tarifa : 1;
+      const sufijo = modoMostrar === "PESOS" ? " $" : " km";
+
+      const kmBrutoTotal = estado.kmWebfleetBruto + kmPlat2;
+      const kmRealAplicado = modoTaller === "DESCONTAR" ? (kmBrutoTotal - estado.kmTallerDescuento) : kmBrutoTotal;
+      const baseComparacion = modoMostrar === "KM_COM" ? estado.kmComercialMonitor : estado.kmRolTotal;
+      const difGlobal = kmRealAplicado - baseComparacion;
+      const pctGlobal = baseComparacion > 0 ? (difGlobal / baseComparacion) * 100 : 0;
+
+      // Filtrar unidades según búsqueda
+      const unidadesFiltradas = estado.unidades.filter(x => {
+        if (!q) return true;
+        return String(x.u).includes(q) || x.op.toLowerCase().includes(q) || x.clave.toLowerCase().includes(q);
+      });
+
+      // Calcular excesos, faltantes y semáforo
+      let sumaExceso = 0;
+      let sumaFaltante = 0;
+      let contRojo = 0, contAmarillo = 0, contVerde = 0;
+      let wfEnMeta = 0, wfTot = 0;
+
+      const listaExcesos = [];
+      const listaFaltantes = [];
+
+      unidadesFiltradas.forEach(item => {
+        const ref = modoMostrar === "KM_COM" ? item.kmCom : item.kmRol;
+        if (item.cat === "WEBFLEET") {
+          wfTot++;
+          const diff = item.kmGps - ref;
+          if (diff > 0) {
+            sumaExceso += diff;
+            listaExcesos.push({ label: `U-${item.u} · Clave ${item.clave || 'S/C'}`, op: item.op, val: diff * factor });
+          } else if (diff < 0) {
+            sumaFaltante += Math.abs(diff);
+            listaFaltantes.push({ label: `U-${item.u} · Clave ${item.clave || 'S/C'}`, op: item.op, val: Math.abs(diff) * factor });
+          }
+          const pctDesv = ref > 0 ? (Math.abs(diff) / ref) * 100 : 100;
+          if (pctDesv <= tol) {
+            contVerde++;
+            wfEnMeta++;
+          } else if (pctDesv <= tol * 2.2) {
+            contAmarillo++;
+            wfEnMeta++;
+          } else {
+            contRojo++;
+          }
+        } else if (item.cat === "PUNTO_CIEGO") {
+          sumaFaltante += ref;
+          listaFaltantes.push({ label: `U-${item.u} · Sin GPS (${item.clave})`, op: item.op, val: ref * factor });
+          contRojo++;
+        } else if (item.cat === "TALLER_SIN_ROL") {
+          if (item.kmRol > item.kmGps) {
+            const falta = item.kmRol - item.kmGps;
+            sumaFaltante += falta;
+            listaFaltantes.push({ label: `U-${item.u} · Taller (${item.clave})`, op: item.op, val: falta * factor });
+          } else if (item.kmGps > 0) {
+            listaExcesos.push({ label: `U-${item.u} · Sin rol en Monitor`, op: item.op, val: item.kmGps * factor });
+          }
+          contRojo++;
+        } else if (item.cat === "PLAT2") {
+          contAmarillo++;
+        }
+      });
+
+      // Actualizar las 6 tarjetas KPI
+      document.getElementById("kpi-1-val").textContent = modoMostrar === "PESOS" ? ("$" + fmt(baseComparacion * tarifa, 0)) : fmt(baseComparacion, 0);
+      document.getElementById("kpi-1-sub").textContent = modoMostrar === "KM_COM" ? "solo tramo comercial (Monitor)" : "según la asignación (lleno + vacío)";
+
+      document.getElementById("kpi-2-val").textContent = modoMostrar === "PESOS" ? ("$" + fmt(kmRealAplicado * tarifa, 0)) : fmt(kmRealAplicado, 0);
+      const signo = difGlobal >= 0 ? "+" : "";
+      document.getElementById("kpi-2-sub").textContent = `${signo}${fmt(difGlobal, 0)} km (${signo}${pctGlobal.toFixed(1)}%) vs programa`;
+
+      document.getElementById("kpi-3-val").textContent = modoMostrar === "PESOS" ? ("$" + fmt(sumaExceso * tarifa, 0)) : fmt(sumaExceso, 0);
+      document.getElementById("kpi-4-val").textContent = modoMostrar === "PESOS" ? ("$" + fmt(sumaFaltante * tarifa, 0)) : fmt(sumaFaltante, 0);
+
+      const pctCumpl = estado.corrProg > 0 ? ((estado.corrReal / estado.corrProg) * 100).toFixed(2) : "100.00";
+      document.getElementById("kpi-5-val").textContent = pctCumpl + "%";
+      document.getElementById("kpi-5-sub").textContent = `${estado.corrReal} realizadas de ${estado.corrProg} · ${fmt(estado.kmComercialMonitor, 0)} km com.`;
+
+      document.getElementById("kpi-6-val").textContent = `${wfEnMeta} / ${wfTot}`;
+      document.getElementById("kpi-6-sub").textContent = `dentro de tolerancia (±${tol*2}% vs rol)`;
+
+      // Renderizar barras horizontales izquierdas (Top 10 Exceso)
+      listaExcesos.sort((a, b) => b.val - a.val);
+      const topEx = listaExcesos.slice(0, 10);
+      const maxEx = topEx.length > 0 ? topEx[0].val : 1;
+      const contEx = document.getElementById("lista-exceso");
+      contEx.innerHTML = topEx.map(item => {
+        const w = Math.max(4, (item.val / maxEx) * 100);
+        const txtVal = modoMostrar === "PESOS" ? ("$" + fmt(item.val, 0)) : (fmt(item.val, 0) + " km");
+        return `
+          <div class="bar-row" title="${item.op}">
+            <div class="bar-label">${item.label}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${w}%"></div></div>
+            <div class="bar-val">${txtVal}</div>
+          </div>
+        `;
+      }).join("");
+
+      // Renderizar barras horizontales derechas (Top 10 Faltantes / Sin GPS / Taller)
+      listaFaltantes.sort((a, b) => b.val - a.val);
+      const topFa = listaFaltantes.slice(0, 10);
+      const maxFa = topFa.length > 0 ? topFa[0].val : 1;
+      const contFa = document.getElementById("lista-faltante");
+      contFa.innerHTML = topFa.map(item => {
+        const w = Math.max(4, (item.val / maxFa) * 100);
+        const txtVal = modoMostrar === "PESOS" ? ("$" + fmt(item.val, 0)) : (fmt(item.val, 0) + " km");
+        return `
+          <div class="bar-row" title="${item.op}">
+            <div class="bar-label">${item.label}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${w}%"></div></div>
+            <div class="bar-val">${txtVal}</div>
+          </div>
+        `;
+      }).join("");
+
+      // Renderizar Semáforo Inferior
+      const totSem = Math.max(1, contRojo + contAmarillo + contVerde);
+      document.getElementById("contenedor-semaforo").innerHTML = `
+        <div class="semaforo-row">
+          <div class="bar-label">Rojo · revisar desvío / sin GPS</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(contRojo/totSem)*100}%"></div></div>
+          <div class="bar-val">${contRojo}</div>
+        </div>
+        <div class="semaforo-row">
+          <div class="bar-label">Amarillo · vigilar / 2ª plataforma</div>
+          <div class="bar-track"><div class="bar-fill amber" style="width:${(contAmarillo/totSem)*100}%"></div></div>
+          <div class="bar-val">${contAmarillo}</div>
+        </div>
+        <div class="semaforo-row">
+          <div class="bar-label">Verde · cumple en rango (±${tol}%)</div>
+          <div class="bar-track"><div class="bar-fill green" style="width:${(contVerde/totSem)*100}%"></div></div>
+          <div class="bar-val">${contVerde}</div>
+        </div>
+      `;
+      document.getElementById("nota-semaforo").textContent =
+        `Unidades auditadas: ${totSem}. Se detectaron 75 cambios de unidad respecto a la sábana semanal, 5 unidades con movimiento en taller/diésel sin rol (-64.5 km) y 3 unidades puente (8038, 8074, 8104) pendientes de lectura GPS.`;
+
+      renderTablasSecundarias(unidadesFiltradas, tol, kmPlat2, tarifa, kmBrutoTotal, kmRealAplicado);
+    }
+
+    function renderTablasSecundarias(unidadesFiltradas, tol, kmPlat2, tarifa, kmBrutoTotal, kmRealAplicado) {
+      // Planeado vs Real
+      document.getElementById("tbody-planeado").innerHTML = `
+        <tr><td><strong>1. Kilometraje Comercial (Kms Lleno en Sábana)</strong></td><td class="text-right">708 corridas</td><td class="text-right">${fmt(estado.kmLlenoSabana, 2)} km</td><td class="text-right">$${fmt(estado.kmLlenoSabana * tarifa, 2)}</td><td>Recorrido con pasaje programado en las 23 rutas</td></tr>
+        <tr><td><strong>2. Kilometraje de Vacío Autorizado (Kms Vacío en Sábana)</strong></td><td class="text-right">708 + 8 esp.</td><td class="text-right">${fmt(estado.kmVacioSabana, 2)} km</td><td class="text-right">$${fmt(estado.kmVacioSabana * tarifa, 2)}</td><td>Encierros a puntos de inicio + Guardias + Apoyo TP Norte/Sur</td></tr>
+        <tr style="background:#eff6ff;"><td><strong>TOTAL PROYECTADO (ROL COMPLETO SÁBANA)</strong></td><td class="text-right"><strong>716 salidas</strong></td><td class="text-right"><strong>${fmt(estado.kmRolTotal, 2)} km</strong></td><td class="text-right"><strong>$${fmt(estado.kmRolTotal * tarifa, 2)}</strong></td><td>Base contractual esperada por BUAP</td></tr>
+        <tr><td><strong>3. Telemetría Webfleet GPS (Unidades 8002 a 8103)</strong></td><td class="text-right">83 unidades</td><td class="text-right">${fmt(estado.kmWebfleetBruto, 2)} km</td><td class="text-right">$${fmt(estado.kmWebfleetBruto * tarifa, 2)}</td><td>Incluye 81.0 km de cuentakilómetros corregido (U-8030)</td></tr>
+        <tr><td><strong>4. Telemetría 2ª Plataforma (Unidades 8105 a 8127)</strong></td><td class="text-right">22 unidades</td><td class="text-right">${fmt(kmPlat2, 2)} km</td><td class="text-right">$${fmt(kmPlat2 * tarifa, 2)}</td><td>Lectura agregada de segunda plataforma</td></tr>
+        <tr><td><strong>5. Menos: Traslados a Taller II y Diésel sin Rol</strong></td><td class="text-right">6 unidades</td><td class="text-right" style="color:#be123c;">-${fmt(estado.kmTallerDescuento, 2)} km</td><td class="text-right" style="color:#be123c;">-$${fmt(estado.kmTallerDescuento * tarifa, 2)}</td><td>Unidades 8021, 8023, 8032, 8034, 8035 y 8045 (No cobrables)</td></tr>
+        <tr style="background:#dcfce7;"><td><strong>TOTAL NETO COBRABLE A BUAP</strong></td><td class="text-right"><strong>105 unidades</strong></td><td class="text-right"><strong>${fmt(kmRealAplicado, 2)} km</strong></td><td class="text-right"><strong>$${fmt(kmRealAplicado * tarifa, 2)}</strong></td><td><strong>Convergencia del 99.88% vs Rol Total</strong> (Falta sumar GPS de 8038, 8074 y 8104)</td></tr>
+      `;
+
+      // Tabla Operadores
+      document.getElementById("tbody-operadores").innerHTML = unidadesFiltradas.map(x => {
+        const dif = x.kmGps - x.kmRol;
+        let badge = "";
+        if (x.cat === "PUNTO_CIEGO") badge = `<span class="tag tag-red">Sin GPS (Punto Ciego)</span>`;
+        else if (x.cat === "TALLER_SIN_ROL") badge = `<span class="tag tag-amber">Taller / Sin Rol</span>`;
+        else if (x.cat === "PLAT2") badge = `<span class="tag tag-purple">2ª Plataforma (8105-8127)</span>`;
+        else {
+          const p = x.kmRol > 0 ? (Math.abs(dif) / x.kmRol) * 100 : 0;
+          if (p <= tol) badge = `<span class="tag tag-green">Verde · Cumple</span>`;
+          else if (p <= tol * 2.2) badge = `<span class="tag tag-amber">Amarillo · Vigilar</span>`;
+          else badge = `<span class="tag tag-red">Rojo · Desvío >${tol*2}%</span>`;
+        }
+        return `
+          <tr>
+            <td><strong>${x.u}</strong></td>
+            <td>${x.clave || "-"}</td>
+            <td>${x.op}</td>
+            <td class="text-right"><strong>${x.corr}</strong></td>
+            <td class="text-right">${fmt(x.kmCom, 2)}</td>
+            <td class="text-right">${fmt(x.kmRol, 1)}</td>
+            <td class="text-right"><strong>${x.kmGps > 0 ? fmt(x.kmGps, 1) : "0.0"}</strong></td>
+            <td class="text-right" style="color:${dif > 15 ? '#be123c' : '#334155'}; font-weight:700;">
+              ${x.cat === "WEBFLEET" ? ((dif >= 0 ? "+" : "") + fmt(dif, 1) + " km") : "-"}
+            </td>
+            <td>${badge}</td>
+          </tr>
+        `;
+      }).join("");
+
+      // Viajes por Operador (Top 15 por corridas/kilómetros)
+      const topViajes = [...unidadesFiltradas].sort((a, b) => b.corr - a.corr || b.kmGps - a.kmGps).slice(0, 15);
+      const maxCorr = topViajes.length > 0 ? Math.max(1, topViajes[0].corr) : 11;
+      document.getElementById("lista-viajes-op").innerHTML = topViajes.map(x => `
+        <div class="bar-row">
+          <div class="bar-label">U-${x.u} · ${x.op}</div>
+          <div class="bar-track"><div class="bar-fill blue" style="width:${(x.corr / maxCorr)*100}%"></div></div>
+          <div class="bar-val">${x.corr} corr (${fmt(x.kmCom, 0)} km)</div>
+        </div>
+      `).join("");
+
+      // Tabla de las 23 Rutas Troncales
+      const fPeriodo = document.getElementById("f-periodo").value;
+      document.getElementById("tbody-rutas").innerHTML = estado.rutas
+        .filter(r => fPeriodo === "TODAS" || (fPeriodo === "CU2" ? r[0].includes("CU2") : !r[0].includes("CU2")))
+        .map(r => {
+          const pct = r[1] > 0 ? ((r[2] / r[1]) * 100).toFixed(1) : "100.0";
+          return `
+            <tr>
+              <td><strong>${r[0]}</strong></td>
+              <td class="text-right">${r[1]}</td>
+              <td class="text-right" style="color:#15803d; font-weight:700;">${r[2]}</td>
+              <td class="text-right" style="color:${r[3] > 0 ? '#be123c' : '#94a3b8'}; font-weight:700;">${r[3]}</td>
+              <td class="text-right"><span class="tag ${r[3] === 0 ? 'tag-green' : 'tag-amber'}">${pct}%</span></td>
+              <td class="text-right">${fmt(r[4], 1)}</td>
+              <td class="text-right">${fmt(r[5], 1)}</td>
+              <td class="text-right"><strong>${fmt(r[6], 1)}</strong></td>
+            </tr>
+          `;
+        }).join("");
+
+      // Tabla de Incidencias
+      document.getElementById("tbody-incidencias").innerHTML = estado.incidencias.map(inc => `
+        <tr>
+          <td><strong>${inc[0]}</strong></td>
+          <td><span class="tag ${inc[1] === 'CANCELADA' ? 'tag-red' : 'tag-amber'}">${inc[1]}</span></td>
+          <td><strong>${inc[2]}</strong></td>
+          <td>${inc[3]}</td>
+          <td>${inc[4]}</td>
+          <td><strong>${inc[5]}</strong></td>
+          <td>${inc[6]}</td>
+          <td class="text-right">${fmt(inc[7], 2)} km</td>
+        </tr>
+      `).join("");
+    }
+
+    // Lector de nuevos archivos Excel en la pestaña "Archivos"
+    document.getElementById("up-gps").addEventListener("change", function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const wb = XLSX.read(evt.target.result, { type: "binary" });
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+        let totBruto = 0, totTaller = 0;
+        const mapaGps = {};
+        rows.forEach(r => {
+          const u = String(r["Vehículo n°"] || "").replace(".0", "").trim();
+          const d = parseFloat(r["Distancia [km]"]);
+          if (!u || isNaN(d)) return; // Excluye las 2 filas finales de totales
+          totBruto += d;
+          if (!mapaGps[u]) mapaGps[u] = { km: 0, ev: 0 };
+          mapaGps[u].km += d;
+          mapaGps[u].ev++;
+        });
+        estado.unidades.forEach(item => {
+          const g = mapaGps[String(item.u)];
+          if (g) {
+            item.kmGps = g.km;
+            item.ev = g.ev;
+            if (item.corr === 0 || item.u === 8045) totTaller += g.km;
+          }
+        });
+        estado.kmWebfleetBruto = totBruto;
+        estado.kmTallerDescuento = totTaller;
+        document.getElementById("badge-archivo").textContent = "GPS actualizado: " + file.name;
+        actualizarVista();
+      };
+      reader.readAsBinaryString(file);
+    });
+
+    document.getElementById("up-monitor").addEventListener("change", function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const wb = XLSX.read(evt.target.result, { type: "binary" });
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+        let prog = 0, real = 0, canc = 0, kmCom = 0;
+        const porUni = {};
+        rows.forEach(r => {
+          const est = String(r[" "] || Object.values(r)[0] || "").trim().toUpperCase();
+          if (!est) return;
+          prog++;
+          const km = parseFloat(r["Distancia de trabajo (Km.)"]) || 0;
+          const u = String(r["Unidad"] || "-").trim();
+          const op = String(r["Operador"] || "").trim();
+          if (est === "REALIZADA") {
+            real++; kmCom += km;
+            if (u !== "-") {
+              if (!porUni[u]) porUni[u] = { c: 0, k: 0, op: op };
+              porUni[u].c++; porUni[u].k += km;
+            }
+          } else if (est === "CANCELADA") canc++;
+        });
+        estado.corrProg = prog; estado.corrReal = real; estado.corrCanc = canc;
+        estado.kmComercialMonitor = kmCom;
+        estado.unidades.forEach(item => {
+          const m = porUni[String(item.u)];
+          if (m) { item.corr = m.c; item.kmCom = m.k; if (m.op) item.op = m.op; }
+        });
+        document.getElementById("badge-archivo").textContent = "Monitor actualizado: " + file.name;
+        actualizarVista();
+      };
+      reader.readAsBinaryString(file);
+    });
+
+    function descargarCSV() {
+      let csv = "Unidad,Clave,Operador,Corridas_Monitor,Km_Comercial,Km_Rol_Total,Km_GPS_Webfleet,Eventos_GPS,Categoria\n";
+      estado.unidades.forEach(x => {
+        csv += `${x.u},"${x.clave}","${x.op}",${x.corr},${x.kmCom.toFixed(2)},${x.kmRol.toFixed(2)},${x.kmGps.toFixed(2)},${x.ev},${x.cat}\n`;
+      });
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "Conciliacion_Kilometraje_STU_BUAP.csv";
+      a.click();
+    }
+
+    window.onload = actualizarVista;
+  </script>
+</body>
+</html>
