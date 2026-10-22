@@ -6,13 +6,17 @@
 <title>Rol Operativo Pro - STU BUAP</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#F4F6F9">
 <link rel="manifest" href="manifest.json">
+
+<!-- Fuentes no bloqueantes para carga instantánea con datos móviles -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+
+<!-- Firebase SDK con defer para no bloquear el dibujado inicial de la interfaz -->
+<script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <style>
   :root {
@@ -37,8 +41,8 @@
     --radius: 14px;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "IBM Plex Sans", sans-serif; padding-bottom: 80px; transition: background 0.3s; position: relative; }
-  .mono { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding-bottom: 80px; transition: background 0.3s; position: relative; }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; }
   
   /* MARCA DE AGUA */
   .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 380px; height: 50vh; opacity: 0.06; pointer-events: none; z-index: 0; background-image: url("Logo%20Estrella%20Roja.webp"); background-size: contain; background-repeat: no-repeat; background-position: center; mix-blend-mode: multiply;}
@@ -47,7 +51,7 @@
   body.pc-view .shell { max-width: 1400px; padding: 0 20px; }
   body.pc-view header { border-bottom: 1px solid var(--line); border-radius: 0 0 16px 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
   
-  .hour-section { margin-bottom: 15px; }
+  .hour-section { margin-bottom: 15px; content-visibility: auto; contain-intrinsic-size: 1px 220px; }
   .trip-grid { display: flex; flex-direction: column; gap: 6px; }
   
   body.pc-view .trip-grid { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
@@ -92,10 +96,11 @@
   .icon-btn-top.active-pc { background: var(--accent); color: white; border-color: var(--accent); }
 
   .head-top { display: flex; justify-content: space-between; padding: 0 14px 6px; align-items: baseline; }
-  .head-title h1 { margin: 0; font-size: 16px; }
-  .sync-indicator { font-size: 10px; display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 999px; background: var(--surface-2); color: var(--ink-soft); margin-left: 6px; }
+  .head-title h1 { margin: 0; font-size: 16px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+  .sync-indicator { font-size: 10px; display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: var(--surface-2); color: var(--ink-soft); margin-left: 4px; font-weight: 600; }
   .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #2E7D4F; }
   .sync-dot.busy { background: #B4790A; animation: pulse 1s infinite; }
+  .sync-dot.offline { background: #8A93A0; }
   @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
 
   .toolbar-wrap { display: flex; overflow-x: auto; padding: 0 14px 10px; gap: 8px; align-items: center; -webkit-overflow-scrolling: touch; scrollbar-width: none; pointer-events: auto; }
@@ -125,7 +130,7 @@
   
   .hour-head { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 8px; padding: 10px 14px 6px; background: var(--bg); }
   body.pc-view .hour-head { padding-left: 0; padding-right: 0; }
-  .hour-head .h { font-family: "IBM Plex Mono", monospace; font-size: 15px; font-weight: 600; color: var(--accent); }
+  .hour-head .h { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 15px; font-weight: 600; color: var(--accent); }
   .hour-head .c { font-size: 11.5px; color: var(--ink-faint); flex: 1; }
   .hour-toggle { border: none; background: var(--surface-2); color: var(--ink-soft); font-size: 11px; font-weight: 600; cursor: pointer; padding: 6px 12px; border-radius: 7px; pointer-events: auto; transition: 0.2s;}
   .hour-toggle.restore-btn-block { background: var(--accent); color: white; }
@@ -164,15 +169,11 @@
   .icon-btn.terminal-btn.on svg { fill: var(--accent); color: var(--accent); }
   .icon-btn.restore-btn { color: var(--accent); }
 
-  /* SISTEMA UNIFICADO DE VENTANAS EMERGENTES (FUNCIONA IGUAL EN CELULAR Y EN PC) */
+  /* SISTEMA UNIFICADO DE VENTANAS EMERGENTES */
   .overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100%; height: 100%;
     background: rgba(18, 24, 38, 0.72);
     z-index: 9999;
     display: none;
@@ -189,10 +190,7 @@
     pointer-events: auto !important;
     visibility: visible !important;
   }
-  body.pc-view .overlay {
-    align-items: center;
-    justify-content: center;
-  }
+  body.pc-view .overlay { align-items: center; justify-content: center; }
 
   .sheet {
     background: var(--surface);
@@ -212,15 +210,7 @@
     opacity: 1 !important;
     visibility: visible !important;
   }
-  body.pc-view .sheet {
-    max-width: 600px;
-  }
-  .overlay.show .sheet,
-  body.pc-view .overlay.show .sheet {
-    transform: scale(1) !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-  }
+  body.pc-view .sheet { max-width: 600px; }
   
   .sheet h2 { margin: 0 0 12px; font-size: 18px; color: var(--accent); }
   .input-field { width: 100%; padding: 13px 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 16px; margin-bottom: 14px; outline: none; background-color: var(--surface-2); color: var(--ink); font-family: inherit; font-weight: 500; min-height: 44px; }
@@ -274,7 +264,7 @@
 
     <div class="head-top">
       <div class="head-title">
-        <h1>Rol Operativo <span class="sync-indicator"><span class="sync-dot" id="syncDot"></span><span id="syncText">Iniciando...</span></span></h1>
+        <h1>Rol Operativo <span class="sync-indicator"><span class="sync-dot busy" id="syncDot"></span><span id="syncText">Cargando caché...</span></span></h1>
         <span id="dayLabel" style="font-size:13px; color:var(--accent); font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:4px; padding: 4px 8px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 15%, transparent);" onclick="abrirMenuDias()">— <span>▼</span></span>
       </div>
     </div>
@@ -316,9 +306,9 @@
 
 <input type="file" id="fileAsignacion" accept=".xlsx,.xls" style="display:none">
 <input type="file" id="fileSeguimiento" accept=".xlsx,.xls" style="display:none">
-<audio id="alertaSonido" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
 
 <script>
+const CACHE_KEY = "stu_buap_cache_v6";
 const ESTADOS_CRITICOS = ["Siniestro", "Taller", "Falla mecánica", "Sin diésel", "Falta", "Permiso", "Incapacidad", "Baja"];
 const MOTIVOS_RAPIDOS = ["Falta", "Permiso", "Siniestro", "Falla mecánica", "Operación", "Programación", "Sin diésel", "Apoyo", "Enroque"];
 const FLOTA_FIJA = [
@@ -377,11 +367,87 @@ var activeView = "activas", activeOrigin = null, activeDest = null, searchTerm =
 var showRevisar = false;
 var flotaSortCol = "u";
 var flotaSortDir = 1;
-var db;
+var db = null;
+var isConnectedToFirebase = false;
 var globalCollisions = []; 
 var globalAlertsData = [];
 var historyFilterDay = "ALL";
 var historySearchTerm = "";
+var cacheTimer = null;
+
+// SINTETIZADOR DE AUDIO NATIVO (0 BYTES DE DATOS MÓVILES)
+function playAlertSound(isCritical) {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = isCritical ? "sawtooth" : "sine";
+        osc.frequency.setValueAtTime(isCritical ? 880 : 660, ctx.currentTime);
+        if (isCritical) {
+            osc.frequency.setValueAtTime(587, ctx.currentTime + 0.15);
+            osc.frequency.setValueAtTime(880, ctx.currentTime + 0.30);
+        }
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (isCritical ? 0.5 : 0.25));
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + (isCritical ? 0.5 : 0.25));
+    } catch (e) {}
+}
+
+// CARGADOR DIFERIDO (LAZY LOAD) DE LIBRERÍA EXCEL (SOLO SE DESCARGA CUANDO SE OCUPA)
+function ensureXLSXLoaded() {
+    return new Promise((resolve, reject) => {
+        if (window.XLSX) return resolve(window.XLSX);
+        setSyncStatus(true, "Cargando módulo Excel...");
+        const script = document.createElement("script");
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+        script.onload = () => {
+            setSyncStatus(false, isConnectedToFirebase ? "En línea" : "Caché local");
+            resolve(window.XLSX);
+        };
+        script.onerror = () => {
+            setSyncStatus(false, "Error red Excel");
+            reject(new Error("No se pudo descargar el lector Excel con tu señal actual."));
+        };
+        document.head.appendChild(script);
+    });
+}
+
+// CACHÉ LOCAL INSTANTÁNEO (OFFLINE-FIRST PARA DATOS MÓVILES)
+function loadLocalCache() {
+    try {
+        const raw = localStorage.getItem(CACHE_KEY);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === "object") {
+                store = Object.assign(store, parsed);
+                store.days = store.days || {};
+                store.state = store.state || {};
+                store.knownRoutes = store.knownRoutes || {};
+                store.unassignedReasons = store.unassignedReasons || {};
+                store.operadoresDB = store.operadoresDB || {};
+                store.globalFleet = store.globalFleet || [];
+                store.globalHistory = Array.isArray(store.globalHistory) ? store.globalHistory : [];
+                store.currentDay = store.currentDay || "Hoy";
+                return true;
+            }
+        }
+    } catch (e) {}
+    return false;
+}
+
+function saveLocalCacheDebounced() {
+    if (cacheTimer) clearTimeout(cacheTimer);
+    cacheTimer = setTimeout(() => {
+        try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify(store));
+        } catch (e) {}
+    }, 300);
+}
 
 // FUNCIONES GLOBALES DE CÁLCULO DE TIEMPOS MEJORADAS (0, 40 o 55 min)
 function normLoc(loc) {
@@ -468,6 +534,7 @@ function registrarEnHistorial(entry) {
     ds.unitChanges = ds.unitChanges || [];
     ds.unitChanges.push(record);
     hist.push(record);
+    return record;
 }
 
 window.toggleDesktopView = function() {
@@ -488,13 +555,17 @@ window.sortFlota = function(col) {
     renderFlota();
 };
 
-setInterval(() => {
+function updateClock() {
     var d = new Date();
     let clockEl = document.getElementById("liveClock");
     if(clockEl) clockEl.innerText = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + ':' + String(d.getSeconds()).padStart(2,'0');
-}, 1000);
+}
+updateClock();
+setInterval(updateClock, 1000);
 
-if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") Notification.requestPermission();
+if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+    Notification.requestPermission().catch(() => {});
+}
 
 function showAggressiveToast(msg) {
     let existing = document.getElementById("agg-toast");
@@ -507,77 +578,120 @@ function showAggressiveToast(msg) {
     setTimeout(() => { t.style.animation = "fadeToast 0.3s ease forwards"; setTimeout(()=>t.remove(),300); }, 6000);
 }
 
-try {
-    var firebaseConfig = { apiKey: "AIzaSyCgRzOFk8XaCHZZV3brW9AtuJCVBP0cJhA", authDomain: "rutas-operaciones.firebaseapp.com", databaseURL: "https://rutas-operaciones-default-rtdb.firebaseio.com", projectId: "rutas-operaciones" };
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    db = firebase.database().ref("operaciones_v6");
-    db.on("value", (snap) => {
-        if(snap.val()) {
-            let prevHistLen = Array.isArray(store.globalHistory) ? store.globalHistory.length : 0;
-            let localHistoryBackup = Array.isArray(store.globalHistory) ? [...store.globalHistory] : [];
-            let oldChanges = (store.state && store.state[store.currentDay] && store.state[store.currentDay].unitChanges) ? store.state[store.currentDay].unitChanges.length : 0;
-            
-            store = snap.val();
-            store.days = store.days || {};
-            store.state = store.state || {};
-            store.knownRoutes = store.knownRoutes || {}; 
-            store.unassignedReasons = store.unassignedReasons || {};
-            store.operadoresDB = store.operadoresDB || {};
-            store.globalFleet = store.globalFleet || [];
-            store.globalHistory = Array.isArray(store.globalHistory) ? store.globalHistory : [];
-            store.currentDay = store.currentDay || "Hoy";
-
-            if (localHistoryBackup.length > 0) {
-                let ids = new Set(store.globalHistory.map(h => h.id));
-                localHistoryBackup.forEach(item => {
-                    if (item && item.id && !ids.has(item.id)) {
-                        store.globalHistory.push(item);
-                        ids.add(item.id);
-                    }
-                });
-            }
-            getGlobalHistory();
-            
-            let newChanges = (store.state[store.currentDay] && store.state[store.currentDay].unitChanges) ? store.state[store.currentDay].unitChanges.length : 0;
-            if(newChanges > oldChanges || (store.globalHistory.length > prevHistLen && prevHistLen > 0)) {
-                let ultCambio = (store.state[store.currentDay] && store.state[store.currentDay].unitChanges && store.state[store.currentDay].unitChanges.slice(-1)[0]) || store.globalHistory.slice(-1)[0];
-                if (ultCambio) {
-                    let isCritical = ESTADOS_CRITICOS.some(est => String(ultCambio.reason || "").toLowerCase().includes(est.toLowerCase()));
-                    let audio = document.getElementById("alertaSonido");
-                    if(audio) { audio.currentTime = 0; audio.play().catch(e => {}); } 
-                    
-                    if (navigator.vibrate) navigator.vibrate(isCritical ? [400, 200, 400, 200, 600] : [200, 100, 200]);
-
-                    if ("Notification" in window && Notification.permission === "granted") {
-                        new Notification(isCritical ? "⚠️ CRÍTICO: " + ultCambio.route : "🔄 Cambio: " + ultCambio.route, {
-                            body: `Unidad: ${ultCambio.newUnit === 'VACIO' || ultCambio.newUnit === 'S/U' ? 'S/U' : 'U-'+ultCambio.newUnit} | Op: ${ultCambio.newOp === 'VACIO' ? 'Sin Asignar' : (ultCambio.newOp || ultCambio.nombre)}\nMotivo: ${ultCambio.reason || 'N/A'}`,
-                            icon: "manifest.json",
-                            requireInteraction: true
-                        });
-                    }
-                    
-                    if(isCritical && !document.hidden) {
-                        showAggressiveToast(`Cambio urgente en ruta ${ultCambio.route}.<br>Revisa el historial de cambios.`);
-                    }
-                }
-            }
-        }
-        setSyncStatus(false, "En línea");
-        render(); 
-    }, (err) => setSyncStatus(false, "Error de red"));
-} catch(e) { setSyncStatus(false, "Modo sin conexión"); }
-
-function setSyncStatus(isBusy, text){
-    let d = document.getElementById("syncDot"); let t = document.getElementById("syncText");
-    if(d) d.className = "sync-dot" + (isBusy ? " busy" : "");
+function setSyncStatus(isBusy, text, isOffline){
+    let d = document.getElementById("syncDot");
+    let t = document.getElementById("syncText");
+    if(d) d.className = "sync-dot" + (isBusy ? " busy" : (isOffline ? " offline" : ""));
     if(t) t.textContent = text;
 }
 
+// GUARDADO LIGERO QUIRÚRGICO (PARA NO CONSUMIR DATOS SUBIENDO LAS 710 CORRIDAS EN CADA CLIC)
+function savePatch(patchObj) {
+    saveLocalCacheDebounced();
+    if (!db) {
+        setSyncStatus(false, "Guardado en caché", true);
+        return;
+    }
+    setSyncStatus(true, "Sincronizando...");
+    const cleanPatch = JSON.parse(JSON.stringify(patchObj));
+    db.update(cleanPatch, (err) => {
+        setSyncStatus(false, err ? "Caché (Sin red)" : "En línea", !!err);
+    });
+}
+
+// GUARDADO COMPLETO (SOLO CUANDO SE SUBE UN ARCHIVO EXCEL NUEVO)
 function saveStore() {
     getGlobalHistory();
-    if(!db) { setSyncStatus(false, "Modo sin conexión"); return; }
-    setSyncStatus(true, "Guardando...");
-    db.set(JSON.parse(JSON.stringify(store)), (err) => setSyncStatus(false, err ? "Error" : "En línea"));
+    saveLocalCacheDebounced();
+    if(!db) { setSyncStatus(false, "Modo sin conexión", true); return; }
+    setSyncStatus(true, "Subiendo rol...");
+    db.set(JSON.parse(JSON.stringify(store)), (err) => setSyncStatus(false, err ? "Error de red" : "En línea", !!err));
+}
+
+// INICIALIZAR FIREBASE DE FORMA ASÍNCRONA SIN BLOQUEAR EL CELULAR
+function initFirebaseConnection() {
+    if (typeof firebase === "undefined") {
+        setTimeout(initFirebaseConnection, 150);
+        return;
+    }
+    try {
+        var firebaseConfig = {
+            apiKey: "AIzaSyCgRzOFk8XaCHZZV3brW9AtuJCVBP0cJhA",
+            authDomain: "rutas-operaciones.firebaseapp.com",
+            databaseURL: "https://rutas-operaciones-default-rtdb.firebaseio.com",
+            projectId: "rutas-operaciones"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        db = firebase.database().ref("operaciones_v6");
+
+        firebase.database().ref(".info/connected").on("value", (snap) => {
+            isConnectedToFirebase = !!snap.val();
+            if (isConnectedToFirebase) {
+                setSyncStatus(false, "En línea", false);
+            } else {
+                setSyncStatus(false, "Caché (Datos bajos)", true);
+            }
+        });
+
+        let isFirstLoad = true;
+        db.on("value", (snap) => {
+            if(snap.val()) {
+                let prevHistLen = Array.isArray(store.globalHistory) ? store.globalHistory.length : 0;
+                let localHistoryBackup = Array.isArray(store.globalHistory) ? [...store.globalHistory] : [];
+                let oldChanges = (store.state && store.state[store.currentDay] && store.state[store.currentDay].unitChanges) ? store.state[store.currentDay].unitChanges.length : 0;
+                
+                store = snap.val();
+                store.days = store.days || {};
+                store.state = store.state || {};
+                store.knownRoutes = store.knownRoutes || {}; 
+                store.unassignedReasons = store.unassignedReasons || {};
+                store.operadoresDB = store.operadoresDB || {};
+                store.globalFleet = store.globalFleet || [];
+                store.globalHistory = Array.isArray(store.globalHistory) ? store.globalHistory : [];
+                store.currentDay = store.currentDay || "Hoy";
+
+                if (localHistoryBackup.length > 0) {
+                    let ids = new Set(store.globalHistory.map(h => h.id));
+                    localHistoryBackup.forEach(item => {
+                        if (item && item.id && !ids.has(item.id)) {
+                            store.globalHistory.push(item);
+                            ids.add(item.id);
+                        }
+                    });
+                }
+                getGlobalHistory();
+                saveLocalCacheDebounced();
+                
+                let newChanges = (store.state[store.currentDay] && store.state[store.currentDay].unitChanges) ? store.state[store.currentDay].unitChanges.length : 0;
+                if(!isFirstLoad && (newChanges > oldChanges || (store.globalHistory.length > prevHistLen && prevHistLen > 0))) {
+                    let ultCambio = (store.state[store.currentDay] && store.state[store.currentDay].unitChanges && store.state[store.currentDay].unitChanges.slice(-1)[0]) || store.globalHistory.slice(-1)[0];
+                    if (ultCambio) {
+                        let isCritical = ESTADOS_CRITICOS.some(est => String(ultCambio.reason || "").toLowerCase().includes(est.toLowerCase()));
+                        playAlertSound(isCritical);
+                        
+                        if (navigator.vibrate) navigator.vibrate(isCritical ? [400, 200, 400, 200, 600] : [200, 100, 200]);
+
+                        if ("Notification" in window && Notification.permission === "granted") {
+                            new Notification(isCritical ? "⚠️ CRÍTICO: " + ultCambio.route : "🔄 Cambio: " + ultCambio.route, {
+                                body: `Unidad: ${ultCambio.newUnit === 'VACIO' || ultCambio.newUnit === 'S/U' ? 'S/U' : 'U-'+ultCambio.newUnit} | Op: ${ultCambio.newOp === 'VACIO' ? 'Sin Asignar' : (ultCambio.newOp || ultCambio.nombre)}\nMotivo: ${ultCambio.reason || 'N/A'}`,
+                                icon: "manifest.json",
+                                requireInteraction: true
+                            });
+                        }
+                        
+                        if(isCritical && !document.hidden) {
+                            showAggressiveToast(`Cambio urgente en ruta ${ultCambio.route}.<br>Revisa el historial de cambios.`);
+                        }
+                    }
+                }
+                isFirstLoad = false;
+            }
+            setSyncStatus(false, "En línea", false);
+            render(); 
+        }, (err) => setSyncStatus(false, "Caché local", true));
+    } catch(e) {
+        setSyncStatus(false, "Modo caché", true);
+    }
 }
 
 function getDayState() {
@@ -618,15 +732,23 @@ document.getElementById("overlay").addEventListener("click", function(e){
 window.ignorarEmpalme = function(overlapId, view) {
     let ds = getDayState();
     if(!ds.resolvedOverlaps) ds.resolvedOverlaps = [];
-    if(!ds.resolvedOverlaps.includes(overlapId)) { ds.resolvedOverlaps.push(overlapId); saveStore(); }
-    render(); setTimeout(() => { if(view === 'pendientes') verPendientes(); if(view === 'empalmes') verEmpalmesRuta(); }, 50);
+    if(!ds.resolvedOverlaps.includes(overlapId)) {
+        ds.resolvedOverlaps.push(overlapId);
+        savePatch({ [`state/${store.currentDay}/resolvedOverlaps`]: ds.resolvedOverlaps });
+    }
+    render();
+    setTimeout(() => { if(view === 'pendientes') verPendientes(); if(view === 'empalmes') verEmpalmesRuta(); }, 50);
 };
 
 window.ignorarFalta = function(tripId) {
     let ds = getDayState();
     if(!ds.resolvedMissing) ds.resolvedMissing = [];
-    if(!ds.resolvedMissing.includes(tripId)) { ds.resolvedMissing.push(tripId); saveStore(); }
-    render(); setTimeout(() => verPendientes(), 50);
+    if(!ds.resolvedMissing.includes(tripId)) {
+        ds.resolvedMissing.push(tripId);
+        savePatch({ [`state/${store.currentDay}/resolvedMissing`]: ds.resolvedMissing });
+    }
+    render();
+    setTimeout(() => verPendientes(), 50);
 };
 
 function actualizarBadgePendientes() {
@@ -891,7 +1013,12 @@ window.abrirMenuDias = function() {
     openSheet(`<h2>Seleccionar Fecha</h2><div class="opt-list">${options}</div><button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
 };
 
-window.seleccionarDia = function(day) { store.currentDay = day; saveStore(); render(); closeSheet(); };
+window.seleccionarDia = function(day) {
+    store.currentDay = day;
+    render();
+    closeSheet();
+    savePatch({ currentDay: day });
+};
 
 window.cambiarVista = function(vista, btn) {
     document.querySelectorAll("#seg button").forEach(b => b.classList.remove("active"));
@@ -1099,7 +1226,7 @@ function actualizarUrgenciaVisual() {
 }
 setInterval(actualizarUrgenciaVisual, 15000);
 
-// LÓGICA OPTIMISTA DESBLOQUEADA PARA OCULTAR Y RESTAURAR HORARIOS
+// ACCIONES DE CAMPO ULTRA-LIGERAS (ENVÍAN SOLO ~80 BYTES A FIREBASE)
 window.toggleStatus = function(id, action, event) {
     if (event) event.stopPropagation();
     let ds = getDayState();
@@ -1122,31 +1249,36 @@ window.toggleStatus = function(id, action, event) {
 
     ds.trips[id] = current;
     render();
-    saveStore();
+    savePatch({ [`state/${store.currentDay}/trips/${id}`]: current });
 };
 
 window.ocultarBloque = function(hour) {
     let ds = getDayState();
+    let patch = {};
     (store.days[store.currentDay].trips || []).forEach(t => {
         if (t.h.slice(0,2) === hour) {
-            ds.trips[t.id] = Object.assign({}, getTripState(t.id), { hidden: true });
+            let st = Object.assign({}, getTripState(t.id), { hidden: true });
+            ds.trips[t.id] = st;
+            patch[`state/${store.currentDay}/trips/${t.id}`] = st;
         }
     });
     render();
-    saveStore();
+    savePatch(patch);
 };
 
 window.restaurarBloque = function(hour) {
     let ds = getDayState();
+    let patch = {};
     (store.days[store.currentDay].trips || []).forEach(t => {
         if (t.h.slice(0,2) === hour) {
             let st = Object.assign({}, getTripState(t.id), { hidden: false, formadoAt: null });
             if (st.status === "formado") st.status = "pendiente";
             ds.trips[t.id] = st;
+            patch[`state/${store.currentDay}/trips/${t.id}`] = st;
         }
     });
     render();
-    saveStore();
+    savePatch(patch);
 };
 
 window.tapTrip = function(event, card) {
@@ -1454,10 +1586,19 @@ window.guardarFlotaDedicado = function() {
         type: "Flota"
     });
 
-    closeSheet(); render(); saveStore();
+    closeSheet();
+    render();
+    savePatch({
+        [`state/${store.currentDay}/opOverride`]: ds.opOverride,
+        [`state/${store.currentDay}/unitOverride`]: ds.unitOverride,
+        [`state/${store.currentDay}/unitChanges`]: ds.unitChanges,
+        unassignedReasons: store.unassignedReasons,
+        globalFleet: store.globalFleet,
+        globalHistory: store.globalHistory
+    });
 };
 
-// MODAL DE CAMBIO EN RUTA (CERO FRICCIÓN COGNITIVA, FUNCIONA EN CELULAR Y PC)
+// MODAL DE CAMBIO EN RUTA (CERO FRICCIÓN COGNITIVA)
 window.openChangeModal = function(card) {
     let tripId = card.getAttribute("data-id") || "";
     let trip = (store.days?.[store.currentDay]?.trips || []).find(t => String(t.id) === String(tripId));
@@ -1574,7 +1715,14 @@ window.procesarCambio = function() {
 
     closeSheet();
     render();
-    saveStore();
+    savePatch({
+        [`state/${store.currentDay}/unitOverride`]: ds.unitOverride,
+        [`state/${store.currentDay}/opOverride`]: ds.opOverride,
+        [`state/${store.currentDay}/tripUnitOverride`]: ds.tripUnitOverride,
+        [`state/${store.currentDay}/tripOpOverride`]: ds.tripOpOverride,
+        [`state/${store.currentDay}/unitChanges`]: ds.unitChanges,
+        globalHistory: store.globalHistory
+    });
 };
 
 window.abrirConfiguracion = function() {
@@ -1582,7 +1730,7 @@ window.abrirConfiguracion = function() {
     const totalHist = getGlobalHistory().length;
     openSheet(`<h2>Configuración / Archivos</h2>
       <div style="background:var(--surface-2);padding:12px;border-radius:10px;font-size:13px;line-height:1.8;margin-bottom:12px">
-        <b>Conexión:</b> ${db ? 'Firebase En Línea' : 'Sin conexión'}<br>
+        <b>Conexión:</b> ${isConnectedToFirebase ? 'Firebase En Línea (Modo Ligero)' : 'Modo Caché Local (Ahorro de datos)'}<br>
         <b>Fecha activa:</b> ${store.currentDay || '—'} (${trips.length} viajes)<br>
         <b>Unidades fijas:</b> ${FLOTA_FIJA.length}<br>
         <b>Historial Histórico:</b> ${totalHist} registro(s) protegidos
@@ -1779,38 +1927,43 @@ window.verCambios = function() {
     renderListaHistorialModal();
 };
 
-window.descargarHistorialExcel = function() {
+window.descargarHistorialExcel = async function() {
     const registros = obtenerHistorialFiltrado();
     if (!registros.length) {
         showAggressiveToast("No hay registros en el historial para exportar a Excel.");
         return;
     }
 
-    const filasExcel = registros.map(c => ({
-        "Fecha Operativa": c.day || "—",
-        "Fecha y Hora del Cambio": c.time ? new Date(c.time).toLocaleString('es-MX') : "—",
-        "Tipo": c.type || "Viaje",
-        "Alcance": c.scope || "Horario individual",
-        "Hora Corrida": c.tripTime || "—",
-        "Ruta": c.route || "—",
-        "Clave": c.clave || "—",
-        "Unidad Anterior": (!c.oldUnit || c.oldUnit === "VACIO" || c.oldUnit === "S/U") ? "S/U" : String(c.oldUnit),
-        "Unidad Nueva": (!c.newUnit || c.newUnit === "VACIO" || c.newUnit === "S/U") ? "S/U" : String(c.newUnit),
-        "Operador Anterior": (!c.oldOp || c.oldOp === "VACIO") ? "Sin Asignar" : String(c.oldOp),
-        "Operador Nuevo": (!c.newOp || c.newOp === "VACIO") ? "Sin Asignar" : String(c.newOp),
-        "Motivo / Estatus": c.reason || "—"
-    }));
+    try {
+        await ensureXLSXLoaded();
+        const filasExcel = registros.map(c => ({
+            "Fecha Operativa": c.day || "—",
+            "Fecha y Hora del Cambio": c.time ? new Date(c.time).toLocaleString('es-MX') : "—",
+            "Tipo": c.type || "Viaje",
+            "Alcance": c.scope || "Horario individual",
+            "Hora Corrida": c.tripTime || "—",
+            "Ruta": c.route || "—",
+            "Clave": c.clave || "—",
+            "Unidad Anterior": (!c.oldUnit || c.oldUnit === "VACIO" || c.oldUnit === "S/U") ? "S/U" : String(c.oldUnit),
+            "Unidad Nueva": (!c.newUnit || c.newUnit === "VACIO" || c.newUnit === "S/U") ? "S/U" : String(c.newUnit),
+            "Operador Anterior": (!c.oldOp || c.oldOp === "VACIO") ? "Sin Asignar" : String(c.oldOp),
+            "Operador Nuevo": (!c.newOp || c.newOp === "VACIO") ? "Sin Asignar" : String(c.newOp),
+            "Motivo / Estatus": c.reason || "—"
+        }));
 
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(filasExcel);
-    ws['!cols'] = [
-        { wch: 16 }, { wch: 22 }, { wch: 10 }, { wch: 24 }, { wch: 12 },
-        { wch: 22 }, { wch: 10 }, { wch: 15 }, { wch: 15 },
-        { wch: 28 }, { wch: 28 }, { wch: 26 }
-    ];
-    XLSX.utils.book_append_sheet(wb, ws, "Historial_Historico");
-    const fechaArchivo = new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(wb, `Historial_Operativo_STU_${fechaArchivo}.xlsx`);
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(filasExcel);
+        ws['!cols'] = [
+            { wch: 16 }, { wch: 22 }, { wch: 10 }, { wch: 24 }, { wch: 12 },
+            { wch: 22 }, { wch: 10 }, { wch: 15 }, { wch: 15 },
+            { wch: 28 }, { wch: 28 }, { wch: 26 }
+        ];
+        XLSX.utils.book_append_sheet(wb, ws, "Historial_Historico");
+        const fechaArchivo = new Date().toISOString().slice(0, 10);
+        XLSX.writeFile(wb, `Historial_Operativo_STU_${fechaArchivo}.xlsx`);
+    } catch (err) {
+        showAggressiveToast(err.message);
+    }
 };
 
 function uniqueSorted(trips, prop) {
@@ -1845,19 +1998,32 @@ document.getElementById("btnDestino").addEventListener("click", function(){
     crearFiltroSheet("🚩 Punto final", top.concat(rest), activeDest, v => { activeDest = v; render(); });
 });
 
+// DEBOUNCE EN BÚSQUEDA PARA EVITAR TRABAR EL PROCESADOR DEL CELULAR
+let searchDebounce = null;
 document.getElementById('search').addEventListener('input', e => {
-    searchTerm = e.target.value.trim().toLowerCase();
-    render();
+    if (searchDebounce) clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => {
+        searchTerm = e.target.value.trim().toLowerCase();
+        render();
+    }, 120);
 });
 
-// LECTOR DE ARCHIVOS EXCEL ("datos" Y "rol") PROTEGIENDO EL HISTORIAL HISTÓRICO
+// LECTOR DE ARCHIVOS EXCEL ("datos" Y "rol") CON CARGA DIFERIDA DE XLSX
 document.getElementById("fileAsignacion").addEventListener("change", e => handleExcel(e.target.files[0], 'asignacion', e.target));
 document.getElementById("fileSeguimiento").addEventListener("change", e => handleExcel(e.target.files[0], 'seguimiento', e.target));
 
-function handleExcel(file, type, inputEl) {
+async function handleExcel(file, type, inputEl) {
     if(!file) return;
     let msgBox = document.getElementById("uploadMsg");
-    if(msgBox) msgBox.innerHTML = `<span style="color:var(--pend)">Procesando ${file.name}...</span>`;
+    if(msgBox) msgBox.innerHTML = `<span style="color:var(--pend)">Cargando lector y procesando ${file.name}...</span>`;
+    try {
+        await ensureXLSXLoaded();
+    } catch (err) {
+        if(msgBox) msgBox.innerHTML = `<span style="color:var(--bad)">${err.message}</span>`;
+        inputEl.value = "";
+        return;
+    }
+
     let reader = new FileReader();
     reader.onload = e => {
       try {
@@ -2060,6 +2226,13 @@ function parseWorkbook(arrayBuffer){
     });
     return { days: days, fleet: [] }; 
 }
+
+// ARRANQUE INMEDIATO DESDE CACHÉ + CONEXIÓN NO BLOQUEANTE
+if (loadLocalCache()) {
+    setSyncStatus(false, "Caché listo", true);
+    render();
+}
+initFirebaseConnection();
 </script>
 </body>
 </html>
