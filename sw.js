@@ -1,52 +1,39 @@
-const CACHE_NAME = 'stu-buap-shell-v1';
+const CACHE_NAME = "stu-buap-pwa-v6";
 const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json',
-  './Logo%20Estrella%20Roja.webp'
+  "./",
+  "./index.html",
+  "./manifest.json"
 ];
 
-// 1. Instala y guarda el cascarón de la app en la memoria del celular
-self.addEventListener('install', (event) => {
+self.addEventListener("install", (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return Promise.allSettled(ASSETS.map((url) => cache.add(url)));
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS).catch(() => {}))
   );
 });
 
-// 2. Limpia versiones viejas automáticamente cuando actualices tu código
-self.addEventListener('activate', (event) => {
+self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+      Promise.all(
+        keys.map((key) => {
+          if (key !== CACHE_NAME) return caches.delete(key);
+        })
+      )
     )
   );
   self.clients.claim();
 });
 
-// 3. Entrega la app al instante desde la memoria del celular sin gastar datos
-self.addEventListener('fetch', (event) => {
-  const url = event.request.url;
-  // Firebase siempre va directo por red para sincronizar cambios en vivo
-  if (url.includes('firebaseio.com') || url.includes('googleapis.com') || url.includes('gstatic.com')) {
-    return;
-  }
-
+self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return;
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200 && event.request.method === 'GET') {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return networkResponse;
-        })
-        .catch(() => cachedResponse);
-
-      return cachedResponse || fetchPromise;
-    })
+    fetch(event.request)
+      .then((response) => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => {});
+        return response;
+      })
+      .catch(() => caches.match(event.request).then((res) => res || caches.match("./index.html")))
   );
 });
