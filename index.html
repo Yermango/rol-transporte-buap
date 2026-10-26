@@ -1,0 +1,3302 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Rol Operativo Pro - STU BUAP</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#00509d">
+<link rel="manifest" href="manifest.json">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+
+<script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+  :root {
+    --bg: #EEF2F6; 
+    --surface: #FFFFFF; 
+    --surface-2: #F1F5F9;
+    --ink: #0F172A; 
+    --ink-soft: #475569; 
+    --ink-faint: #94A3B8;
+    --line: #CBD5E1; 
+    --accent: #00509d; 
+    --accent-dark: #003870;
+    --accent-ink: #FFFFFF;
+    --pend: #B45309; 
+    --pend-bg: #FEF3C7; 
+    --done: #15803D; 
+    --done-bg: #DCFCE7;
+    --bad: #D81A32; 
+    --bad-bg: #FEE2E2; 
+    --chip-bg: #E2E8F0; 
+    --radius: 16px;
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  input, select, textarea {
+    user-select: auto;
+    -webkit-user-select: auto;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overscroll-behavior-y: contain;
+  }
+  body {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    position: relative;
+  }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; }
+  
+  /* MARCA DE AGUA */
+  .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 75%; max-width: 340px; height: 45vh; opacity: 0.05; pointer-events: none; z-index: 0; background-image: url("Logo%20Estrella%20Roja.webp"); background-size: contain; background-repeat: no-repeat; background-position: center; mix-blend-mode: multiply;}
+
+  .shell {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+  @media (min-width: 960px) {
+    .shell { max-width: 1280px; padding: 0 20px; }
+  }
+  body.pc-view .shell { max-width: 1400px; padding: 0 20px; }
+
+  /* APP BAR SUPERIOR NATIVA ANDROID */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: var(--bg);
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+  }
+  .native-appbar {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+    color: #FFFFFF;
+    padding: max(12px, env(safe-area-inset-top)) 16px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .appbar-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .appbar-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .appbar-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.3px;
+  }
+  .sync-indicator {
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    color: #FFFFFF;
+    font-weight: 600;
+  }
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ADE80; }
+  .sync-dot.busy { background: #FBBF24; animation: pulse 1s infinite; }
+  .sync-dot.offline { background: #F87171; }
+  @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+
+  .day-selector-btn {
+    font-size: 13.5px;
+    color: #FFFFFF;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    width: fit-content;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+  }
+  .day-selector-btn:active { transform: scale(0.96); }
+
+  .appbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .clock {
+    font-size: 22px;
+    font-weight: 700;
+    color: #FFFFFF;
+    letter-spacing: -0.5px;
+    background: rgba(0, 0, 0, 0.18);
+    padding: 6px 10px;
+    border-radius: 10px;
+  }
+  .icon-btn-top {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 12px;
+    padding: 8px;
+    cursor: pointer;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .icon-btn-top svg { width: 22px; height: 22px; pointer-events: none; }
+  .icon-btn-top:active { transform: scale(0.93); }
+
+  /* BARRA DE FILTROS GRANDES Y TÁCTILES */
+  .toolbar-wrap {
+    display: flex;
+    overflow-x: auto;
+    padding: 10px 14px 8px;
+    gap: 8px;
+    align-items: center;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .toolbar-wrap::-webkit-scrollbar { display: none; }
+  
+  .tbtn {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 13.5px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+    min-height: 44px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .tbtn:active { transform: scale(0.96); }
+  .tbtn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .tbtn.btn-revisar.active { background: var(--bad); color: white; border-color: var(--bad); }
+  .tbtn.btn-foranea.active { background: #5b21b6; color: white; border-color: #5b21b6; }
+  .tbtn svg { width: 17px; height: 17px; pointer-events: none; }
+
+  .search-wrap { padding: 0 14px 10px; }
+  .search-wrap input {
+    width: 100%;
+    border: 1.5px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    border-radius: 12px;
+    padding: 11px 14px;
+    font-size: 15.5px;
+    font-weight: 500;
+    outline: none;
+    min-height: 46px;
+  }
+  .search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0, 80, 157, 0.15); }
+
+  /* BARRA DE NAVEGACIÓN INFERIOR NATIVA ANDROID (BOTTOM NAVIGATION BAR) */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    padding: 4px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08);
+  }
+  .bnav-btn {
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 2px;
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    font-family: inherit;
+  }
+  .bnav-btn svg {
+    width: 23px;
+    height: 23px;
+    stroke-width: 2.1;
+    transition: transform 0.15s;
+  }
+  .bnav-btn span.bnav-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+  }
+  .bnav-btn.active {
+    color: var(--accent);
+    background: rgba(0, 80, 157, 0.08);
+  }
+  .bnav-btn.active svg {
+    transform: translateY(-1px);
+    stroke-width: 2.5;
+  }
+  .badge-alert {
+    position: absolute;
+    top: 2px;
+    right: 16%;
+    background: var(--bad);
+    color: white;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-size: 11px;
+    display: none;
+    font-weight: 800;
+    border: 2px solid var(--surface);
+  }
+  .badge-alert.has-items { display: inline-block; animation: pop 0.3s; }
+  @keyframes pop { 0% { transform: scale(0.8); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+  /* TARJETAS DE CORRIDAS AMPLIAS Y CLARAS */
+  .hour-section { margin-bottom: 16px; }
+  .trip-grid { display: flex; flex-direction: column; gap: 8px; }
+
+  .hour-head {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px 6px;
+    background: var(--bg);
+  }
+  .hour-head .h { font-size: 16px; font-weight: 800; color: var(--accent); }
+  .hour-head .c { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); flex: 1; }
+  .hour-toggle {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 7px 12px;
+    border-radius: 9px;
+  }
+  .hour-toggle.restore-btn-block { background: var(--accent); color: white; border-color: var(--accent); }
+
+  .trip {
+    position: relative;
+    margin: 0 12px;
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius);
+    padding: 13px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+  }
+  .trip:active { transform: scale(0.99); }
+  .trip.status-en_terminal { border-color: var(--accent); background: #EBF5FF; }
+  .trip.status-formado { border-color: var(--done) !important; background: var(--done-bg) !important; opacity: 1 !important; border-left: none !important; }
+  
+  .trip.urgency-30 { border-left: 6px solid #F59E0B; }
+  .trip.urgency-20 { border-left: 6px solid #EA580C; background: #FFF7ED; }
+  .trip.urgency-10 { border-left: 6px solid var(--bad); background: #FEF2F2; }
+
+  .trip.trip-nounit { border: 2px solid var(--bad); background: #FFF1F2; }
+  .trip.trip-nounit .unit { background: var(--bad); color: white; }
+
+  .trip.trip-damaged { background: #5a1010 !important; border-color: #ff4d4d; color: white; }
+  .trip.trip-damaged .trip-route, .trip.trip-damaged .trip-sub, .trip.trip-damaged .trip-time { color: white; }
+  .trip.trip-damaged .unit { background: #ff4d4d; color: white; }
+  .trip.trip-damaged .icon-btn svg { color: rgba(255,255,255,0.9); }
+  
+  .trip.trip-collision { animation: blink-red 1.5s infinite; border: 2px solid var(--bad); }
+  @keyframes blink-red { 0% { background: var(--surface); } 50% { background: var(--bad-bg); } 100% { background: var(--surface); } }
+  
+  .trip-time { font-size: 17px; font-weight: 800; width: 48px; flex-shrink: 0; color: var(--ink); }
+  .trip-main { flex: 1; min-width: 0; }
+  .trip-route { font-size: 15.5px; font-weight: 800; color: var(--ink); line-height: 1.25; }
+  .trip-sub { font-size: 13.5px; color: var(--ink-soft); margin-top: 5px; display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+  .trip-sub .unit { font-weight: 800; padding: 3px 7px; background: var(--surface-2); border-radius: 6px; color: var(--ink); font-size: 13px; border: 1px solid var(--line); }
+  .trip-sub .collision-warn { color: var(--bad); font-weight: 800; background: var(--bad-bg); padding: 2px 6px; border-radius: 5px; font-size: 11.5px;}
+  
+  .trip-actions { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; z-index: 2; }
+  .icon-btn {
+    border: none;
+    background: var(--surface-2);
+    color: var(--ink-soft);
+    padding: 7px;
+    border-radius: 10px;
+    cursor: pointer;
+    min-height: 40px;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .icon-btn svg { width: 21px; height: 21px; pointer-events: none;} 
+  .icon-btn.hide-btn svg { width: 18px; height: 18px; } 
+  .icon-btn.formado-btn.on { color: #FFFFFF; background: var(--done); }
+  .icon-btn.terminal-btn.on { color: #FFFFFF; background: var(--accent); }
+  .icon-btn.restore-btn { color: #FFFFFF; background: var(--accent); }
+  .icon-btn.call-btn { color: #00509d; background: #DBEAFE; }
+  .icon-btn.msg-btn { color: #15803D; background: #DCFCE7; }
+  .icon-btn.no-phone { opacity: 0.55; background: var(--surface-2); color: var(--ink-soft); }
+
+  /* INSIGNIAS DE PUNTUALIDAD (COLUMNA AS) */
+  .punt-badge { display: inline-flex; align-items: center; gap: 2px; font-size: 11.5px; font-weight: 800; padding: 2px 6px; border-radius: 6px; font-family: "IBM Plex Mono", monospace; }
+  .punt-high { background: #DCFCE7; color: #15803D; }
+  .punt-mid { background: #FEF3C7; color: #B45309; }
+  .punt-low { background: #FEE2E2; color: #B91C1C; }
+
+  /* TABLA EXCEL (FLOTA Y TABLERO) */
+  .table-container { width: 100%; overflow-x: auto; background: var(--surface); border-radius: 14px; border: 1px solid var(--line); }
+  .excel-table { width: 100%; border-collapse: collapse; font-size: 13.5px; text-align: left; }
+  .excel-table th { background: var(--surface-2); position: sticky; top: 0; padding: 12px 10px; font-weight: 800; color: var(--ink); cursor: pointer; border-bottom: 2px solid var(--line); white-space: nowrap; }
+  .excel-table td { padding: 11px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  .sort-arrow { display: inline-block; margin-left: 4px; font-size: 11px; opacity: 0.5; }
+  .th-active .sort-arrow { opacity: 1; color: var(--accent); }
+
+  .row-ok { background: var(--surface); }
+  .row-disp { background: #e6f4ea; color: #137333; font-weight: 600; }
+  .row-bad { background: #fce8e6; color: var(--bad); font-weight: 700; }
+  .row-warn { background: #fff4e6; color: #b06000; font-weight: 600; }
+  .row-gray { background: #e2e6eb; color: #4b5563; font-weight: 500; } 
+  .row-baja { background: #e9ecef; color: #8A93A0; text-decoration: line-through; }
+
+  /* TABLERO TORRE DE CONTROL */
+  .dash-wrap { padding: 0 12px 20px; display: flex; flex-direction: column; gap: 14px; }
+  .dash-kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .kpi-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; cursor: pointer; }
+  .kpi-num { font-size: 26px; font-weight: 800; font-family: "IBM Plex Mono", monospace; line-height: 1.1; }
+  .kpi-label { font-size: 12.5px; color: var(--ink-soft); font-weight: 700; margin-top: 4px; }
+  .dash-block-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+  .dash-block-bar::-webkit-scrollbar { display: none; }
+  .block-pill { flex: 0 0 auto; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 9px 14px; border-radius: 11px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .block-pill.active { background: var(--accent); color: white; border-color: var(--accent); }
+  .dash-box { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
+  .dash-box h3 { margin: 0 0 10px; font-size: 15.5px; color: var(--accent); display: flex; justify-content: space-between; align-items: center; }
+  .cov-card { border: 1px solid var(--line); border-left: 5px solid var(--done); background: #f8fcf9; border-radius: 12px; padding: 12px; margin-bottom: 8px; }
+  .cov-card.guardia { border-left-color: var(--accent); background: #f2f7fc; }
+  .tag-foranea { background: #ede9fe; color: #5b21b6; font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 5px; margin-left: 6px; }
+
+  /* MODALES EMERGENTES */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.75);
+    z-index: 9999;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+  }
+  .overlay.show { display: flex !important; }
+  @media (min-width: 700px) {
+    .overlay { align-items: center; padding: 16px; }
+  }
+  .sheet {
+    background: var(--surface);
+    width: 100%;
+    max-width: 540px;
+    border-radius: 22px 22px 0 0;
+    padding: 22px 18px calc(24px + env(safe-area-inset-bottom, 0px));
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 -10px 35px rgba(0,0,0,0.3);
+  }
+  @media (min-width: 700px) {
+    .sheet { border-radius: 20px; padding: 22px; }
+  }
+  .sheet h2 { margin: 0 0 12px; font-size: 19px; color: var(--accent); }
+  .input-field { width: 100%; padding: 13px 12px; border: 1.5px solid var(--line); border-radius: 12px; font-size: 16px; margin-bottom: 14px; outline: none; background-color: var(--surface-2); color: var(--ink); font-family: inherit; font-weight: 600; min-height: 48px; }
+  .btn-primary { display: block; width: 100%; padding: 15px; background: var(--bad); color: #fff; font-weight: 800; font-size: 16px; border: none; border-radius: 13px; margin-top: 14px; cursor: pointer; min-height: 50px; }
+  .btn-outline { display: block; width: 100%; padding: 13px; background: transparent; color: var(--accent); border: 2px solid var(--accent); font-weight: 800; font-size: 15px; border-radius: 13px; margin-top: 10px; cursor: pointer; text-align: center; min-height: 48px; }
+  .reason-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 15px; }
+  .reason-chip { border: 1.5px solid var(--line); padding: 10px 14px; border-radius: 20px; font-size: 14px; font-weight: 600; cursor: pointer; background: var(--surface); color: var(--ink-soft); }
+  .reason-chip.sel { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .opt-list { display: flex; flex-direction: column; gap: 4px; }
+  .opt-row { display: flex; align-items: center; justify-content: space-between; border: none; background: none; width: 100%; text-align: left; padding: 13px 10px; font-size: 16px; font-weight: 600; color: var(--ink); cursor: pointer; border-radius: 12px; min-height: 48px; }
+  .opt-row.sel { color: var(--accent); font-weight: 800; background: #EBF5FF; }
+  .opt-row .ck { width: 18px; height: 18px; display: inline-flex; }
+  .avail-row { padding: 13px 12px; border-radius: 14px; margin-bottom: 10px; border: 1.5px solid var(--line); background: var(--surface); }
+  .avail-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-weight: 800; font-size: 14.5px; }
+  .avail-unit { background: var(--surface-2); padding: 3px 9px; border-radius: 7px; font-size: 12.5px; color: var(--ink); font-weight: 800; }
+  .avail-status { display: inline-block; font-size: 12px; font-weight: 800; padding: 4px 9px; border-radius: 7px; margin-bottom: 6px; }
+  .avail-status.ok { background: var(--done-bg); color: var(--done); }
+  .avail-status.warn { background: var(--pend-bg); color: var(--pend); }
+  .avail-status.guard { background: #e0f2fe; color: #0369a1; }
+
+  @keyframes popToast { 0% { top: -50px; opacity: 0; } 100% { top: max(20px, env(safe-area-inset-top)); opacity: 1; } }
+  @keyframes fadeToast { 100% { top: -50px; opacity: 0; } }
+</style>
+</head>
+<body>
+<div class="watermark"></div>
+
+<div class="shell" id="appShell">
+  <header>
+    <!-- CABECERA NATIVA ANDROID -->
+    <div class="native-appbar">
+      <div class="appbar-left">
+        <div class="appbar-title-row">
+          <h1 class="appbar-title">STU BUAP</h1>
+          <span class="sync-indicator" onclick="forzarSincronizacionNube()" title="Toca para sincronizar con la nube">
+            <span class="sync-dot busy" id="syncDot"></span>
+            <span id="syncText">Conectando...</span>
+          </span>
+        </div>
+        <div id="dayLabel" class="day-selector-btn" onclick="abrirMenuDias()">Cargando día... <span>▼</span></div>
+      </div>
+
+      <div class="appbar-right">
+        <div class="clock mono" id="liveClock">00:00:00</div>
+        <button type="button" class="icon-btn-top" id="btnUploadGlobal" aria-label="Configuración" onclick="abrirConfiguracion()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </button>
+      </div>
+    </div>
+    
+    <!-- BARRA DE HERRAMIENTAS TÁCTIL -->
+    <div class="toolbar-wrap" id="toolbar">
+      <button type="button" class="tbtn" id="btnOrigen"></button>
+      <button type="button" class="tbtn" id="btnDestino"></button>
+      <button type="button" class="tbtn btn-foranea" id="btnForaneas" onclick="toggleForaneas()">🛣️ Foráneas</button>
+      <button type="button" class="tbtn btn-revisar" id="btnRevisar" onclick="toggleRevisar()">🔍 Por Revisar</button>
+      <button type="button" class="tbtn" id="btnAvail" onclick="verDisponibilidad()">⏱ Disponibilidad</button>
+      <button type="button" class="tbtn" id="btnVacios" onclick="verVacios()">🚎 Vacíos CU2</button>
+      <button type="button" class="tbtn" id="btnCambios" onclick="verCambios()">🔄 Historial</button>
+    </div>
+
+    <div class="search-wrap" id="searchWrap">
+      <input id="search" type="text" inputmode="search" placeholder="🔍 Buscar ruta, unidad, operador o estatus..." autocomplete="off">
+    </div>
+  </header>
+
+  <main id="list"></main>
+</div>
+
+<!-- BARRA DE NAVEGACIÓN INFERIOR NATIVA ANDROID -->
+<nav class="bottom-nav" id="seg">
+  <button type="button" class="bnav-btn active" data-view="activas" onclick="cambiarVista('activas', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M7 18v2"/><path d="M17 18v2"/></svg>
+    <span class="bnav-label">Activas</span>
+  </button>
+  <button type="button" class="bnav-btn" data-view="tablero" onclick="cambiarVista('tablero', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+    <span class="bnav-label">Tablero</span>
+  </button>
+  <button type="button" class="bnav-btn" data-view="flota" onclick="cambiarVista('flota', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <span class="bnav-label">Flota</span>
+  </button>
+  <button type="button" class="bnav-btn" onclick="verPendientes()">
+    <span id="badgeAlerts" class="badge-alert">0</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span class="bnav-label">Pendientes</span>
+  </button>
+  <button type="button" class="bnav-btn" data-view="ocultas" onclick="cambiarVista('ocultas', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+    <span class="bnav-label">Ocultas</span>
+  </button>
+</nav>
+
+<div class="overlay" id="overlay">
+    <div class="sheet" id="sheet">
+        <div id="sheetContent"></div>
+    </div>
+</div>
+
+<input type="file" id="fileAsignacion" accept=".xlsx,.xls" style="display:none">
+<input type="file" id="fileSeguimiento" accept=".xlsx,.xls" style="display:none">
+
+<script>
+const CACHE_KEY = "stu_buap_cache_v7";
+const ESTADOS_CRITICOS = ["Siniestro", "Taller", "Falla mecánica", "Sin diésel", "Falta", "Permiso", "Incapacidad", "Baja"];
+const MOTIVOS_RAPIDOS = ["Falta", "Permiso", "Siniestro", "Falla mecánica", "Operación", "Programación", "Sin diésel", "Apoyo", "Enroque"];
+const FLOTA_FIJA = [
+  {u:"8002", p:"2MUE32"}, {u:"8003", p:"2MUE33"}, {u:"8005", p:"2MUA58"}, {u:"8008", p:"2MUE36"},
+  {u:"8015", p:"2MUE41"}, {u:"8016", p:"2MUE42"}, {u:"8017", p:"2MUD53"}, {u:"8018", p:"2MUE43"},
+  {u:"8019", p:"2MUE44"}, {u:"8021", p:"2MUE46"}, {u:"8022", p:"2MUE73"}, {u:"8023", p:"2MUF33"},
+  {u:"8024", p:"2MUF42"}, {u:"8025", p:"2MUF35"}, {u:"8026", p:"2MUE80"}, {u:"8027", p:"2MUD55"},
+  {u:"8028", p:"2MUE87"}, {u:"8029", p:"2MUD52"}, {u:"8030", p:"2MUR78"}, {u:"8031", p:"2MUH84"},
+  {u:"8032", p:"2MUT71"}, {u:"8033", p:"2MUE93"}, {u:"8034", p:"2MUE98"}, {u:"8035", p:"2MUE99"},
+  {u:"8036", p:"2MUF01"}, {u:"8037", p:"2MUF15"}, {u:"8038", p:"2MUF02"}, {u:"8041", p:"2MUF03"},
+  {u:"8042", p:"2MUF04"}, {u:"8043", p:"2MUF17"}, {u:"8044", p:"2MUF18"}, {u:"8045", p:"2MUF19"},
+  {u:"8046", p:"2MUF20"}, {u:"8047", p:"2MUF21"}, {u:"8048", p:"2MUF41"}, {u:"8049", p:"2MUF25"},
+  {u:"8050", p:"2MUF26"}, {u:"8051", p:"2MUF27"}, {u:"8052", p:"2MUF32"}, {u:"8053", p:"2MUF06"},
+  {u:"8056", p:"2MUF10"}, {u:"8057", p:"2MUF09"}, {u:"8058", p:"2MUF14"}, {u:"8059", p:"2MUF08"},
+  {u:"8060", p:"2MUF11"}, {u:"8061", p:"2MUF12"}, {u:"8062", p:"2MUF05"}, {u:"8063", p:"2MUF13"},
+  {u:"8064", p:"2MUF07"}, {u:"8065", p:"2MUE24"}, {u:"8066", p:"2MUE25"}, {u:"8067", p:"2MUP36"},
+  {u:"8068", p:"2MUP65"}, {u:"8069", p:"2MUP68"}, {u:"8070", p:"2MUP67"}, {u:"8071", p:"2MUP64"},
+  {u:"8072", p:"2MUP71"}, {u:"8073", p:"2MUP66"}, {u:"8074", p:"2MUP69"}, {u:"8075", p:"2MUP70"},
+  {u:"8076", p:"2MUP82"}, {u:"8077", p:"2MUP81"}, {u:"8078", p:"2MUP84"}, {u:"8079", p:"2MUP86"},
+  {u:"8080", p:"2MUP88"}, {u:"8081", p:"2MUP89"}, {u:"8082", p:"2MUP90"}, {u:"8083", p:"2MUP91"},
+  {u:"8084", p:"99LZY"},  {u:"8085", p:"2MUP92"}, {u:"8086", p:"2MUT34"}, {u:"8087", p:"2MUH34"},
+  {u:"8088", p:"2MUH35"}, {u:"8089", p:"2MUH36"}, {u:"8090", p:"2MUH38"}, {u:"8091", p:"2MUH39"},
+  {u:"8092", p:"2MUH41"}, {u:"8093", p:"2MUT45"}, {u:"8094", p:"2MUT44"}, {u:"8095", p:"2MUT43"},
+  {u:"8096", p:"2MUT42"}, {u:"8097", p:"2MUT41"}, {u:"8098", p:"2MUT40"}, {u:"8099", p:"2MUT39"},
+  {u:"8100", p:"2MUT38"}, {u:"8101", p:"2MUT37"}, {u:"8102", p:"2MUT36"}, {u:"8103", p:"2MUT35"},
+  {u:"8104", p:"2MUH33"}, {u:"8105", p:"2MUV16"}, {u:"8106", p:"2MUV32"}, {u:"8107", p:"2MUV35"},
+  {u:"8108", p:"2MUV36"}, {u:"8109", p:"2MUV39"}, {u:"8110", p:"2MUV31"}, {u:"8111", p:"2MUV37"},
+  {u:"8112", p:"2MUV38"}, {u:"8113", p:"2MUV10"}, {u:"8114", p:"2MUV13"}, {u:"8115", p:"2MUV15"},
+  {u:"8116", p:"2MUV33"}, {u:"8117", p:"2MUV50"}, {u:"8118", p:"2MUV11"}, {u:"8119", p:"2MUV12"},
+  {u:"8120", p:"2MUV41"}, {u:"8121", p:"2MUV51"}, {u:"8122", p:"2MUV44"}, {u:"8123", p:"2MUV47"},
+  {u:"8124", p:"2MUV14"}, {u:"8125", p:"2MUV42"}, {u:"8126", p:"2MUV48"}, {u:"8127", p:"2MUV49"}
+];
+const FLOTA_SET = new Set(FLOTA_FIJA.map(f => String(f.u)));
+
+var ICO = {
+    search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>',
+    pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.1-7-11a7 7 0 1 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+    flag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18"/><path d="M5 4h13l-3 4 3 4H5"/></svg>',
+    hide: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>',
+    restore: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>',
+    formado: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
+    terminal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+    phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
+    msg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>'
+};
+
+// SANITIZADOR BLINDADO DE LLAVES PARA FIREBASE (EVITA RECHAZOS POR PUNTOS "." EN NOMBRES O FECHAS)
+function fbKey(str) {
+    if (str === null || str === undefined) return "";
+    return String(str).trim().replace(/[.#$\[\]\/]/g, "_");
+}
+
+function sanitizeObjectForFirebase(obj) {
+    if (obj === null || obj === undefined) return null;
+    if (Array.isArray(obj)) {
+        return obj.map(item => sanitizeObjectForFirebase(item));
+    }
+    if (typeof obj === "object") {
+        const out = {};
+        Object.keys(obj).forEach(k => {
+            const safeK = fbKey(k);
+            if (!safeK) return;
+            const val = sanitizeObjectForFirebase(obj[k]);
+            if (val !== undefined) out[safeK] = val;
+        });
+        return out;
+    }
+    return obj;
+}
+
+var store = {
+    days: {},
+    state: {},
+    knownRoutes: {},
+    unassignedReasons: {},
+    operadoresDB: {},
+    operadoresMeta: {},
+    tallerDB: {},
+    globalFleet: [],
+    globalHistory: [],
+    currentDay: "Hoy"
+};
+var activeView = "activas", activeOrigin = null, activeDest = null, searchTerm = "";
+var showRevisar = false;
+var onlyForaneas = false;
+var dashSelectedBlock = "LIVE";
+var flotaSortCol = "u";
+var flotaSortDir = 1;
+var db = null;
+var isConnectedToFirebase = false;
+var globalCollisions = []; 
+var globalAlertsData = [];
+var historyFilterDay = "ALL";
+var historySearchTerm = "";
+var cacheTimer = null;
+
+function playAlertSound(isCritical) {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = isCritical ? "sawtooth" : "sine";
+        osc.frequency.setValueAtTime(isCritical ? 880 : 660, ctx.currentTime);
+        if (isCritical) {
+            osc.frequency.setValueAtTime(587, ctx.currentTime + 0.15);
+            osc.frequency.setValueAtTime(880, ctx.currentTime + 0.30);
+        }
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (isCritical ? 0.5 : 0.25));
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + (isCritical ? 0.5 : 0.25));
+    } catch (e) {}
+}
+
+function ensureXLSXLoaded() {
+    return new Promise((resolve, reject) => {
+        if (window.XLSX) return resolve(window.XLSX);
+        setSyncStatus(true, "Cargando Excel...");
+        const script = document.createElement("script");
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+        script.onload = () => {
+            setSyncStatus(false, isConnectedToFirebase ? "En línea" : "Caché local");
+            resolve(window.XLSX);
+        };
+        script.onerror = () => {
+            setSyncStatus(false, "Error red Excel");
+            reject(new Error("No se pudo descargar el lector Excel con tu señal actual."));
+        };
+        document.head.appendChild(script);
+    });
+}
+
+function normalizeStoreStructure(rawStore) {
+    if (!rawStore || typeof rawStore !== "object") return;
+    store.days = rawStore.days || {};
+    Object.keys(store.days).forEach(dk => {
+        if (store.days[dk] && store.days[dk].trips && !Array.isArray(store.days[dk].trips)) {
+            store.days[dk].trips = Object.values(store.days[dk].trips);
+        }
+    });
+    store.state = rawStore.state || {};
+    store.knownRoutes = rawStore.knownRoutes || {};
+    store.unassignedReasons = rawStore.unassignedReasons || {};
+    store.operadoresDB = rawStore.operadoresDB || {};
+    store.operadoresMeta = rawStore.operadoresMeta || {};
+    store.tallerDB = rawStore.tallerDB || {};
+    store.globalFleet = Array.isArray(rawStore.globalFleet) ? rawStore.globalFleet : Object.values(rawStore.globalFleet || {});
+    store.globalHistory = Array.isArray(rawStore.globalHistory) ? rawStore.globalHistory : Object.values(rawStore.globalHistory || {});
+    store.currentDay = rawStore.currentDay || Object.keys(store.days)[0] || "Hoy";
+    if (store.days && Object.keys(store.days).length > 0 && !store.days[store.currentDay]) {
+        store.currentDay = Object.keys(store.days)[0];
+    }
+}
+
+function loadLocalCache() {
+    try {
+        const raw = localStorage.getItem(CACHE_KEY);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === "object") {
+                normalizeStoreStructure(parsed);
+                return true;
+            }
+        }
+    } catch (e) {}
+    return false;
+}
+
+function saveLocalCacheDebounced() {
+    if (cacheTimer) clearTimeout(cacheTimer);
+    cacheTimer = setTimeout(() => {
+        try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify(store));
+        } catch (e) {}
+    }, 250);
+}
+
+function cleanPhone10(val) {
+    if (val === null || val === undefined) return "";
+    let d = String(val).replace(/\D/g, "");
+    if (d.length > 10 && d.startsWith("52")) d = d.slice(-10);
+    return d.length === 10 ? d : "";
+}
+
+function obtenerPrimerNombreSaludo(opName) {
+    let partes = String(opName || "").trim().split(/\s+/).filter(Boolean);
+    if (!partes.length) return "compañero";
+    let p = partes[0];
+    return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+}
+
+function getReasonForEntity(nameOrKey) {
+    if (!nameOrKey || !store.unassignedReasons) return "";
+    return store.unassignedReasons[fbKey(nameOrKey)] || store.unassignedReasons[nameOrKey] || "";
+}
+
+function setReasonForEntity(nameOrKey, reason) {
+    if (!nameOrKey) return;
+    if (!store.unassignedReasons) store.unassignedReasons = {};
+    let k = fbKey(nameOrKey);
+    if (!reason) {
+        delete store.unassignedReasons[k];
+        delete store.unassignedReasons[nameOrKey];
+    } else {
+        store.unassignedReasons[k] = reason;
+    }
+}
+
+function getOpMeta(opName) {
+    if (!opName) return { puntualidad: null, telPersonal: "", telEmpresa: "", tel: "", esTurismo: false, esBaja: false, clave: "" };
+    let k = fbKey(opName);
+    let meta = (store.operadoresMeta && (store.operadoresMeta[k] || store.operadoresMeta[opName])) || {};
+    let reason = getReasonForEntity(opName);
+    let rLow = String(reason).toLowerCase();
+    let nLow = String(opName).toLowerCase();
+    let punt = (meta.puntualidad !== undefined && meta.puntualidad !== null && meta.puntualidad !== "") ? Number(meta.puntualidad) : null;
+    let esTurismo = Boolean(meta.esTurismo) || rLow.includes("turismo") || nLow.includes("turismo");
+    let esBaja = Boolean(meta.esBaja) || (punt !== null && punt <= 0) || rLow.includes("baja") || nLow.includes("baja");
+    let telPersonal = cleanPhone10(meta.telPersonal || "");
+    let telEmpresa = cleanPhone10(meta.telEmpresa || "");
+    let telFallback = cleanPhone10(meta.tel || "");
+    if (!telPersonal && !telEmpresa && telFallback) telPersonal = telFallback;
+    return {
+        puntualidad: punt,
+        telPersonal: telPersonal,
+        telEmpresa: telEmpresa,
+        tel: telEmpresa || telPersonal || "",
+        esTurismo: esTurismo,
+        esBaja: esBaja,
+        clave: meta.clave || ""
+    };
+}
+
+function isOperadorActivo(opName) {
+    if (!opName || opName === "VACIO" || opName === "Sin asignar") return false;
+    let m = getOpMeta(opName);
+    if (m.esTurismo || m.esBaja) return false;
+    if (m.puntualidad !== null && m.puntualidad <= 0) return false;
+    let reason = getReasonForEntity(opName);
+    if (reason && ESTADOS_CRITICOS.includes(reason)) return false;
+    return true;
+}
+
+function isUnidadEnTallerOInhabil(u) {
+    if (!u || u === "VACIO") return false;
+    let uStr = fbKey(u);
+    if (store.tallerDB && (store.tallerDB[uStr] || store.tallerDB[u])) return true;
+    let r = getReasonForEntity(uStr);
+    if (!r) return false;
+    return ESTADOS_CRITICOS.includes(r) || /taller|siniestro|falla|detenid|corralon|di[eé]sel/i.test(String(r));
+}
+
+function getMotivoUnidad(u) {
+    if (!u) return "";
+    let uStr = fbKey(u);
+    return (store.tallerDB && (store.tallerDB[uStr] || store.tallerDB[u])) || getReasonForEntity(uStr) || "";
+}
+
+function renderPuntualidadBadge(opName) {
+    if (!opName || opName === "Sin asignar" || opName === "VACIO") return "";
+    let m = getOpMeta(opName);
+    if (m.esTurismo) return `<span class="punt-badge punt-low" title="Apoyo de Turismo (No activo)">🚌 Turismo</span>`;
+    if (m.puntualidad === null || isNaN(m.puntualidad)) return "";
+    let p = m.puntualidad;
+    let cls = p >= 9 ? "punt-high" : (p >= 7 ? "punt-mid" : "punt-low");
+    return `<span class="punt-badge ${cls}" title="Puntualidad Columna AS: ${p}">⭐ ${p}</span>`;
+}
+
+// COMUNICACIÓN DIRECTA EN "ACTIVAS": SOPORTE DUAL COLUMNA G (PERSONAL) Y COLUMNA H (EMPRESA)
+window.contactarOperador = function(event, mode, opName, tripTime, routeName, unitNum) {
+    if (event) event.stopPropagation();
+    if (!opName || opName === "Sin asignar" || opName === "VACIO") {
+        showAggressiveToast("Esta corrida aún no tiene operador asignado.");
+        return;
+    }
+    let meta = getOpMeta(opName);
+    let telG = meta.telPersonal;
+    let telH = meta.telEmpresa;
+    let safeOp = encodeURIComponent(opName);
+    let safeRoute = encodeURIComponent(routeName);
+
+    if (!telG && !telH) {
+        abrirModalEditarTelefonos(opName, mode, tripTime, routeName, unitNum);
+        return;
+    }
+
+    if (telG && telH && telG !== telH) {
+        let accionTitulo = mode === "call" ? "📞 ¿A qué número deseas llamar?" : "💬 ¿A qué número enviar WhatsApp «¿Estás positivo?»?";
+        openSheet(`
+            <h2>${accionTitulo}</h2>
+            <div style="background:var(--surface-2); padding:12px; border-radius:12px; margin-bottom:12px; font-size:14px;">
+                <b>${opName}</b> ${renderPuntualidadBadge(opName)}<br>
+                <span style="color:var(--ink-soft);">Salida: <b>${tripTime}</b> · ${routeName} ${unitNum ? `(U-${unitNum})` : ''}</span>
+            </div>
+            <button type="button" class="btn-primary" style="background:var(--accent); margin-top:6px; display:flex; justify-content:space-between; align-items:center;" onclick="closeSheet(); ejecutarContactoDirecto('${mode}', '${telH}', decodeURIComponent('${safeOp}'), '${tripTime}', decodeURIComponent('${safeRoute}'), '${unitNum}')">
+                <span>🏢 Tel. Empresa (Col H)</span>
+                <span class="mono">${telH}</span>
+            </button>
+            <button type="button" class="btn-primary" style="background:var(--done); margin-top:10px; display:flex; justify-content:space-between; align-items:center;" onclick="closeSheet(); ejecutarContactoDirecto('${mode}', '${telG}', decodeURIComponent('${safeOp}'), '${tripTime}', decodeURIComponent('${safeRoute}'), '${unitNum}')">
+                <span>📱 Tel. Personal (Col G)</span>
+                <span class="mono">${telG}</span>
+            </button>
+            <button type="button" class="btn-outline" style="margin-top:12px;" onclick="abrirModalEditarTelefonos(decodeURIComponent('${safeOp}'), '${mode}', '${tripTime}', decodeURIComponent('${safeRoute}'), '${unitNum}')">✏️ Editar números de teléfono</button>
+            <button type="button" class="btn-outline" onclick="closeSheet()">Cancelar</button>
+        `);
+        return;
+    }
+
+    let unicoTel = telH || telG;
+    ejecutarContactoDirecto(mode, unicoTel, opName, tripTime, routeName, unitNum);
+};
+
+window.abrirModalEditarTelefonos = function(opName, mode, tripTime, routeName, unitNum) {
+    let meta = getOpMeta(opName);
+    let safeOp = encodeURIComponent(opName);
+    let safeRoute = encodeURIComponent(routeName || "");
+    openSheet(`
+        <h2>📱 Teléfonos de ${opName}</h2>
+        <p style="font-size:13.5px; color:var(--ink-soft); margin-top:0;">Registra el teléfono personal (Columna G) y/o el teléfono de empresa (Columna H) a 10 dígitos:</p>
+        <label style="font-size:13.5px; font-weight:700;">📱 Teléfono Personal (Columna G):</label>
+        <input type="tel" id="inputTelPersonalG" class="input-field" placeholder="Ej. 2221234567" maxlength="10" value="${meta.telPersonal || ''}">
+        <label style="font-size:13.5px; font-weight:700;">🏢 Teléfono Empresa (Columna H):</label>
+        <input type="tel" id="inputTelEmpresaH" class="input-field" placeholder="Ej. 2229876543" maxlength="10" value="${meta.telEmpresa || ''}">
+        <button type="button" class="btn-primary" style="background:var(--accent);" onclick="guardarTelefonosRapido(decodeURIComponent('${safeOp}'), '${mode}', '${tripTime}', decodeURIComponent('${safeRoute}'), '${unitNum}')">Guardar y Contactar</button>
+        <button type="button" class="btn-outline" onclick="closeSheet()">Cancelar</button>
+    `);
+};
+
+window.guardarTelefonosRapido = function(opName, mode, tripTime, routeName, unitNum) {
+    let telG = cleanPhone10(document.getElementById("inputTelPersonalG")?.value || "");
+    let telH = cleanPhone10(document.getElementById("inputTelEmpresaH")?.value || "");
+    if (!telG && !telH) {
+        showAggressiveToast("Ingresa al menos un número válido de 10 dígitos.");
+        return;
+    }
+    let k = fbKey(opName);
+    if (!store.operadoresMeta) store.operadoresMeta = {};
+    if (!store.operadoresMeta[k]) store.operadoresMeta[k] = {};
+    store.operadoresMeta[k].telPersonal = telG;
+    store.operadoresMeta[k].telEmpresa = telH;
+    store.operadoresMeta[k].tel = telH || telG;
+    closeSheet();
+    render();
+    savePatch({
+        [`operadoresMeta/${k}/telPersonal`]: telG,
+        [`operadoresMeta/${k}/telEmpresa`]: telH,
+        [`operadoresMeta/${k}/tel`]: telH || telG
+    });
+    ejecutarContactoDirecto(mode, telH || telG, opName, tripTime, routeName, unitNum);
+};
+
+function ejecutarContactoDirecto(mode, tel, opName, tripTime, routeName, unitNum) {
+    if (mode === "call") {
+        window.location.href = `tel:${tel}`;
+    } else {
+        let nombreCorto = obtenerPrimerNombreSaludo(opName);
+        let uTxt = (unitNum && unitNum !== "S/U") ? ` (Unidad U-${unitNum})` : "";
+        let mensaje = `Hola ${nombreCorto}, buen día. ¿Estás positivo para tu salida de las ${tripTime} en la ruta ${routeName}${uTxt}?`;
+        let url = `https://wa.me/52${tel}?text=${encodeURIComponent(mensaje)}`;
+        window.open(url, "_blank");
+    }
+}
+
+function normLoc(loc) {
+    return String(loc || "").toUpperCase().replace(/ECOCAMPUS/i, 'CU2').replace(/^(RUTA\s+)/i, "").trim();
+}
+
+function isForaneaTrip(trip) {
+    if (!trip) return false;
+    let o = normLoc(trip.o);
+    let d = normLoc(trip.d);
+    let isInternal = (o === "CU" && d === "CU2") || (o === "CU2" && d === "CU") || (o === "CU" && d === "CU") || (o === "CU2" && d === "CU2");
+    return !isInternal;
+}
+
+function getTravelTime(orig, dest) {
+    let o = normLoc(orig);
+    let d = normLoc(dest);
+    if (o === d) return 0;
+    let isCuCu2 = (o === "CU" && d === "CU2") || (o === "CU2" && d === "CU");
+    if (isCuCu2) return 40;
+    return 55;
+}
+
+function getTripDuration(trip) { return trip ? getTravelTime(trip.o, trip.d) : 0; }
+function getEmptyTravelTime(dest1, orig2) { return (dest1 && orig2) ? getTravelTime(dest1, orig2) : 0; }
+function hhmmToMins(h){ var p = String(h || "00:00").split(":"); return (+p[0])*60 + (+p[1] || 0); }
+function minsToHhmm(m){
+    let clamped = Math.max(0, Math.min(1439, Math.round(m)));
+    let rh = Math.floor(clamped/60);
+    let rm = clamped%60;
+    return String(rh).padStart(2,'0') + ':' + String(rm).padStart(2,'0');
+}
+
+function resolveTripAssignment(t, ds, baselineOp) {
+    let kOp = fbKey(t.k || t.n || "");
+    let kU = fbKey(t.u || "");
+    let overU = ds.tripUnitOverride[t.id] || ds.unitOverride[kOp] || ds.unitOverride[t.k || t.n] || ds.unitOverride[kU] || ds.unitOverride[t.u];
+    let finalUnit = overU === "VACIO" ? "" : (overU || t.u || "");
+    let baseOp = baselineOp[String(finalUnit)] || t.n || "";
+    let overOp = ds.tripOpOverride[t.id] || ds.opOverride[fbKey(finalUnit)] || ds.opOverride[finalUnit] || ds.opOverride[fbKey(t.n || "")] || ds.opOverride[t.n];
+    let finalOp = overOp === "VACIO" ? "" : (overOp || baseOp || "");
+    return { unit: String(finalUnit || ""), op: String(finalOp || "") };
+}
+
+function calcularEstadoFlotaYVentanas(refMin) {
+    let ds = getDayState();
+    let allTrips = (store.days[store.currentDay] && store.days[store.currentDay].trips) ? store.days[store.currentDay].trips : [];
+    let baselineOp = {};
+    if(store.globalFleet) { store.globalFleet.forEach(g => { if(g && g.u && g.n) baselineOp[String(g.u)] = g.n; }); }
+
+    let unitToOp = {};
+    let opToUnit = {};
+    FLOTA_FIJA.forEach(f => {
+        let u = String(f.u);
+        if (isUnidadEnTallerOInhabil(u)) return;
+        let defaultOp = baselineOp[u] || "";
+        let overVal = ds.opOverride[fbKey(u)] !== undefined ? ds.opOverride[fbKey(u)] : ds.opOverride[u];
+        let op = overVal !== undefined ? (overVal==="VACIO"?"":overVal) : defaultOp;
+        if(op && isOperadorActivo(op)) { unitToOp[u] = op; opToUnit[op] = u; }
+    });
+    if(ds.unitOverride) {
+        Object.keys(ds.unitOverride).forEach(opKey => {
+            let u = ds.unitOverride[opKey];
+            let actualOpName = store.operadoresDB[opKey] || opKey;
+            if (u === "VACIO") {
+                if(opToUnit[actualOpName]) {
+                    let oldU = opToUnit[actualOpName];
+                    if(unitToOp[oldU] === actualOpName) delete unitToOp[oldU];
+                    delete opToUnit[actualOpName];
+                }
+            } else if (u && !isUnidadEnTallerOInhabil(u) && isOperadorActivo(actualOpName)) {
+                if(opToUnit[actualOpName]) {
+                    let oldU = opToUnit[actualOpName];
+                    if(unitToOp[oldU] === actualOpName) delete unitToOp[oldU];
+                }
+                unitToOp[u] = actualOpName;
+                opToUnit[actualOpName] = u;
+            }
+        });
+    }
+
+    let opsTrips = {};
+    allTrips.forEach(t => {
+        let asg = resolveTripAssignment(t, ds, baselineOp);
+        if (asg.op) {
+            if (!opsTrips[asg.op]) opsTrips[asg.op] = [];
+            opsTrips[asg.op].push({ ...t, _u: asg.unit, _op: asg.op });
+        }
+    });
+
+    let allOpsSet = new Set();
+    Object.values(store.operadoresDB || {}).forEach(n => { if(n) allOpsSet.add(n); });
+    Object.keys(opsTrips).forEach(n => { if(n) allOpsSet.add(n); });
+    Object.values(unitToOp).forEach(n => { if(n) allOpsSet.add(n); });
+
+    let opWindows = [];
+    allOpsSet.forEach(opName => {
+        if (!isOperadorActivo(opName)) return;
+
+        let meta = getOpMeta(opName);
+        let reason = getReasonForEntity(opName);
+        let trips = (opsTrips[opName] || []).slice().sort((a,b) => a.h.localeCompare(b.h));
+        let unit = opToUnit[opName] || (trips[0] && trips[0]._u) || "";
+        if (unit && isUnidadEnTallerOInhabil(unit)) unit = "";
+
+        let isApoyo = reason.toLowerCase().includes("apoyo") || opName.toLowerCase().includes("apoyo") || trips.length === 0;
+
+        if (trips.length === 0) {
+            opWindows.push({
+                nombre: opName,
+                unidad: unit,
+                puntualidad: meta.puntualidad,
+                isGuardia: true,
+                freeNow: true,
+                winFrom: "05:00",
+                winTo: "22:00",
+                freeMins: 999,
+                ubicacion: "Base / Guardia",
+                statusLabel: "🛡️ Guardia / Apoyo (Libre todo el bloque)",
+                badge: "guard",
+                detail: "Sin corridas asignadas que generen choque.",
+                proxima: "Sin salidas programadas",
+                trips: []
+            });
+            return;
+        }
+
+        let prev = null, next = null;
+        trips.forEach(t => {
+            if (hhmmToMins(t.h) <= refMin) prev = t;
+            else if (!next) next = t;
+        });
+
+        if (prev && next) {
+            let startMins = hhmmToMins(prev.h);
+            let baseDest = normLoc(prev.d);
+            let nextOrig = normLoc(next.o);
+            let arrivalDest = startMins + getTripDuration(prev);
+            let arrivalNextOrig = arrivalDest + (baseDest !== nextOrig ? getEmptyTravelTime(baseDest, nextOrig) : 0);
+            let nextStart = hhmmToMins(next.h);
+            let finalPos = baseDest !== nextOrig ? nextOrig : baseDest;
+
+            if (refMin < arrivalDest) {
+                opWindows.push({
+                    nombre: opName,
+                    unidad: unit,
+                    puntualidad: meta.puntualidad,
+                    isGuardia: false,
+                    freeNow: false,
+                    winFrom: minsToHhmm(arrivalDest),
+                    winTo: next.h,
+                    freeMins: Math.max(0, nextStart - arrivalDest),
+                    ubicacion: `En ruta hacia ${baseDest}`,
+                    statusLabel: `🚌 En viaje (Llega ${minsToHhmm(arrivalDest)} a ${baseDest})`,
+                    badge: "warn",
+                    detail: `Ventana al llegar: <b>${minsToHhmm(arrivalDest)} a ${next.h}</b> (${Math.max(0, nextStart - arrivalDest)} min)`,
+                    proxima: `${next.h} (${formatRouteName(next.o, next.d)})`,
+                    trips: trips
+                });
+            } else {
+                let remMins = nextStart - Math.max(refMin, arrivalNextOrig);
+                opWindows.push({
+                    nombre: opName,
+                    unidad: unit,
+                    puntualidad: meta.puntualidad,
+                    isGuardia: false,
+                    freeNow: remMins >= 35,
+                    winFrom: minsToHhmm(arrivalDest),
+                    winTo: next.h,
+                    freeMins: remMins,
+                    ubicacion: finalPos,
+                    statusLabel: remMins > 0 ? `🟢 Libre de ${minsToHhmm(arrivalDest)} a ${next.h} (${remMins}m restantes)` : `⚠️ Justo para siguiente salida`,
+                    badge: remMins >= 35 ? "ok" : "warn",
+                    detail: `En <b>${finalPos}</b> desde las ${minsToHhmm(arrivalDest)} hasta las ${next.h}.`,
+                    proxima: `${next.h} (${formatRouteName(next.o, next.d)})`,
+                    trips: trips
+                });
+            }
+        } else if (!prev && next) {
+            let nextStart = hhmmToMins(next.h);
+            let remStart = nextStart - refMin;
+            opWindows.push({
+                nombre: opName,
+                unidad: unit,
+                puntualidad: meta.puntualidad,
+                isGuardia: isApoyo,
+                freeNow: remStart >= 45,
+                winFrom: "05:00",
+                winTo: next.h,
+                freeMins: remStart,
+                ubicacion: normLoc(next.o),
+                statusLabel: `🟢 Libre antes de iniciar: 05:00 a ${next.h} (${remStart}m)`,
+                badge: remStart >= 45 ? "ok" : "warn",
+                detail: `Su primera corrida sale a las <b>${next.h}</b> desde <b>${normLoc(next.o)}</b>.`,
+                proxima: `${next.h} (${formatRouteName(next.o, next.d)})`,
+                trips: trips
+            });
+        } else if (prev && !next) {
+            let endTurn = hhmmToMins(prev.h) + getTripDuration(prev);
+            let locEnd = normLoc(prev.d);
+            let isAlreadyFree = refMin >= endTurn;
+            opWindows.push({
+                nombre: opName,
+                unidad: unit,
+                puntualidad: meta.puntualidad,
+                isGuardia: false,
+                freeNow: isAlreadyFree,
+                winFrom: minsToHhmm(endTurn),
+                winTo: "22:00",
+                freeMins: isAlreadyFree ? 800 : -1,
+                ubicacion: locEnd,
+                statusLabel: isAlreadyFree ? `🟢 Terminó rol: Libre de ${minsToHhmm(endTurn)} en adelante` : `🚌 Última vuelta (Se libera ${minsToHhmm(endTurn)} en ${locEnd})`,
+                badge: isAlreadyFree ? "ok" : "warn",
+                detail: `Último viaje salió ${prev.h} hacia <b>${locEnd}</b> (fin aprox. ${minsToHhmm(endTurn)}).`,
+                proxima: "Sin más vueltas hoy",
+                trips: trips
+            });
+        }
+    });
+
+    let freeUnits = [];
+    let tallerUnits = [];
+    FLOTA_FIJA.forEach(f => {
+        let u = String(f.u);
+        if (isUnidadEnTallerOInhabil(u)) {
+            tallerUnits.push({ u: u, p: f.p, motivo: getMotivoUnidad(u) || "Taller" });
+        } else if (!unitToOp[u]) {
+            freeUnits.push(f);
+        }
+    });
+
+    return { opWindows, freeUnits, tallerUnits, unitToOp, opToUnit };
+}
+
+function recomendarCandidatosParaViaje(trip) {
+    if (!trip) return [];
+    let targetStart = hhmmToMins(trip.h);
+    let targetDur = getTripDuration(trip);
+    let targetEnd = targetStart + targetDur;
+    let targetOrig = normLoc(trip.o);
+    let targetDest = normLoc(trip.d);
+
+    let { opWindows, freeUnits } = calcularEstadoFlotaYVentanas(targetStart);
+    let defaultFreeUnit = freeUnits.length ? freeUnits[0].u : "";
+    let validTripUnit = (trip.u && !isUnidadEnTallerOInhabil(trip.u)) ? trip.u : "";
+    let candidates = [];
+
+    opWindows.forEach(opW => {
+        let trips = opW.trips || [];
+        let puntBonus = (opW.puntualidad !== null && !isNaN(opW.puntualidad)) ? (opW.puntualidad * 12) : 80;
+
+        if (trips.length === 0) {
+            let sugUnit = opW.unidad || validTripUnit || defaultFreeUnit || "";
+            candidates.push({
+                op: opW.nombre,
+                unit: sugUnit,
+                puntualidad: opW.puntualidad,
+                score: 1000 + puntBonus,
+                badge: "🛡️ OPCIÓN IDEAL (GUARDIA / APOYO)",
+                windowText: `Libre de 05:00 a 22:00`,
+                why: `Es Guardia/Apoyo activo sin corridas asignadas hoy. Puede cubrir ${trip.h} (${formatRouteName(trip.o, trip.d)}) sin generar ningún empalme.`
+            });
+            return;
+        }
+
+        let prev = null, next = null;
+        for (let t of trips) {
+            if (t.id === trip.id) return;
+            let tm = hhmmToMins(t.h);
+            if (tm <= targetStart) prev = t;
+            else if (!next) next = t;
+        }
+
+        let availFrom = 300;
+        let prevEnd = 300;
+        let prevLoc = targetOrig;
+        if (prev) {
+            prevEnd = hhmmToMins(prev.h) + getTripDuration(prev);
+            prevLoc = normLoc(prev.d);
+            availFrom = prevEnd + getEmptyTravelTime(prevLoc, targetOrig);
+        }
+
+        let availUntil = 1320;
+        let nextStart = 1320;
+        if (next) {
+            nextStart = hhmmToMins(next.h);
+            availUntil = nextStart - getEmptyTravelTime(targetDest, normLoc(next.o));
+        }
+
+        if (availFrom <= targetStart && targetEnd <= availUntil) {
+            let sameTerminal = (prevLoc === targetOrig);
+            let totalFreeWindow = nextStart - prevEnd;
+            let slackAfter = availUntil - targetEnd;
+            let score = (sameTerminal ? 500 : 250) + Math.min(200, slackAfter) + puntBonus;
+            let sugUnit = opW.unidad || validTripUnit || defaultFreeUnit || "";
+
+            let whyParts = [];
+            if (prev) {
+                whyParts.push(`Termina vuelta en ${prevLoc} a las ${minsToHhmm(prevEnd)}${sameTerminal ? ' (Ya está en la misma terminal)' : ''}`);
+            } else {
+                whyParts.push(`Libre desde inicio de turno`);
+            }
+            if (next) {
+                whyParts.push(`su siguiente salida es hasta las ${next.h} (${formatRouteName(next.o, next.d)})`);
+            } else {
+                whyParts.push(`ya no tiene más salidas después`);
+            }
+
+            candidates.push({
+                op: opW.nombre,
+                unit: sugUnit,
+                puntualidad: opW.puntualidad,
+                score: score,
+                badge: sameTerminal ? "🟢 EN MISMA TERMINAL SIN CHOQUE" : "🔵 ALCANZA CON TRASLADO",
+                windowText: `Ventana libre: ${minsToHhmm(prevEnd)} a ${next ? next.h : 'Fin de turno'} (${totalFreeWindow} min)`,
+                why: `${whyParts.join(" y ")}. Le sobran ${slackAfter} min de colchón.`
+            });
+        }
+    });
+
+    candidates.sort((a, b) => b.score - a.score);
+    return candidates.slice(0, 5);
+}
+
+function getGlobalHistory() {
+    if (!Array.isArray(store.globalHistory)) store.globalHistory = Object.values(store.globalHistory || {});
+    let existingIds = new Set(store.globalHistory.map(h => h && h.id).filter(Boolean));
+
+    if (store.state) {
+        Object.keys(store.state).forEach(dayKey => {
+            let rawChanges = (store.state[dayKey] && store.state[dayKey].unitChanges) || [];
+            let dayChanges = Array.isArray(rawChanges) ? rawChanges : Object.values(rawChanges);
+            dayChanges.forEach((c, idx) => {
+                if (!c) return;
+                let timeVal = c.time || (c.changeAt ? new Date(c.changeAt).toISOString() : new Date().toISOString());
+                let uid = c.id || `${dayKey}_${c.changeAt || c.time || idx}_${c.tripId || c.route || idx}`;
+                if (!existingIds.has(uid)) {
+                    store.globalHistory.push({
+                        id: uid,
+                        day: c.day || dayKey,
+                        time: timeVal,
+                        tripTime: c.tripTime || "—",
+                        clave: c.clave || "—",
+                        route: c.route || "Cambio",
+                        scope: c.scope || "Horario individual",
+                        tripId: c.tripId || "",
+                        oldUnit: c.oldUnit || "—",
+                        newUnit: c.newUnit || "—",
+                        oldOp: c.oldOp || "—",
+                        newOp: c.newOp || c.nombre || "—",
+                        reason: c.reason || "Cambio operativo",
+                        type: c.type || "Viaje"
+                    });
+                    existingIds.add(uid);
+                }
+            });
+        });
+    }
+
+    store.globalHistory.sort((a, b) => String((a && a.time) || "").localeCompare(String((b && b.time) || "")));
+    return store.globalHistory;
+}
+
+function registrarEnHistorial(entry) {
+    let ds = getDayState();
+    let hist = getGlobalHistory();
+    let nowIso = entry.time || new Date().toISOString();
+    let record = {
+        id: fbKey(entry.id || `${store.currentDay || 'Hoy'}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`),
+        day: entry.day || store.currentDay || "Hoy",
+        time: nowIso,
+        changeAt: Date.now(),
+        tripTime: entry.tripTime || "—",
+        clave: entry.clave || "—",
+        route: entry.route || "Cambio",
+        scope: entry.scope || "Horario individual",
+        tripId: entry.tripId || "",
+        oldUnit: entry.oldUnit || "S/U",
+        newUnit: entry.newUnit || "S/U",
+        oldOp: entry.oldOp || "Sin Asignar",
+        newOp: entry.newOp || "Sin Asignar",
+        nombre: entry.newOp || "Sin Asignar",
+        reason: entry.reason || "Cambio manual",
+        type: entry.type || "Viaje"
+    };
+    if (!Array.isArray(ds.unitChanges)) ds.unitChanges = Object.values(ds.unitChanges || {});
+    ds.unitChanges.push(record);
+    hist.push(record);
+    return record;
+}
+
+window.toggleRevisar = function() {
+    showRevisar = !showRevisar;
+    document.getElementById("btnRevisar").classList.toggle("active", showRevisar);
+    render();
+};
+
+window.toggleForaneas = function() {
+    onlyForaneas = !onlyForaneas;
+    document.getElementById("btnForaneas").classList.toggle("active", onlyForaneas);
+    render();
+};
+
+window.sortFlota = function(col) {
+    if(flotaSortCol === col) flotaSortDir *= -1;
+    else { flotaSortCol = col; flotaSortDir = 1; }
+    renderFlota();
+};
+
+function updateClock() {
+    var d = new Date();
+    let clockEl = document.getElementById("liveClock");
+    if(clockEl) clockEl.innerText = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + ':' + String(d.getSeconds()).padStart(2,'0');
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+    Notification.requestPermission().catch(() => {});
+}
+
+function showAggressiveToast(msg) {
+    let existing = document.getElementById("agg-toast");
+    if(existing) existing.remove();
+    let t = document.createElement("div");
+    t.id = "agg-toast";
+    t.innerHTML = `🚨 ${msg}`;
+    t.style.cssText = "position:fixed; top:env(safe-area-inset-top, 20px); left:50%; transform:translateX(-50%); width: 92%; max-width: 420px; background:var(--bad); color:white; padding:16px; border-radius:14px; z-index:10001; font-weight:800; box-shadow:0 10px 25px rgba(216,26,50,0.6); font-size: 15px; text-align:center; animation: popToast 0.35s ease forwards;";
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.animation = "fadeToast 0.3s ease forwards"; setTimeout(()=>t.remove(),300); }, 5000);
+}
+
+function setSyncStatus(isBusy, text, isOffline){
+    let d = document.getElementById("syncDot");
+    let t = document.getElementById("syncText");
+    if(d) d.className = "sync-dot" + (isBusy ? " busy" : (isOffline ? " offline" : ""));
+    if(t) t.textContent = text;
+}
+
+// GUARDADO LIGERO QUIRÚRGICO BLINDADO PARA FIREBASE
+function savePatch(patchObj) {
+    saveLocalCacheDebounced();
+    if (!db) {
+        setSyncStatus(false, "Caché local", true);
+        return;
+    }
+    setSyncStatus(true, "Sincronizando...");
+    const safePatch = {};
+    Object.keys(patchObj).forEach(path => {
+        const cleanPath = path.split("/").map(seg => fbKey(seg)).join("/");
+        safePatch[cleanPath] = sanitizeObjectForFirebase(patchObj[path]);
+    });
+    db.update(JSON.parse(JSON.stringify(safePatch)), (err) => {
+        if (err) {
+            console.error("Firebase update error:", err);
+            saveStore();
+        } else {
+            setSyncStatus(false, "En línea", false);
+        }
+    });
+}
+
+// GUARDADO COMPLETO EN LA NUBE (100% SANITIZADO PARA QUE TODOS LOS CELULARES LO RECIBAN)
+function saveStore(onComplete) {
+    getGlobalHistory();
+    saveLocalCacheDebounced();
+    if(!db) {
+        setSyncStatus(false, "Sin conexión", true);
+        if (onComplete) onComplete(new Error("Sin conexión a Firebase"));
+        return;
+    }
+    setSyncStatus(true, "Subiendo a nube...");
+    const cleanPayload = sanitizeObjectForFirebase(JSON.parse(JSON.stringify(store)));
+    db.set(cleanPayload, (err) => {
+        if (err) {
+            console.error("Error al subir a Firebase:", err);
+            setSyncStatus(false, "Error nube", true);
+            showAggressiveToast("Error al subir a la nube: " + err.message);
+        } else {
+            setSyncStatus(false, "En línea", false);
+        }
+        if (onComplete) onComplete(err);
+    });
+}
+
+window.forzarSincronizacionNube = function() {
+    if (!db) {
+        showAggressiveToast("Reconectando con la nube...");
+        initFirebaseConnection();
+        return;
+    }
+    setSyncStatus(true, "Descargando nube...");
+    db.once("value", (snap) => {
+        if (snap.val()) {
+            normalizeStoreStructure(snap.val());
+            saveLocalCacheDebounced();
+            render();
+            setSyncStatus(false, "En línea", false);
+        } else {
+            setSyncStatus(false, "Nube vacía", false);
+        }
+    });
+};
+
+function initFirebaseConnection() {
+    if (typeof firebase === "undefined") {
+        setTimeout(initFirebaseConnection, 150);
+        return;
+    }
+    try {
+        var firebaseConfig = {
+            apiKey: "AIzaSyCgRzOFk8XaCHZZV3brW9AtuJCVBP0cJhA",
+            authDomain: "rutas-operaciones.firebaseapp.com",
+            databaseURL: "https://rutas-operaciones-default-rtdb.firebaseio.com",
+            projectId: "rutas-operaciones"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        db = firebase.database().ref("operaciones_v6");
+
+        firebase.database().ref(".info/connected").on("value", (snap) => {
+            isConnectedToFirebase = !!snap.val();
+            if (isConnectedToFirebase) {
+                setSyncStatus(false, "En línea", false);
+            } else {
+                setSyncStatus(false, "Sin red (Caché)", true);
+            }
+        });
+
+        let isFirstLoad = true;
+        db.on("value", (snap) => {
+            const cloudVal = snap.val();
+            if(cloudVal) {
+                let prevHistLen = Array.isArray(store.globalHistory) ? store.globalHistory.length : 0;
+                let localHistoryBackup = Array.isArray(store.globalHistory) ? [...store.globalHistory] : [];
+                
+                normalizeStoreStructure(cloudVal);
+
+                if (localHistoryBackup.length > 0) {
+                    let ids = new Set(store.globalHistory.map(h => h && h.id).filter(Boolean));
+                    localHistoryBackup.forEach(item => {
+                        if (item && item.id && !ids.has(item.id)) {
+                            store.globalHistory.push(item);
+                            ids.add(item.id);
+                        }
+                    });
+                }
+                getGlobalHistory();
+                saveLocalCacheDebounced();
+                
+                if(!isFirstLoad && store.globalHistory.length > prevHistLen && prevHistLen > 0) {
+                    let ultCambio = store.globalHistory.slice(-1)[0];
+                    if (ultCambio) {
+                        let isCritical = ESTADOS_CRITICOS.some(est => String(ultCambio.reason || "").toLowerCase().includes(est.toLowerCase()));
+                        playAlertSound(isCritical);
+                        if (navigator.vibrate) navigator.vibrate(isCritical ? [400, 200, 400, 200, 600] : [200, 100, 200]);
+
+                        if ("Notification" in window && Notification.permission === "granted") {
+                            new Notification(isCritical ? "⚠️ CRÍTICO: " + ultCambio.route : "🔄 Cambio: " + ultCambio.route, {
+                                body: `Unidad: ${ultCambio.newUnit === 'VACIO' || ultCambio.newUnit === 'S/U' ? 'S/U' : 'U-'+ultCambio.newUnit} | Op: ${ultCambio.newOp === 'VACIO' ? 'Sin Asignar' : (ultCambio.newOp || ultCambio.nombre)}\nMotivo: ${ultCambio.reason || 'N/A'}`,
+                                icon: "manifest.json"
+                            });
+                        }
+                        if(isCritical && !document.hidden) {
+                            showAggressiveToast(`Cambio urgente en ruta ${ultCambio.route}.`);
+                        }
+                    }
+                }
+                isFirstLoad = false;
+            }
+            setSyncStatus(false, "En línea", false);
+            render(); 
+        }, (err) => setSyncStatus(false, "Caché local", true));
+    } catch(e) {
+        setSyncStatus(false, "Modo caché", true);
+    }
+}
+
+function getDayState() {
+    if(!store.state) store.state = {};
+    let dKey = fbKey(store.currentDay || "Hoy");
+    if(!store.state[dKey]) store.state[dKey] = { trips: {}, unitOverride: {}, tripUnitOverride: {}, unitChanges: [], opOverride: {}, tripOpOverride: {}, resolvedOverlaps: [], resolvedMissing: [] };
+    let ds = store.state[dKey];
+    ds.trips = ds.trips || {}; ds.unitOverride = ds.unitOverride || {}; ds.tripUnitOverride = ds.tripUnitOverride || {};
+    ds.opOverride = ds.opOverride || {}; ds.tripOpOverride = ds.tripOpOverride || {};
+    ds.unitChanges = Array.isArray(ds.unitChanges) ? ds.unitChanges : Object.values(ds.unitChanges || {});
+    ds.resolvedOverlaps = Array.isArray(ds.resolvedOverlaps) ? ds.resolvedOverlaps : Object.values(ds.resolvedOverlaps || {});
+    ds.resolvedMissing = Array.isArray(ds.resolvedMissing) ? ds.resolvedMissing : Object.values(ds.resolvedMissing || {});
+    return ds;
+}
+
+function getTripState(id) { return getDayState().trips[id] || { status: "pendiente", hidden: false, formadoAt: null }; }
+
+function formatRouteName(o, d) { 
+    let orig = normLoc(o);
+    let dest = normLoc(d);
+    return `${orig} - ${dest}`; 
+}
+
+window.openSheet = function(html) {
+    const content = document.getElementById("sheetContent");
+    const overlay = document.getElementById("overlay");
+    const sheet = document.getElementById("sheet");
+    if (content) content.innerHTML = html;
+    if (sheet) sheet.scrollTop = 0;
+    if (overlay) overlay.classList.add("show");
+};
+
+window.closeSheet = function() {
+    const overlay = document.getElementById("overlay");
+    if (overlay) overlay.classList.remove("show");
+};
+
+document.getElementById("overlay").addEventListener("click", function(e){
+    if(e.target.id === "overlay") closeSheet();
+});
+
+window.ignorarEmpalme = function(overlapId, view) {
+    let ds = getDayState();
+    let dKey = fbKey(store.currentDay);
+    if(!ds.resolvedOverlaps.includes(overlapId)) {
+        ds.resolvedOverlaps.push(overlapId);
+        savePatch({ [`state/${dKey}/resolvedOverlaps`]: ds.resolvedOverlaps });
+    }
+    render();
+    setTimeout(() => { if(view === 'pendientes') verPendientes(); }, 50);
+};
+
+window.ignorarFalta = function(tripId) {
+    let ds = getDayState();
+    let dKey = fbKey(store.currentDay);
+    if(!ds.resolvedMissing.includes(tripId)) {
+        ds.resolvedMissing.push(tripId);
+        savePatch({ [`state/${dKey}/resolvedMissing`]: ds.resolvedMissing });
+    }
+    render();
+    setTimeout(() => verPendientes(), 50);
+};
+
+function actualizarBadgePendientes() {
+    let ds = getDayState(); let cardsArr = []; let alertCount = 0;
+    let allTrips = (store.days[store.currentDay] && store.days[store.currentDay].trips) ? store.days[store.currentDay].trips : [];
+    let baselineOp = {}; if(store.globalFleet) { store.globalFleet.forEach(g => { if(g && g.u && g.n) baselineOp[String(g.u)] = g.n; }); }
+
+    if(globalCollisions.length > 0) {
+        alertCount += globalCollisions.length;
+        let mappedEmpalmes = globalCollisions.map(c => {
+            let r1 = formatRouteName(c.t1.o, c.t1.d);
+            let r2 = formatRouteName(c.t2.o, c.t2.d);
+            let cands = recomendarCandidatosParaViaje(c.t2).slice(0, 3);
+            let sug = cands.map(a => `
+                <div style="background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px; align-items:center;">
+                        <b style="color: var(--accent); font-size: 13px;">${a.op} ${renderPuntualidadBadge(a.op)} ${a.unit ? `(U-${a.unit})` : ''}</b>
+                        <span style="font-weight: bold; font-size: 10.5px; color: var(--done); background: var(--done-bg); padding: 2px 6px; border-radius: 4px;">${a.windowText}</span>
+                    </div>
+                    <div style="font-size: 11.5px; color: var(--ink-soft);">${a.why}</div>
+                </div>
+            `).join('') || `<div style="font-size:12px; color:var(--bad); padding: 8px; text-align: center;">Ningún operador libre para esta hora</div>`;
+
+            let safeEnt = encodeURIComponent(c.entity || '');
+            let safeT2H = encodeURIComponent(c.t2.h || '');
+            let safeCId = encodeURIComponent(c.id || '');
+
+            return `
+            <div style="background: var(--surface); border: 1px solid #eadbc8; border-radius: 12px; padding: 14px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--surface-2); padding-bottom: 10px; margin-bottom: 10px;">
+                    <b style="color:var(--pend); font-size: 15px;">${c.entity}</b>
+                    <span style="background: var(--pend-bg); color: var(--pend); font-size: 11.5px; padding: 4px 8px; border-radius: 6px; font-weight: bold;">⚠️ Choca ${c.empalme} min</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12.5px; margin-bottom: 12px;">
+                    <div style="background: var(--surface-2); padding: 8px 10px; border-radius: 8px;">
+                        <strong style="color:var(--ink-soft); display:block; margin-bottom:3px; font-size:11px;">VIAJE 1</strong>
+                        <b>${c.t1.h}</b><br><span style="color:var(--ink-soft)">${r1}</span>
+                    </div>
+                    <div style="background: #fae3e6; padding: 8px 10px; border-radius: 8px;">
+                        <strong style="color:var(--bad); display:block; margin-bottom:3px; font-size:11px;">VIAJE 2 (CONFLICTO)</strong>
+                        <b style="color:var(--bad)">${c.t2.h}</b><br><span style="color:var(--bad)">${r2}</span>
+                    </div>
+                </div>
+                <div style="margin-bottom: 12px; background: #fcfdfd; padding: 10px; border-radius: 8px; border: 1px dashed var(--line);">
+                    <strong style="color:var(--ink); display:block; margin-bottom: 8px; font-size: 12px;">🧠 Mejor cobertura sugerida para V2 (Priorizada por Puntualidad AS):</strong>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">${sug}</div>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <button type="button" class="btn-outline" style="flex:2; border-color:var(--pend); color:var(--pend); padding: 10px; margin: 0; border-radius: 8px; font-size:14px;" onclick="resolverEmpalmeRuta(decodeURIComponent('${safeEnt}'), decodeURIComponent('${safeT2H}'))">Cubrir / Reasignar V2</button>
+                    <button type="button" class="btn-outline" style="flex:1; border-color:var(--ink-faint); color:var(--ink-soft); padding: 10px; margin: 0; border-radius: 8px; font-size:14px;" onclick="ignorarEmpalme(decodeURIComponent('${safeCId}'), 'pendientes')">✓ Resuelto</button>
+                </div>
+            </div>`;
+        });
+        cardsArr.push(...mappedEmpalmes);
+    }
+
+    let missing = [];
+    let nowTime = new Date().getTime();
+
+    (allTrips || []).forEach(t => {
+        let state = getTripState(t.id);
+        let isHidden = !!state.hidden;
+        if (state.status === "formado" && state.formadoAt && (nowTime - state.formadoAt > 300000)) isHidden = true;
+        if (isHidden) return;
+        if (ds.resolvedMissing && ds.resolvedMissing.includes(t.id)) return;
+
+        let asg = resolveTripAssignment(t, ds, baselineOp);
+        let uTaller = isUnidadEnTallerOInhabil(asg.unit);
+        let opInactivo = Boolean(asg.op && !isOperadorActivo(asg.op));
+
+        if (!asg.unit || !asg.op || uTaller || opInactivo) {
+            let missingMsg = [];
+            if (!asg.unit) missingMsg.push("Falta Unidad");
+            else if (uTaller) missingMsg.push(`U-${asg.unit} en Taller (${getMotivoUnidad(asg.unit)})`);
+
+            if (!asg.op) missingMsg.push("Falta Operador");
+            else if (opInactivo) {
+                let m = getOpMeta(asg.op);
+                missingMsg.push(m.esTurismo ? "Op. Apoyo Turismo (No activo)" : (m.puntualidad === 0 ? "Op. Puntualidad 0 / Baja" : `Op. ${getReasonForEntity(asg.op) || 'Inactivo'}`));
+            }
+            missing.push({ trip: t, missing: missingMsg.join(" · "), unit: asg.unit, op: asg.op });
+        }
+    });
+
+    if (missing.length > 0) {
+        alertCount += missing.length;
+        let mappedMissing = missing.map(m => {
+            let safeId = encodeURIComponent(m.trip.id || '');
+            let safeU = encodeURIComponent(m.unit || '');
+            let safeOp = encodeURIComponent(m.op || '');
+            let safeK = encodeURIComponent(m.trip.k || m.trip.n || '');
+            return `
+            <div style="background: var(--surface); border: 1px solid var(--bad-bg); border-radius: 12px; padding: 14px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--surface-2); padding-bottom: 10px; margin-bottom: 10px;">
+                    <b style="color:var(--ink); font-size: 16px;">${m.trip.h}</b>
+                    <span style="background: var(--bad-bg); color: var(--bad); font-size: 11.5px; padding: 4px 8px; border-radius: 6px; font-weight: bold;">🚨 ${m.missing}</span>
+                </div>
+                <div style="font-size: 13px; margin-bottom: 12px; color: var(--ink-soft);">
+                    <strong style="color:var(--ink)">Ruta:</strong> ${formatRouteName(m.trip.o, m.trip.d)}
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <button type="button" class="btn-outline" style="flex:2; border-color:var(--ink); color:var(--ink); padding: 10px; margin: 0; border-radius: 8px; font-size:14px;" onclick="abrirModalDesdePendientes(decodeURIComponent('${safeId}'), decodeURIComponent('${safeU}'), decodeURIComponent('${safeOp}'), decodeURIComponent('${safeK}'))">🧠 Ver quién puede cubrir</button>
+                    <button type="button" class="btn-outline" style="flex:1; border-color:var(--ink-faint); color:var(--ink-soft); padding: 10px; margin: 0; border-radius: 8px; font-size:14px;" onclick="ignorarFalta(decodeURIComponent('${safeId}'))">✓ Resuelto</button>
+                </div>
+            </div>`;
+        });
+        cardsArr.push(...mappedMissing);
+    }
+
+    globalAlertsData = cardsArr;
+    let badge = document.getElementById("badgeAlerts");
+    if(badge) { badge.innerText = alertCount; if(alertCount > 0) badge.classList.add('has-items'); else badge.classList.remove('has-items'); }
+}
+
+window.abrirModalDesdePendientes = function(tripId, unit, op, k) {
+    let fakeCard = document.createElement('div');
+    fakeCard.setAttribute('data-id', tripId);
+    fakeCard.setAttribute('data-k', k);
+    fakeCard.setAttribute('data-u', unit || "");
+    fakeCard.setAttribute('data-n', op || "");
+    openChangeModal(fakeCard);
+};
+
+window.resolverEmpalmeRuta = function(val, time) {
+    let ds = getDayState(); let trips = store.days[store.currentDay].trips || [];
+    let baselineOp = {}; if(store.globalFleet) { store.globalFleet.forEach(g => { if(g && g.u && g.n) baselineOp[String(g.u)] = g.n; }); }
+
+    let tripToFix = trips.find(t => {
+        if(t.h !== time) return false;
+        let asg = resolveTripAssignment(t, ds, baselineOp);
+        return ('U-'+asg.unit === val || asg.op === val);
+    });
+
+    if(tripToFix) {
+        let asg = resolveTripAssignment(tripToFix, ds, baselineOp);
+        let fakeCard = document.createElement('div');
+        fakeCard.setAttribute('data-id', tripToFix.id);
+        fakeCard.setAttribute('data-k', tripToFix.k || "");
+        fakeCard.setAttribute('data-u', asg.unit);
+        fakeCard.setAttribute('data-n', asg.op);
+        openChangeModal(fakeCard);
+    }
+};
+
+window.verPendientes = function() {
+    if(globalAlertsData.length === 0) {
+        openSheet(`<h2>⚠ Tareas Pendientes</h2><p style="text-align:center; color:gray; padding:20px;">Todo en orden. No hay alertas accionables en este momento.</p><button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
+        return;
+    }
+    openSheet(`<h2>⚠ Tareas Pendientes (${globalAlertsData.length})</h2><div style="font-size:13px; color:gray; margin-bottom:15px;">Gestiona choques físicos, unidades en taller y faltas de asignación con sugerencias automáticas.</div><div style="max-height: 62vh; overflow-y:auto; padding-bottom: 10px;">${globalAlertsData.join('')}</div><button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
+};
+
+window.abrirMenuDias = function() {
+    if(!store.days || Object.keys(store.days).length === 0) {
+        openSheet(`<h2>Seleccionar Fecha</h2><p style="color:gray;font-size:14px;">Aún no hay días cargados en la nube. Si ya subiste el archivo en tu computadora, toca el botón de abajo para sincronizar:</p><button type="button" class="btn-primary" style="background:var(--accent);" onclick="closeSheet(); forzarSincronizacionNube();">🔄 Sincronizar desde la Nube</button><button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
+        return;
+    }
+    let options = Object.keys(store.days).map(day => {
+        let safeDay = encodeURIComponent(day);
+        let label = (store.days[day] && store.days[day].label) ? store.days[day].label : day;
+        return `<button type="button" class="opt-row${day===store.currentDay?' sel':''}" onclick="seleccionarDia(decodeURIComponent('${safeDay}'))">${label}${day===store.currentDay?`<span class="ck">${ICO.check}</span>`:''}</button>`;
+    }).join('');
+    openSheet(`<h2>📅 Seleccionar Fecha Operativa</h2><div class="opt-list">${options}</div><button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
+};
+
+window.seleccionarDia = function(day) {
+    store.currentDay = day;
+    render();
+    closeSheet();
+    savePatch({ currentDay: day });
+};
+
+window.cambiarVista = function(vista, btn) {
+    document.querySelectorAll("#seg .bnav-btn").forEach(b => b.classList.remove("active"));
+    if (btn) btn.classList.add("active");
+    activeView = vista;
+    render();
+};
+
+function obtenerEmpalmesRender() {
+    let trips = (store.days[store.currentDay] && store.days[store.currentDay].trips) ? store.days[store.currentDay].trips : [];
+    let ds = getDayState(); let overlaps = [];
+    let baselineOp = {}; if(store.globalFleet) { store.globalFleet.forEach(g => { if(g && g.u && g.n) baselineOp[String(g.u)] = g.n; }); }
+
+    function checkOverlaps(entityId, tripList) {
+        tripList.sort((a,b) => a.h.localeCompare(b.h));
+        for(let i=0; i<tripList.length-1; i++) {
+            let t1 = tripList[i], t2 = tripList[i+1];
+            let min1 = hhmmToMins(t1.h), min2 = hhmmToMins(t2.h);
+            let duracionT1 = getTripDuration(t1);
+            let emptyTravel = getEmptyTravelTime(t1.d, t2.o);
+            let finT1 = min1 + duracionT1 + emptyTravel;
+            let empalmeMin = finT1 - min2;
+            
+            if(empalmeMin > 15) {
+                let oId = t1.id + "_||_" + t2.id;
+                if(!ds.resolvedOverlaps || !ds.resolvedOverlaps.includes(oId)) {
+                    overlaps.push({ entity: entityId, t1: t1, t2: t2, t2Id: t2.id, time: t2.h, empalme: empalmeMin, id: oId });
+                }
+            }
+        }
+    }
+    let ops = {}, units = {};
+    trips.forEach(t => {
+        let asg = resolveTripAssignment(t, ds, baselineOp);
+        if(asg.op) { if(!ops[asg.op]) ops[asg.op] = []; ops[asg.op].push({...t, _u: asg.unit}); }
+        if(asg.unit) { if(!units[asg.unit]) units[asg.unit] = []; units[asg.unit].push({...t, _op: asg.op}); }
+    });
+    Object.keys(ops).forEach(k => checkOverlaps(k, ops[k]));
+    Object.keys(units).forEach(k => checkOverlaps("U-"+k, units[k]));
+    
+    let uniqueOverlaps = []; let seen = new Set();
+    overlaps.forEach(o => {
+        if(!seen.has(o.id)) { seen.add(o.id); uniqueOverlaps.push(o); }
+    });
+    return uniqueOverlaps;
+}
+
+window.seleccionarBloqueTablero = function(bloque) {
+    dashSelectedBlock = bloque;
+    renderTablero();
+};
+
+function renderTablero() {
+    let allTrips = (store.days[store.currentDay] && store.days[store.currentDay].trips) ? store.days[store.currentDay].trips : [];
+    let ds = getDayState();
+    let baselineOp = {};
+    if(store.globalFleet) { store.globalFleet.forEach(g => { if(g && g.u && g.n) baselineOp[String(g.u)] = g.n; }); }
+
+    let nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+    let refMin = dashSelectedBlock === "LIVE" ? nowMin : hhmmToMins(dashSelectedBlock);
+    let refLabel = dashSelectedBlock === "LIVE" ? `Tiempo Real (${minsToHhmm(nowMin)})` : `Simulación Bloque ${dashSelectedBlock}`;
+
+    let { opWindows, freeUnits, tallerUnits } = calcularEstadoFlotaYVentanas(refMin);
+
+    let blockTrips = allTrips.filter(t => {
+        let tm = hhmmToMins(t.h);
+        return tm >= refMin - 5 && tm <= refMin + 60;
+    });
+    let foraneasInBlock = blockTrips.filter(t => isForaneaTrip(t));
+    let guardiasLibres = opWindows.filter(w => w.isGuardia && w.freeNow);
+    let opsConVentana = opWindows.filter(w => !w.isGuardia && w.freeNow);
+
+    if (searchTerm) {
+        let st = searchTerm.toLowerCase();
+        opWindows = opWindows.filter(w => (w.nombre + " " + w.unidad + " " + w.ubicacion + " " + w.statusLabel).toLowerCase().includes(st));
+        foraneasInBlock = foraneasInBlock.filter(t => {
+            let asg = resolveTripAssignment(t, ds, baselineOp);
+            return (t.o + " " + t.d + " " + asg.unit + " " + asg.op + " " + t.h).toLowerCase().includes(st);
+        });
+    }
+
+    opWindows.sort((a, b) => {
+        if (a.freeNow !== b.freeNow) return a.freeNow ? -1 : 1;
+        if (a.isGuardia !== b.isGuardia) return a.isGuardia ? -1 : 1;
+        return b.freeMins - a.freeMins;
+    });
+
+    let blocks = [
+        { id: "LIVE", label: `🟢 Ahora (${minsToHhmm(nowMin)})` },
+        { id: "05:30", label: "🌅 05:30 Arranque" },
+        { id: "06:00", label: "🛡️ 06:00 Con Guardias" },
+        { id: "06:30", label: "🚨 06:30 Sin Guardias" },
+        { id: "07:00", label: "🕖 07:00 Pico Mañana" },
+        { id: "08:00", label: "🕗 08:00" },
+        { id: "13:00", label: "🕐 13:00 Tarde" }
+    ];
+
+    let pillsHtml = blocks.map(b => `<button type="button" class="block-pill ${dashSelectedBlock===b.id?'active':''}" onclick="seleccionarBloqueTablero('${b.id}')">${b.label}</button>`).join('');
+
+    let foraneasHtml = foraneasInBlock.length ? foraneasInBlock.map(t => {
+        let st = getTripState(t.id);
+        let asg = resolveTripAssignment(t, ds, baselineOp);
+        let uTaller = isUnidadEnTallerOInhabil(asg.unit);
+        let opInact = Boolean(asg.op && !isOperadorActivo(asg.op));
+        let missing = !asg.unit || !asg.op || uTaller || opInact;
+        let statusBadge = st.status === "formado"
+            ? `<span style="background:var(--done-bg);color:var(--done);padding:2px 7px;border-radius:6px;font-size:11px;font-weight:700;">✓ Formado</span>`
+            : (st.status === "en_terminal"
+                ? `<span style="background:#e0f2fe;color:var(--accent);padding:2px 7px;border-radius:6px;font-size:11px;font-weight:700;">🏠 En Terminal</span>`
+                : `<span style="background:var(--pend-bg);color:var(--pend);padding:2px 7px;border-radius:6px;font-size:11px;font-weight:700;">⏳ Pendiente</span>`);
+
+        let safeId = encodeURIComponent(t.id);
+        let safeU = encodeURIComponent(asg.unit);
+        let safeOp = encodeURIComponent(asg.op);
+        let safeK = encodeURIComponent(t.k || t.n || '');
+
+        return `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border:1.5px solid ${missing?'var(--bad)':'var(--line)'};background:${missing?'#fff0f0':'var(--surface)'};border-radius:12px;margin-bottom:8px;cursor:pointer;" onclick="abrirModalDesdePendientes(decodeURIComponent('${safeId}'), decodeURIComponent('${safeU}'), decodeURIComponent('${safeOp}'), decodeURIComponent('${safeK}'))">
+            <div>
+                <span class="mono" style="font-weight:800;font-size:15px;color:var(--accent);">${t.h}</span>
+                <b style="font-size:14px;margin-left:6px;">${formatRouteName(t.o, t.d)}</b>
+                <div style="font-size:12.5px;color:var(--ink-soft);margin-top:3px;">
+                    <b>${asg.unit ? 'U-'+asg.unit : '🚨 S/U'}${uTaller ? ' (🔧 Taller)' : ''}</b> · ${asg.op || '🚨 Sin Operador'} ${asg.op ? renderPuntualidadBadge(asg.op) : ''}
+                </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+                ${statusBadge}
+                <span style="font-size:11.5px;color:var(--accent);font-weight:800;">⚡ Cubrir</span>
+            </div>
+        </div>`;
+    }).join('') : `<div style="padding:12px;text-align:center;color:gray;font-size:13.5px;">No hay salidas foráneas en los próximos 60 min de este bloque.</div>`;
+
+    let trsDisponibles = opWindows.map(w => {
+        let rowClass = w.isGuardia ? "row-disp" : (w.freeNow ? "row-ok" : "row-warn");
+        return `
+        <tr class="${rowClass}">
+            <td><b>${w.nombre}</b> ${renderPuntualidadBadge(w.nombre)}${w.isGuardia ? ' <span style="font-size:10px;background:#00509d;color:white;padding:1px 5px;border-radius:4px;">GUARDIA/APOYO</span>' : ''}</td>
+            <td class="mono" style="font-weight:800;">${w.unidad ? 'U-'+w.unidad : 'S/U'}</td>
+            <td><b style="color:${w.freeNow?'var(--done)':'var(--pend)'};">${w.winFrom} a ${w.winTo}</b><br><small style="color:var(--ink-soft);">${w.statusLabel}</small></td>
+            <td><b>${w.ubicacion}</b><br><small style="color:var(--ink-soft);">Sig: ${w.proxima}</small></td>
+        </tr>`;
+    }).join('');
+
+    let freeUnitsBadges = freeUnits.length
+        ? freeUnits.map(f => `<span style="display:inline-block;background:var(--done-bg);color:var(--done);font-weight:800;font-size:12.5px;padding:5px 9px;border-radius:7px;margin:3px;">U-${f.u}</span>`).join('')
+        : `<span style="font-size:13px;color:gray;">Todas las unidades habilitadas tienen operador asignado.</span>`;
+
+    let tallerUnitsBadges = tallerUnits.length
+        ? tallerUnits.map(t => `<span style="display:inline-block;background:var(--bad-bg);color:var(--bad);font-weight:800;font-size:12.5px;padding:5px 9px;border-radius:7px;margin:3px;">🔧 U-${t.u} (${t.motivo})</span>`).join('')
+        : `<span style="font-size:13px;color:gray;">Sin unidades registradas en Taller.</span>`;
+
+    let html = `
+    <div class="dash-wrap">
+        <div>
+            <div style="font-size:12.5px;font-weight:800;color:var(--ink-soft);margin-bottom:6px;">
+                🕐 BLOQUE DE MONITOREO (Excluye unidades en Taller, Bajas/Calif. 0 y Apoyo de Turismo):
+            </div>
+            <div class="dash-block-bar">${pillsHtml}</div>
+        </div>
+
+        <div class="dash-kpi-grid">
+            <div class="kpi-card" style="border-left:5px solid var(--accent);">
+                <div class="kpi-num" style="color:var(--accent);">${ guardiasLibres.length }</div>
+                <div class="kpi-label">🛡️ Guardias Activos Libres</div>
+            </div>
+            <div class="kpi-card" style="border-left:5px solid var(--done);">
+                <div class="kpi-num" style="color:var(--done);">${ opsConVentana.length }</div>
+                <div class="kpi-label">🟢 Ops con Ventana Libre</div>
+            </div>
+            <div class="kpi-card" style="border-left:5px solid var(--pend);">
+                <div class="kpi-num" style="color:var(--pend);">${ freeUnits.length }</div>
+                <div class="kpi-label">🚌 Unidades Libres Reales</div>
+            </div>
+            <div class="kpi-card" style="border-left:5px solid var(--bad);" onclick="cambiarVista('flota', document.querySelector('[data-view=flota]'))">
+                <div class="kpi-num" style="color:var(--bad);">${ tallerUnits.length }</div>
+                <div class="kpi-label">🔧 Unidades en Taller</div>
+            </div>
+        </div>
+
+        <div class="dash-box">
+            <h3>
+                <span>🛣️ Monitor de Rutas Foráneas (${refLabel})</span>
+                <span style="font-size:12px;color:var(--ink-soft);font-weight:600;">Toca para cubrir</span>
+            </h3>
+            <div style="max-height:280px;overflow-y:auto;">${foraneasHtml}</div>
+        </div>
+
+        <div class="dash-box">
+            <h3><span>⏱️ Disponibilidad: ¿De qué hora a qué hora están libres?</span></h3>
+            <div class="table-container" style="max-height:400px;overflow-y:auto;">
+                <table class="excel-table">
+                    <thead>
+                        <tr>
+                            <th>Operador (Punt. AS)</th>
+                            <th>Unidad</th>
+                            <th>Disponible (De HH:MM a HH:MM)</th>
+                            <th>Ubicación / Siguiente</th>
+                        </tr>
+                    </thead>
+                    <tbody>${trsDisponibles}</tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="dash-box">
+            <h3><span>🚌 Unidades Libres en Patio (Descontando Hoja de Taller)</span></h3>
+            <div>${freeUnitsBadges}</div>
+        </div>
+
+        <div class="dash-box">
+            <h3><span>🔧 Unidades Detectadas en Taller (${tallerUnits.length})</span></h3>
+            <div>${tallerUnitsBadges}</div>
+        </div>
+    </div>`;
+
+    document.getElementById("list").innerHTML = html;
+}
+
+function render() {
+    if(!store.days || !store.days[store.currentDay]) {
+        document.getElementById("dayLabel").innerHTML = "Sin datos cargados <span>▼</span>";
+        document.getElementById("btnOrigen").innerHTML = ICO.pin + '<span>' + (activeOrigin ? activeOrigin : 'Origen') + '</span>';
+        document.getElementById("btnDestino").innerHTML = ICO.flag + '<span>' + (activeDest ? activeDest : 'Destino') + '</span>';
+        if(activeView === "flota") { renderFlota(); return; }
+        if(activeView === "tablero") { renderTablero(); return; }
+        document.getElementById("list").innerHTML = `
+          <div style="text-align:center;padding:45px 20px;color:var(--ink-soft);">
+            <div style="font-size:40px;margin-bottom:10px;">🚍</div>
+            <b style="font-size:16px;color:var(--ink);">Sincronizando rol operativo...</b>
+            <p style="font-size:14px;">Si ya subiste tus archivos Excel en tu computadora, toca el botón para descargarlos de la nube, o súbelos desde ⚙️ arriba a la derecha.</p>
+            <button type="button" class="btn-primary" style="background:var(--accent);max-width:280px;margin:12px auto;" onclick="forzarSincronizacionNube()">🔄 Sincronizar desde la Nube</button>
+          </div>`;
+        return;
+    }
+    document.getElementById("dayLabel").innerHTML = (store.days[store.currentDay].label || store.currentDay) + " <span>▼</span>";
+    document.getElementById("btnOrigen").innerHTML = ICO.pin + '<span>' + (activeOrigin ? activeOrigin : 'Origen') + '</span>';
+    document.getElementById("btnOrigen").classList.toggle("active", !!activeOrigin);
+    document.getElementById("btnDestino").innerHTML = ICO.flag + '<span>' + (activeDest ? activeDest : 'Destino') + '</span>';
+    document.getElementById("btnDestino").classList.toggle("active", !!activeDest);
+
+    globalCollisions = obtenerEmpalmesRender(); 
+    actualizarBadgePendientes(); 
+
+    if(activeView === "flota") { renderFlota(); return; }
+    if(activeView === "tablero") { renderTablero(); return; }
+
+    let trips = store.days[store.currentDay].trips || [];
+    let nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+    let nowTime = new Date().getTime();
+    let visible = [];
+
+    let sortedTrips = [...trips];
+    let ds = getDayState();
+    
+    let baselineOp = {};
+    if(store.globalFleet) { store.globalFleet.forEach(g => { if(g && g.u && g.n) baselineOp[String(g.u)] = g.n; }); }
+
+    sortedTrips.forEach(t => {
+      let state = getTripState(t.id);
+      let isHidden = !!state.hidden;
+      if (state.status === "formado" && state.formadoAt && (nowTime - state.formadoAt > 300000)) {
+          isHidden = true;
+      }
+
+      let skip = false;
+      let fOrigin = normLoc(t.o);
+      let fDest = normLoc(t.d);
+
+      if (activeOrigin && fOrigin !== activeOrigin) skip = true;
+      if (activeDest && fDest !== activeDest) skip = true;
+      if (onlyForaneas && !isForaneaTrip(t)) skip = true;
+      
+      let asg = resolveTripAssignment(t, ds, baselineOp);
+      let finalUnit = asg.unit;
+      let finalOp = asg.op;
+
+      let isDamagedUnit = isUnidadEnTallerOInhabil(finalUnit);
+      let isDamagedOp = Boolean(finalOp && !isOperadorActivo(finalOp));
+
+      if (showRevisar) {
+          if((!finalUnit) || (!finalOp) || isDamagedUnit || isDamagedOp || globalCollisions.some(c => c.t2Id === t.id)) {}
+          else skip = true;
+      }
+
+      if (searchTerm){
+          let motU = getMotivoUnidad(finalUnit);
+          let hay = (t.o+" a "+t.d+" "+(finalOp||"")+" "+(finalUnit||"")+" "+(t.k||"")+" "+motU).toLowerCase();
+          if (hay.indexOf(searchTerm) === -1) skip = true;
+      }
+      
+      if(skip) return;
+      if(activeView === "activas" && isHidden) return; 
+      if(activeView === "ocultas" && !isHidden) return;
+      
+      t._finalUnit = finalUnit; t._finalOp = finalOp; t._isDamagedU = isDamagedUnit; t._isDamagedOp = isDamagedOp;
+      visible.push(t);
+    });
+    
+    if (!visible.length){ document.getElementById("list").innerHTML = "<div style='text-align:center;padding:40px;color:gray;font-weight:600;'>No hay corridas con este filtro</div>"; return; }
+
+    let groupedTrips = {};
+    visible.forEach(t => { 
+        var h = t.h.slice(0,2); 
+        if(!groupedTrips[h]) groupedTrips[h] = []; 
+        groupedTrips[h].push(t); 
+    });
+
+    let sortedHours = Object.keys(groupedTrips);
+    if (activeView === "ocultas") sortedHours.sort((a, b) => Number(b) - Number(a)); 
+    else sortedHours.sort((a, b) => Number(a) - Number(b)); 
+
+    var html = "";
+    for (let hour of sortedHours) {
+        let tripsInHour = groupedTrips[hour];
+        if (activeView === "ocultas") tripsInHour.sort((a,b) => b.h.localeCompare(a.h));
+        else tripsInHour.sort((a,b) => a.h.localeCompare(b.h));
+
+        let actionBtn = activeView === 'ocultas' ? `<button type="button" class="hour-toggle restore-btn-block" onclick="restaurarBloque('${hour}')">Restaurar bloque</button>` : `<button type="button" class="hour-toggle" onclick="ocultarBloque('${hour}')">Ocultar bloque</button>`;
+
+        html += `<div class="hour-section"><div class="hour-head"><span class="h mono">${hour}:00</span><span class="c">${tripsInHour.length} salida(s)</span>${actionBtn}</div><div class="trip-grid">`;
+
+        tripsInHour.forEach(t => {
+            let state = getTripState(t.id);
+            let opName = t._finalOp || "Sin asignar"; let unitName = t._finalUnit || "S/U";
+            let routeLabel = formatRouteName(t.o, t.d);
+            let foraneaBadge = isForaneaTrip(t) ? `<span class="tag-foranea">FORÁNEA</span>` : '';
+            
+            let isCollision = globalCollisions.some(c => c.t2Id === t.id);
+            let isMissingUnit = !t._finalUnit;
+            let isMissingOp = !t._finalOp;
+
+            let hm = t.h.split(":"); let diff = (+hm[0])*60 + (+hm[1]) - nowMin; let urgencyClass = "";
+            if(state.status !== "formado" && diff >= 0) { if(diff <= 10) urgencyClass = "urgency-10"; else if(diff <= 20) urgencyClass = "urgency-20"; else if(diff <= 30) urgencyClass = "urgency-30"; }
+
+            let extraClasses = `${urgencyClass} ${(t._isDamagedU || t._isDamagedOp) ? 'trip-damaged' : ''} ${isCollision ? 'trip-collision' : ''} ${(isMissingUnit || isMissingOp) ? 'trip-nounit' : ''}`;
+            let reasonStr = "";
+            if(t._isDamagedU) {
+                reasonStr = `Taller: ${getMotivoUnidad(t._finalUnit) || 'Detenida'}`;
+            } else if(t._isDamagedOp) {
+                let mOp = getOpMeta(t._finalOp);
+                if (mOp.esTurismo) reasonStr = "Apoyo Turismo (No activo)";
+                else if (mOp.puntualidad === 0) reasonStr = "Puntualidad 0 / Baja";
+                else reasonStr = getReasonForEntity(t._finalOp) || "Inactivo";
+            }
+
+            let attrK = String(t.k !== null && t.k !== undefined ? t.k : "").replace(/"/g, '&quot;');
+            let attrU = String(t._finalUnit || "").replace(/"/g, '&quot;');
+            let attrN = String(opName || "").replace(/"/g, '&quot;');
+            let attrOrigU = String(t.u || "").replace(/"/g, '&quot;');
+
+            let opMeta = getOpMeta(t._finalOp);
+            let hasTel = Boolean(opMeta && (opMeta.telPersonal || opMeta.telEmpresa));
+            let safeOpCall = opName.replace(/'/g, "\\'");
+            let safeRouteCall = routeLabel.replace(/'/g, "\\'");
+
+            html += `
+              <div class="trip status-${state.status} ${extraClasses}" onclick="tapTrip(event, this)" data-id="${t.id}" data-k="${attrK}" data-origu="${attrOrigU}" data-u="${attrU}" data-n="${attrN}" data-time="${t.h}" data-status="${state.status}">
+                <div class="trip-time mono">${t.h}</div>
+                <div class="trip-main"><div class="trip-route">${routeLabel}${foraneaBadge}</div>
+                  <div class="trip-sub"><span class="unit">${unitName}</span><span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px; font-weight:700;">${opName}</span>
+                      ${t._finalOp ? renderPuntualidadBadge(t._finalOp) : ''}
+                      ${reasonStr ? ` <b style="font-size:11px; margin-left:3px;">[${reasonStr}]</b>` : ''}
+                      ${isCollision ? ` <span class="collision-warn">¡EMPALME!</span>` : ''}
+                      ${(isMissingUnit || isMissingOp) && !reasonStr ? ` <span style="color:var(--bad); font-weight:bold; font-size:11px; margin-left:4px;">(Falta asignación)</span>` : ''}
+                  </div>
+                </div>
+                <div class="trip-actions">
+                  ${activeView === 'ocultas' ? 
+                    `<button type="button" class="icon-btn restore-btn" aria-label="Restaurar" onclick="toggleStatus('${t.id}', 'restore', event)">${ICO.restore}</button>` : 
+                    `
+                    <button type="button" class="icon-btn call-btn ${hasTel ? '' : 'no-phone'}" title="Llamar al operador" onclick="contactarOperador(event, 'call', '${safeOpCall}', '${t.h}', '${safeRouteCall}', '${t._finalUnit}')">${ICO.phone}</button>
+                    <button type="button" class="icon-btn msg-btn ${hasTel ? '' : 'no-phone'}" title="Mensaje: ¿Estás positivo?" onclick="contactarOperador(event, 'msg', '${safeOpCall}', '${t.h}', '${safeRouteCall}', '${t._finalUnit}')">${ICO.msg}</button>
+                    <button type="button" class="icon-btn hide-btn" aria-label="Ocultar" onclick="toggleStatus('${t.id}', 'hide', event)">${ICO.hide}</button>
+                    <button type="button" class="icon-btn terminal-btn ${state.status==='en_terminal'?'on':''}" aria-label="En Terminal" onclick="toggleStatus('${t.id}', 'en_terminal', event)">${ICO.terminal}</button>
+                    <button type="button" class="icon-btn formado-btn ${state.status==='formado'?'on':''}" aria-label="Formado" onclick="toggleStatus('${t.id}', 'formado', event)">${ICO.formado}</button>
+                    `
+                  }
+                </div>
+              </div>`;
+        });
+        html += `</div></div>`;
+    }
+    document.getElementById("list").innerHTML = html; actualizarUrgenciaVisual();
+}
+
+function actualizarUrgenciaVisual() {
+    let nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+    document.querySelectorAll(".trip[data-time]").forEach(card => {
+      if(card.classList.contains('trip-damaged') || card.classList.contains('trip-collision') || card.classList.contains('trip-nounit')) return;
+      card.classList.remove("urgency-30", "urgency-20", "urgency-10");
+      if(card.dataset.status === "formado") return;
+      let parts = card.dataset.time.split(":"); let diff = (+parts[0]) * 60 + (+parts[1]) - nowMin;
+      if(diff >= 0 && diff <= 10) card.classList.add("urgency-10"); else if(diff > 10 && diff <= 20) card.classList.add("urgency-20"); else if(diff > 20 && diff <= 30) card.classList.add("urgency-30");
+    });
+}
+setInterval(actualizarUrgenciaVisual, 15000);
+
+window.toggleStatus = function(id, action, event) {
+    if (event) event.stopPropagation();
+    let ds = getDayState();
+    let dKey = fbKey(store.currentDay);
+    let current = Object.assign({}, getTripState(id));
+
+    if (action === "hide") {
+        current.hidden = true;
+    } else if (action === "restore") {
+        current.hidden = false;
+        current.formadoAt = null;
+        if (current.status === "formado") {
+            current.status = "pendiente";
+        }
+    } else {
+        let newStatus = current.status === action ? "pendiente" : action;
+        current.status = newStatus;
+        current.formadoAt = newStatus === "formado" ? Date.now() : null;
+        if (newStatus !== "formado") current.hidden = false;
+    }
+
+    ds.trips[id] = current;
+    render();
+    savePatch({ [`state/${dKey}/trips/${id}`]: current });
+};
+
+window.ocultarBloque = function(hour) {
+    let ds = getDayState();
+    let dKey = fbKey(store.currentDay);
+    let patch = {};
+    (store.days[store.currentDay].trips || []).forEach(t => {
+        if (t.h.slice(0,2) === hour) {
+            let st = Object.assign({}, getTripState(t.id), { hidden: true });
+            ds.trips[t.id] = st;
+            patch[`state/${dKey}/trips/${t.id}`] = st;
+        }
+    });
+    render();
+    savePatch(patch);
+};
+
+window.restaurarBloque = function(hour) {
+    let ds = getDayState();
+    let dKey = fbKey(store.currentDay);
+    let patch = {};
+    (store.days[store.currentDay].trips || []).forEach(t => {
+        if (t.h.slice(0,2) === hour) {
+            let st = Object.assign({}, getTripState(t.id), { hidden: false, formadoAt: null });
+            if (st.status === "formado") st.status = "pendiente";
+            ds.trips[t.id] = st;
+            patch[`state/${dKey}/trips/${t.id}`] = st;
+        }
+    });
+    render();
+    savePatch(patch);
+};
+
+window.tapTrip = function(event, card) {
+    if(event.target.closest("button")) return;
+    openChangeModal(card);
+};
+
+function renderFlota() {
+    let ds = getDayState();
+    let opsMap = {}; if(store.operadoresDB) Object.keys(store.operadoresDB).forEach(k => opsMap[store.operadoresDB[k]] = k);
+    let baselineOp = {}; if(store.globalFleet) { store.globalFleet.forEach(g => { if(g && g.u && g.n) baselineOp[String(g.u)] = g.n; }); }
+
+    let allTrips = (store.days[store.currentDay] && store.days[store.currentDay].trips) ? store.days[store.currentDay].trips : [];
+    let opsTrips = {};
+    (allTrips || []).forEach(t => {
+        let asg = resolveTripAssignment(t, ds, baselineOp);
+        if(asg.op) { 
+            if(!opsTrips[asg.op]) opsTrips[asg.op] = []; 
+            opsTrips[asg.op].push(t); 
+        }
+    });
+
+    function getVueltas(opName) {
+        if (!opName) return 0;
+        let viajes = opsTrips[opName] || [];
+        if(viajes.length === 0) return 0;
+        viajes.sort((a,b) => a.h.localeCompare(b.h));
+        let vueltas = 0, i = 0;
+        while(i < viajes.length) {
+            let cur = viajes[i];
+            let next = viajes[i+1];
+            let co = normLoc(cur.o), cd = normLoc(cur.d);
+            if (next) {
+                let no = normLoc(next.o), nd = normLoc(next.d);
+                if (co === nd && cd === no) { vueltas++; i += 2; continue; }
+            }
+            vueltas++; i++;
+        }
+        return vueltas;
+    }
+
+    let unitToOp = {}; let opToUnit = {};
+    FLOTA_FIJA.forEach(f => {
+        let u = String(f.u);
+        if (isUnidadEnTallerOInhabil(u)) return;
+        let defaultOp = baselineOp[u] || "";
+        let overVal = ds.opOverride[fbKey(u)] !== undefined ? ds.opOverride[fbKey(u)] : ds.opOverride[u];
+        let op = overVal !== undefined ? (overVal==="VACIO"?"":overVal) : defaultOp;
+        if(op && isOperadorActivo(op)) { unitToOp[u] = op; opToUnit[op] = u; }
+    });
+
+    if(ds.unitOverride) {
+        Object.keys(ds.unitOverride).forEach(opKey => {
+            let u = ds.unitOverride[opKey];
+            let actualOpName = store.operadoresDB[opKey] || opKey;
+            if (u === "VACIO") {
+                if(opToUnit[actualOpName]) {
+                    let oldU = opToUnit[actualOpName];
+                    if(unitToOp[oldU] === actualOpName) delete unitToOp[oldU];
+                    delete opToUnit[actualOpName];
+                }
+            } else if (u && !isUnidadEnTallerOInhabil(u) && isOperadorActivo(actualOpName)) {
+                if(opToUnit[actualOpName]) {
+                    let oldU = opToUnit[actualOpName];
+                    if(unitToOp[oldU] === actualOpName) delete unitToOp[oldU];
+                }
+                unitToOp[u] = actualOpName; opToUnit[actualOpName] = u;
+            }
+        });
+    }
+
+    let rows = []; let processedUnits = new Set(); let processedOps = new Set();
+
+    FLOTA_FIJA.forEach(f => {
+        let u = String(f.u);
+        if(!processedUnits.has(u)) {
+            let op = unitToOp[u];
+            if(op) { rows.push({ u: u, k: opsMap[op]||f.k||"", n: op }); processedUnits.add(u); processedOps.add(op); }
+            else { rows.push({ u: u, k: "", n: "" }); processedUnits.add(u); }
+        }
+    });
+
+    Object.keys(store.operadoresDB || {}).forEach(clave => {
+        let opName = store.operadoresDB[clave];
+        if(opName && !processedOps.has(opName)) { rows.push({ u: "", k: clave, n: opName }); processedOps.add(opName); }
+    });
+
+    rows.forEach(r => {
+        let uReason = getMotivoUnidad(r.u);
+        let opMeta = getOpMeta(r.n);
+        let opReason = getReasonForEntity(r.n) || getReasonForEntity(r.k);
+        r.v = getVueltas(r.n);
+        r.p = opMeta.puntualidad !== null ? opMeta.puntualidad : -1;
+        r.sortWeight = 1; 
+        let opLow = (opReason || "").toLowerCase();
+        let nLow = (r.n || "").toLowerCase();
+        let isTurismo = opMeta.esTurismo;
+        let isBaja = opMeta.esBaja || (opMeta.puntualidad !== null && opMeta.puntualidad === 0);
+        let isApoyo = !isTurismo && (opLow.includes("apoyo") || nLow.includes("apoyo"));
+
+        if (isTurismo) {
+            r.st = "🚌 Apoyo Turismo (No activo)";
+            r.cat = "row-gray";
+            r.sortWeight = 3;
+        } else if (isBaja) {
+            r.st = opMeta.puntualidad === 0 ? "⛔ Puntualidad 0 (No contemplado)" : "⛔ Baja";
+            r.cat = "row-baja";
+            r.sortWeight = 3;
+        } else if(r.u && r.n) {
+            r.st = "Asignado"; r.cat = "row-ok";
+            if(isApoyo) { r.cat = "row-gray"; r.st = "Asignado (Apoyo)"; } 
+            if(uReason) { r.st = `🔧 Taller: ${uReason}`; r.cat = "row-bad"; }
+            else if(opReason && !isApoyo) { r.st = `⚠️ Operador: ${opReason}`; r.cat = "row-bad"; }
+        } else if(r.u && !r.n) {
+            if(uReason) { r.st = `🔧 En Taller (${uReason})`; r.cat = "row-bad"; }
+            else { r.st = "Disponible (Sin Op)"; r.cat = "row-disp"; }
+        } else if(!r.u && r.n) {
+            if (isApoyo) {
+                r.st = opReason || "Apoyo"; r.cat = "row-gray"; r.sortWeight = 2; 
+            } else if(opReason && ESTADOS_CRITICOS.includes(opReason)) {
+                r.st = `Inhábil (${opReason})`; r.cat = "row-bad";
+            } else {
+                r.st = "Habilitado (Sin unidad)"; r.cat = "row-warn";
+            }
+        }
+    });
+
+    if(searchTerm) {
+        let st = searchTerm.toLowerCase();
+        rows = rows.filter(x => ((x.u||"")+" "+(x.n||"")+" "+(x.k||"")+" "+(x.st||"")).toLowerCase().includes(st));
+    }
+    
+    if(showRevisar) {
+        rows = rows.filter(r => r.cat === "row-bad" || r.cat === "row-warn" || r.cat === "row-disp");
+    }
+
+    rows.sort((a,b) => {
+        if (a.sortWeight !== b.sortWeight) return a.sortWeight - b.sortWeight;
+        let valA = a[flotaSortCol] ?? ""; let valB = b[flotaSortCol] ?? "";
+        if(flotaSortCol === 'u' || flotaSortCol === 'k' || flotaSortCol === 'v' || flotaSortCol === 'p') return (Number(valA) - Number(valB)) * flotaSortDir;
+        return String(valA).localeCompare(String(valB)) * flotaSortDir;
+    });
+
+    let trs = rows.map(r => {
+        let safeU = encodeURIComponent(r.u || '');
+        let safeK = encodeURIComponent(r.k || '');
+        let safeN = encodeURIComponent(r.n || '');
+        return `
+        <tr class="${r.cat}" onclick="abrirModalFlotaDedicado(decodeURIComponent('${safeU}'), decodeURIComponent('${safeK}'), decodeURIComponent('${safeN}'))">
+            <td class="mono" style="font-weight:800;">${r.u ? 'U-'+r.u : '---'}</td>
+            <td class="mono">${r.k || '---'}</td>
+            <td><b>${r.n || '---'}</b></td>
+            <td style="text-align:center;">${r.n ? (renderPuntualidadBadge(r.n) || '—') : '—'}</td>
+            <td style="text-align:center; font-weight:800; color:var(--accent); font-size:14px;">${r.v}</td>
+            <td>${r.st}</td>
+        </tr>`;
+    }).join('');
+
+    let html = `
+    <div style="padding: 0 12px 14px;">
+        <div class="table-container">
+            <table class="excel-table">
+                <thead>
+                    <tr>
+                        <th class="${flotaSortCol==='u'?'th-active':''}" onclick="sortFlota('u')">Unidad <span class="sort-arrow">${flotaSortDir===1?'↑':'↓'}</span></th>
+                        <th class="${flotaSortCol==='k'?'th-active':''}" onclick="sortFlota('k')">Clave <span class="sort-arrow">${flotaSortDir===1?'↑':'↓'}</span></th>
+                        <th class="${flotaSortCol==='n'?'th-active':''}" onclick="sortFlota('n')">Operador <span class="sort-arrow">${flotaSortDir===1?'↑':'↓'}</span></th>
+                        <th class="${flotaSortCol==='p'?'th-active':''}" onclick="sortFlota('p')" style="text-align:center;">Punt. AS <span class="sort-arrow">${flotaSortDir===1?'↑':'↓'}</span></th>
+                        <th class="${flotaSortCol==='v'?'th-active':''}" onclick="sortFlota('v')" style="text-align:center;">Vueltas <span class="sort-arrow">${flotaSortDir===1?'↑':'↓'}</span></th>
+                        <th class="${flotaSortCol==='st'?'th-active':''}" onclick="sortFlota('st')">Disponibilidad <span class="sort-arrow">${flotaSortDir===1?'↑':'↓'}</span></th>
+                    </tr>
+                </thead>
+                <tbody>${trs}</tbody>
+            </table>
+        </div>
+    </div>`;
+
+    document.getElementById("list").innerHTML = html || "<div style='text-align:center;padding:40px;color:gray;'>Flota vacía o sin coincidencias.</div>";
+}
+
+window.abrirModalFlotaDedicado = function(u, k, n) {
+    window._flotaCtx = { origU: u || "", origK: k || "", origOp: n || "" };
+    let trips = (store.days[store.currentDay] && store.days[store.currentDay].trips ? store.days[store.currentDay].trips : []).filter(t => t.n === n || (u && String(t.u) === String(u))).sort((a,b) => a.h.localeCompare(b.h));
+    let tripsHtml = trips.length ? trips.map(t => `<div style="padding:4px 0; border-bottom:1px solid #eee; font-size:13px;">${t.h} - ${formatRouteName(t.o, t.d)}</div>`).join('') : 'Sin rol planeado hoy';
+
+    let opOptions = `<option value="VACIO">-- Sin Asignar (Separar) --</option>`;
+    if(store.operadoresDB) Object.values(store.operadoresDB).filter(v=>v && isOperadorActivo(v)).sort().forEach(name => opOptions += `<option value="${name}">`);
+
+    let uOptions = `<option value="VACIO">-- Sin Unidad (Separar) --</option>`;
+    FLOTA_FIJA.forEach(f => {
+        let motT = getMotivoUnidad(f.u);
+        uOptions += `<option value="${f.u}" ${String(f.u) === String(u) ? 'selected' : ''}>U-${f.u} [${f.p}]${motT ? ' ⚠️ (Taller: ' + motT + ')' : ''}</option>`;
+    });
+
+    let meta = getOpMeta(n);
+    let estU = u ? (isUnidadEnTallerOInhabil(u) ? 'Taller' : (getReasonForEntity(u) || 'Activa')) : 'Activa';
+    let estOp = n ? (meta.esTurismo ? 'Apoyo Turismo' : (meta.esBaja ? 'Baja' : (getReasonForEntity(n) || getReasonForEntity(k) || 'Activo'))) : 'Activo';
+
+    let selectUStatus = ['Activa', 'Taller', 'Siniestro', 'Falla mecánica', 'Sin diésel'].map(s => `<option value="${s}" ${s===estU?'selected':''}>${s}</option>`).join('');
+    let selectOpStatus = ['Activo', 'Falta', 'Permiso', 'Apoyo', 'Apoyo Turismo', 'Incapacidad', 'Baja'].map(s => `<option value="${s}" ${s===estOp?'selected':''}>${s}</option>`).join('');
+
+    openSheet(`
+        <h2 style="margin-bottom:8px;">Edición Flota ${u ? `U-${u}` : ''} ${n ? `(${n})` : ''}</h2>
+        <div style="margin-bottom: 12px; background: var(--surface-2); padding:10px; border-radius:8px;">
+            <strong style="font-size:13px;">Rol / Rutas:</strong><div style="max-height:80px;overflow-y:auto;font-size:13px;">${tripsHtml}</div>
+        </div>
+
+        <label style="font-size:13px; font-weight:bold;">1. Unidad Asignada:</label>
+        <select id="modalU" class="input-field" style="appearance:auto; padding: 12px; margin-bottom:8px;">${uOptions}</select>
+        <label style="font-size:13px; font-weight:bold;">Estatus de Unidad (Taller):</label>
+        <select id="modalEstU" class="input-field" style="appearance:auto; padding: 12px;" onchange="if(this.value!=='Activa') document.getElementById('modalOp').value='VACIO'">
+          ${selectUStatus}
+        </select>
+
+        <label style="font-size:13px; font-weight:bold;">2. Operador Asignado:</label>
+        <input type="text" id="modalOp" list="opList" class="input-field" value="${n||''}" placeholder="Buscar o vaciar..." autocomplete="off" style="margin-bottom:8px;">
+        <datalist id="opList">${opOptions}</datalist>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;">
+            <div>
+                <label style="font-size:11.5px; font-weight:bold;">Puntualidad (AS):</label>
+                <input type="number" id="modalPunt" class="input-field" min="0" max="10" step="1" value="${meta.puntualidad !== null ? meta.puntualidad : 10}" style="padding:10px;">
+            </div>
+            <div>
+                <label style="font-size:11.5px; font-weight:bold;">📱 Personal (Col G):</label>
+                <input type="tel" id="modalTelG" class="input-field" maxlength="10" placeholder="Col G..." value="${meta.telPersonal || ''}" style="padding:10px;">
+            </div>
+            <div>
+                <label style="font-size:11.5px; font-weight:bold;">🏢 Empresa (Col H):</label>
+                <input type="tel" id="modalTelH" class="input-field" maxlength="10" placeholder="Col H..." value="${meta.telEmpresa || ''}" style="padding:10px;">
+            </div>
+        </div>
+
+        <label style="font-size:13px; font-weight:bold;">Estatus de Operador:</label>
+        <select id="modalEstOp" class="input-field" style="appearance:auto; padding: 12px;" onchange="if(this.value!=='Activo' && this.value!=='Apoyo') document.getElementById('modalU').value='VACIO'">
+          ${selectOpStatus}
+        </select>
+
+        <button type="button" class="btn-primary" onclick="guardarFlotaDedicado()">Guardar y Separar Automáticamente</button>
+        <button type="button" class="btn-outline" onclick="closeSheet()">Cancelar</button>
+    `);
+};
+
+window.guardarFlotaDedicado = function() {
+    let ctx = window._flotaCtx || {};
+    let origU = ctx.origU || "";
+    let origOp = ctx.origOp || "";
+    let origK = ctx.origK || "";
+
+    let finalU = document.getElementById("modalU").value;
+    let finalOp = document.getElementById("modalOp").value.trim();
+    let stU = document.getElementById("modalEstU").value;
+    let stOp = document.getElementById("modalEstOp").value;
+    let puntVal = Number(document.getElementById("modalPunt")?.value);
+    let telGVal = cleanPhone10(document.getElementById("modalTelG")?.value || "");
+    let telHVal = cleanPhone10(document.getElementById("modalTelH")?.value || "");
+
+    let ds = getDayState();
+    let dKey = fbKey(store.currentDay);
+    store.unassignedReasons = store.unassignedReasons || {};
+    store.operadoresDB = store.operadoresDB || {};
+    store.operadoresMeta = store.operadoresMeta || {};
+    store.tallerDB = store.tallerDB || {};
+    ds.opOverride = ds.opOverride || {}; ds.unitOverride = ds.unitOverride || {};
+
+    if(origU) ds.opOverride[fbKey(origU)] = "VACIO";
+    if(origOp) {
+        ds.unitOverride[fbKey(origOp)] = "VACIO";
+        let oldCode = Object.keys(store.operadoresDB).find(k => store.operadoresDB[k] === origOp);
+        if(oldCode) ds.unitOverride[fbKey(oldCode)] = "VACIO";
+    }
+    if(origK) ds.unitOverride[fbKey(origK)] = "VACIO";
+
+    if(finalU && finalU !== "VACIO") ds.opOverride[fbKey(finalU)] = "VACIO";
+    if(finalOp && finalOp !== "VACIO") {
+        ds.unitOverride[fbKey(finalOp)] = "VACIO";
+        let opCode = Object.keys(store.operadoresDB).find(k => store.operadoresDB[k] === finalOp);
+        if(opCode) ds.unitOverride[fbKey(opCode)] = "VACIO";
+    }
+
+    let checkU = (finalU && finalU !== "VACIO") ? finalU : origU;
+    if(checkU) {
+        let kU = fbKey(checkU);
+        if(stU === "Activa") {
+            setReasonForEntity(kU, null);
+            delete store.tallerDB[kU];
+        } else {
+            setReasonForEntity(kU, stU);
+            store.tallerDB[kU] = stU;
+            finalU = "VACIO";
+        }
+    }
+
+    let checkOp = (finalOp && finalOp !== "VACIO") ? finalOp : origOp;
+    if(checkOp) {
+        let kOp = fbKey(checkOp);
+        if(!store.operadoresMeta[kOp]) store.operadoresMeta[kOp] = {};
+        store.operadoresMeta[kOp].puntualidad = isNaN(puntVal) ? 10 : puntVal;
+        store.operadoresMeta[kOp].telPersonal = telGVal;
+        store.operadoresMeta[kOp].telEmpresa = telHVal;
+        store.operadoresMeta[kOp].tel = telHVal || telGVal;
+        store.operadoresMeta[kOp].esTurismo = (stOp === "Apoyo Turismo");
+        store.operadoresMeta[kOp].esBaja = (stOp === "Baja" || puntVal === 0);
+
+        let opCode = Object.keys(store.operadoresDB).find(k => store.operadoresDB[k] === checkOp);
+        if(stOp === "Activo") {
+            setReasonForEntity(kOp, null);
+            if(opCode) setReasonForEntity(opCode, null);
+        } else {
+            setReasonForEntity(kOp, stOp);
+            if(opCode) setReasonForEntity(opCode, stOp);
+        }
+    }
+
+    if(finalU !== "VACIO" && finalOp !== "" && finalOp !== "VACIO" && isOperadorActivo(finalOp) && !isUnidadEnTallerOInhabil(finalU)) {
+        ds.opOverride[fbKey(finalU)] = finalOp;
+        ds.unitOverride[fbKey(finalOp)] = finalU;
+        let opC = Object.keys(store.operadoresDB).find(k => store.operadoresDB[k] === finalOp);
+        if (opC) ds.unitOverride[fbKey(opC)] = finalU;
+    }
+
+    let motivosFlota = [];
+    if (stU && stU !== "Activa") motivosFlota.push(stU);
+    if (stOp && stOp !== "Activo") motivosFlota.push(stOp);
+    let reasonText = motivosFlota.length ? motivosFlota.join(" / ") : "Cambio de asignación en Flota";
+
+    registrarEnHistorial({
+        tripTime: "Todo el día",
+        clave: origK || "—",
+        route: "Edición de Flota",
+        scope: "Impacta a todas las vueltas planeadas",
+        oldUnit: origU || "S/U",
+        newUnit: (!finalU || finalU === "VACIO") ? "S/U" : finalU,
+        oldOp: origOp || "Sin Asignar",
+        newOp: (!finalOp || finalOp === "VACIO") ? "Sin Asignar" : finalOp,
+        reason: reasonText,
+        type: "Flota"
+    });
+
+    closeSheet();
+    render();
+    savePatch({
+        [`state/${dKey}/opOverride`]: ds.opOverride,
+        [`state/${dKey}/unitOverride`]: ds.unitOverride,
+        [`state/${dKey}/unitChanges`]: ds.unitChanges,
+        unassignedReasons: store.unassignedReasons,
+        operadoresMeta: store.operadoresMeta,
+        tallerDB: store.tallerDB,
+        globalHistory: store.globalHistory
+    });
+};
+
+window.aplicarSugerenciaCobertura = function(op, unit, whyText) {
+    const opInput = document.getElementById("newOpInput");
+    const uInput = document.getElementById("newUInput");
+    const scopeSelect = document.getElementById("scopeSelect");
+    if (opInput) opInput.value = op;
+    if (uInput && unit) uInput.value = unit;
+    if (scopeSelect) scopeSelect.value = "one";
+    window._selectedReason = `Cobertura (${whyText.slice(0, 65)}...)`;
+    document.querySelectorAll(".reason-chip").forEach(b => {
+        b.classList.toggle("sel", b.textContent === "Apoyo" || b.textContent === "Enroque");
+    });
+};
+
+window.openChangeModal = function(card) {
+    let tripId = card.getAttribute("data-id") || "";
+    let trip = (store.days?.[store.currentDay]?.trips || []).find(t => String(t.id) === String(tripId));
+    let ds = getDayState();
+    let baselineOp = {};
+    if(store.globalFleet) { store.globalFleet.forEach(g => { if(g && g.u && g.n) baselineOp[String(g.u)] = g.n; }); }
+
+    let oldU = card.getAttribute("data-u") || "";
+    let oldOp = card.getAttribute("data-n") || "";
+    if (oldOp === "Sin asignar") oldOp = "";
+
+    if (trip) {
+        let asg = resolveTripAssignment(trip, ds, baselineOp);
+        oldU = asg.unit;
+        oldOp = asg.op;
+    }
+
+    let fleetKey = card.getAttribute("data-k") || card.getAttribute("data-origu") || (trip ? (trip.k || trip.n || trip.u || "") : "");
+    window._changeModalCtx = {
+        fleetKey: String(fleetKey || ""),
+        tripId: String(tripId || ""),
+        oldU: String(oldU || ""),
+        oldOp: String(oldOp || "")
+    };
+
+    let opOptions = `<option value="VACIO">-- Sin Asignar (Vaciar) --</option>`;
+    let allOpNames = new Set();
+    if(store.operadoresDB) Object.values(store.operadoresDB).filter(Boolean).forEach(name => { if(isOperadorActivo(name)) allOpNames.add(name); });
+    if(store.days && store.days[store.currentDay] && store.days[store.currentDay].trips) {
+        store.days[store.currentDay].trips.forEach(t => { if(t.n && isOperadorActivo(t.n)) allOpNames.add(t.n); });
+    }
+    [...allOpNames].sort((a,b) => {
+        let pA = getOpMeta(a).puntualidad ?? 5;
+        let pB = getOpMeta(b).puntualidad ?? 5;
+        return (pB - pA) || a.localeCompare(b);
+    }).forEach(name => {
+        let m = getOpMeta(name);
+        let labelPunt = m.puntualidad !== null ? `⭐ Puntualidad: ${m.puntualidad}` : "Activo";
+        opOptions += `<option value="${String(name).replace(/"/g, '&quot;')}">${labelPunt}</option>`;
+    });
+
+    let selectOptions = `<option value="VACIO">-- Sin Asignar (Quitar Carro) --</option>`;
+    FLOTA_FIJA.forEach(f => {
+        let motTaller = getMotivoUnidad(f.u);
+        let tallerWarn = motTaller ? ` ⚠️ [EN TALLER: ${motTaller}]` : '';
+        selectOptions += `<option value="${f.u}" ${String(f.u) === String(oldU) ? 'selected' : ''}>U-${f.u} [${f.p}]${tallerWarn}</option>`;
+    });
+
+    window._selectedReason = "";
+    let reasonsHtml = MOTIVOS_RAPIDOS.map(r => `<button type="button" class="reason-chip" onclick="seleccionarMotivo(this, '${r}')">${r}</button>`).join('');
+
+    let headerInfo = trip ? `
+      <div style="background:var(--surface-2);padding:12px;border-radius:12px;margin-bottom:12px;font-size:13.5px;">
+        <b>${trip.h}</b> · ${formatRouteName(trip.o, trip.d)} ${isForaneaTrip(trip) ? '<span class="tag-foranea">FORÁNEA</span>' : ''}<br>
+        <small style="color:var(--ink-soft);">Clave: ${trip.k || '—'} | Titular actual: ${oldU ? 'U-'+oldU : 'S/U'} · ${oldOp || 'Sin Op'} ${oldOp ? renderPuntualidadBadge(oldOp) : ''}</small>
+      </div>` : '';
+
+    let recomendacionesHtml = "";
+    if (trip) {
+        let candidatos = recomendarCandidatosParaViaje(trip);
+        if (candidatos.length > 0) {
+            let cardsSug = candidatos.map(c => {
+                let safeOp = encodeURIComponent(c.op);
+                let safeU = encodeURIComponent(c.unit || '');
+                let safeWhy = encodeURIComponent(c.windowText);
+                return `
+                <div class="cov-card ${c.score>=900?'guardia':''}">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                        <b style="font-size:14px;color:var(--ink);">${c.op} ${renderPuntualidadBadge(c.op)} ${c.unit ? `<span style="background:var(--surface-2);padding:2px 6px;border-radius:5px;font-size:12px;">U-${c.unit}</span>` : ''}</b>
+                        <button type="button" style="background:var(--accent);color:white;border:none;border-radius:8px;padding:7px 12px;font-size:12.5px;font-weight:800;cursor:pointer;" onclick="aplicarSugerenciaCobertura(decodeURIComponent('${safeOp}'), decodeURIComponent('${safeU}'), decodeURIComponent('${safeWhy}'))">⚡ Elegir</button>
+                    </div>
+                    <div style="font-size:12px;font-weight:800;color:var(--done);margin-top:4px;">${c.badge} · ${c.windowText}</div>
+                    <div style="font-size:12px;color:var(--ink-soft);margin-top:3px;"><b>¿Por qué?:</b> ${c.why}</div>
+                </div>`;
+            }).join('');
+            recomendacionesHtml = `
+            <div style="margin-bottom:14px;">
+                <div style="font-size:12.5px;font-weight:800;color:var(--accent);margin-bottom:6px;">
+                    🧠 MEJORES OPCIONES ACTIVAS PARA CUBRIR (Priorizadas por Puntualidad AS):
+                </div>
+                <div style="max-height:195px;overflow-y:auto;padding-right:2px;">${cardsSug}</div>
+            </div>`;
+        }
+    }
+
+    openSheet(`
+      <h2>Asignar / Cubrir en Ruta</h2>
+      ${headerInfo}
+      ${recomendacionesHtml}
+      <label style="font-size:13.5px; font-weight:800;">Unidad (Flota Autorizada - Alerta Taller):</label>
+      <select id="newUInput" class="input-field" style="appearance:auto; padding: 12px;">${selectOptions}</select>
+      <label style="font-size:13.5px; font-weight:800;">Operador Activo (Excluye Turismo y Puntualidad 0):</label>
+      <input type="text" id="newOpInput" list="opList" class="input-field" value="${String(oldOp).replace(/"/g, '&quot;')}" placeholder="Escribe para buscar o vacía..." autocomplete="off">
+      <datalist id="opList">${opOptions}</datalist>
+      <p style="margin:6px 0 5px; font-weight:800; font-size:13.5px;">Motivo del cambio / cobertura:</p>
+      <div class="reason-grid">${reasonsHtml}</div>
+      ${(tripId && tripId !== 'null') ? `<label style="font-size:13.5px; font-weight:800;">¿Aplica para?</label><select id="scopeSelect" class="input-field" style="appearance:auto; padding: 12px; margin-top:5px;"><option value="all" selected>Todas las vueltas del día (Recomendado)</option><option value="one">Solo para ESTE horario (Cobertura puntual)</option></select>` : ''}
+      <button type="button" class="btn-primary" onclick="procesarCambio()">Guardar Cambios y Notificar</button>
+      <button type="button" class="btn-outline" onclick="closeSheet()">Cancelar</button>
+    `);
+};
+
+window.seleccionarMotivo = function(btn, motivo) {
+    document.querySelectorAll(".reason-chip").forEach(b => b.classList.remove("sel"));
+    btn.classList.add("sel");
+    window._selectedReason = motivo;
+};
+
+window.procesarCambio = function() {
+    let ctx = window._changeModalCtx || {};
+    let fleetKey = fbKey(ctx.fleetKey || "");
+    let tripId = ctx.tripId || "";
+    let oldU = ctx.oldU || "";
+    let oldOp = ctx.oldOp || "";
+
+    let newU = document.getElementById("newUInput").value;
+    let newOp = document.getElementById("newOpInput").value.trim();
+    if(newOp === "") newOp = "VACIO";
+    let reason = window._selectedReason || "Reasignación manual";
+    let ds = getDayState();
+    let dKey = fbKey(store.currentDay);
+    let scopeEl = document.getElementById("scopeSelect");
+    let scope = (tripId && tripId !== 'null' && scopeEl) ? scopeEl.value : 'all';
+    
+    if(scope === 'all' && fleetKey) {
+        ds.unitOverride[fleetKey] = newU === "" ? "VACIO" : newU;
+        ds.opOverride[fleetKey] = newOp === "" ? "VACIO" : newOp;
+        if (tripId) {
+            delete ds.tripUnitOverride[tripId];
+            delete ds.tripOpOverride[tripId];
+        }
+    } else if (tripId) {
+        ds.tripUnitOverride[tripId] = newU === "" ? "VACIO" : newU;
+        ds.tripOpOverride[tripId] = newOp === "" ? "VACIO" : newOp;
+    }
+
+    let changedTrip = (tripId && tripId !== 'null') ? (store.days[store.currentDay].trips || []).find(x => String(x.id) === String(tripId)) : null;
+    registrarEnHistorial({
+        tripTime: changedTrip ? changedTrip.h : "N/A",
+        clave: changedTrip ? (changedTrip.k || fleetKey || "—") : (fleetKey || "—"),
+        route: changedTrip ? formatRouteName(changedTrip.o, changedTrip.d) : "Ruta General",
+        scope: scope === "all" ? "Todas las vueltas de este operador" : "Solo este horario",
+        tripId: tripId,
+        oldUnit: oldU || "S/U",
+        newUnit: (!newU || newU === "VACIO") ? "S/U" : newU,
+        oldOp: oldOp || "Sin Asignar",
+        newOp: (!newOp || newOp === "VACIO") ? "Sin Asignar" : newOp,
+        reason: reason,
+        type: "Viaje"
+    });
+
+    closeSheet();
+    render();
+    savePatch({
+        [`state/${dKey}/unitOverride`]: ds.unitOverride,
+        [`state/${dKey}/opOverride`]: ds.opOverride,
+        [`state/${dKey}/tripUnitOverride`]: ds.tripUnitOverride,
+        [`state/${dKey}/tripOpOverride`]: ds.tripOpOverride,
+        [`state/${dKey}/unitChanges`]: ds.unitChanges,
+        globalHistory: store.globalHistory
+    });
+};
+
+window.abrirConfiguracion = function() {
+    const trips = store.days?.[store.currentDay]?.trips || [];
+    const totalHist = getGlobalHistory().length;
+    const totalTaller = Object.keys(store.tallerDB || {}).length;
+    const totalOpsActivos = Object.values(store.operadoresDB || {}).filter(op => isOperadorActivo(op)).length;
+
+    openSheet(`<h2>⚙️ Configuración y Nube</h2>
+      <div style="background:var(--surface-2);padding:12px;border-radius:12px;font-size:13.5px;line-height:1.8;margin-bottom:12px">
+        <b>Estado de Nube:</b> ${isConnectedToFirebase ? '🟢 Conectado en Tiempo Real' : '🟠 Modo Caché Local'}<br>
+        <b>Fecha activa:</b> ${store.currentDay || '—'} (${trips.length} viajes)<br>
+        <b>Operadores Activos (Sin Turismo / Sin Calif. 0):</b> ${totalOpsActivos}<br>
+        <b>Unidades en Taller detectadas:</b> ${totalTaller} de ${FLOTA_FIJA.length}<br>
+        <b>Historial Histórico:</b> ${totalHist} registro(s)
+      </div>
+      <button type="button" class="btn-primary" style="background:var(--accent);margin-top:0;margin-bottom:12px;" onclick="closeSheet(); forzarSincronizacionNube();">🔄 Sincronizar Datos desde la Nube</button>
+      <div style="background:var(--surface-2); padding:14px; border-radius:12px; margin-bottom:10px;">
+        <strong style="display:block;margin-bottom:4px;">1. Subir Archivo: "datos" (Para todos los equipos)</strong>
+        <span style="font-size:12.5px;color:var(--ink-soft);">Lee Tel. Personal (Col G), Tel. Empresa (Col H), Puntualidad (Col AS), filtra Turismo/Calif. 0 y lee la hoja de Taller.</span>
+        <button type="button" class="btn-outline" onclick="document.getElementById('fileSeguimiento').click()">📂 Seleccionar Excel "datos"</button>
+      </div>
+      <div style="background:var(--surface-2); padding:14px; border-radius:12px; margin-bottom:10px;">
+        <strong style="display:block;margin-bottom:4px;">2. Subir Archivo: "rol" (Para todos los equipos)</strong>
+        <span style="font-size:12.5px;color:var(--ink-soft);">Sube las corridas a la nube para que aparezcan en todas las APKs y celulares al instante.</span>
+        <button type="button" class="btn-outline" onclick="document.getElementById('fileAsignacion').click()">📂 Seleccionar Excel "rol"</button>
+      </div>
+      <div id="uploadMsg" style="margin-top:10px;font-size:13.5px;font-weight:800;color:var(--accent);text-align:center;"></div>
+      <button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
+};
+
+window.verDisponibilidad = function(customTimeStr) {
+    let nowMin = new Date().getHours()*60 + new Date().getMinutes();
+    let refMin = customTimeStr ? hhmmToMins(customTimeStr) : nowMin;
+    let timeVal = minsToHhmm(refMin);
+
+    let { opWindows } = calcularEstadoFlotaYVentanas(refMin);
+    opWindows.sort((a, b) => {
+        if (a.freeNow !== b.freeNow) return a.freeNow ? -1 : 1;
+        if (a.isGuardia !== b.isGuardia) return a.isGuardia ? -1 : 1;
+        return b.freeMins - a.freeMins;
+    });
+
+    let html = opWindows.map(r => `
+        <div class="avail-row">
+            <div class="avail-top">
+                <span class="avail-name">${r.nombre} ${renderPuntualidadBadge(r.nombre)}</span>
+                <span class="avail-unit">${r.unidad ? 'U-'+r.unidad : 'S/U'}</span>
+            </div>
+            <span class="avail-status ${r.badge}">${r.statusLabel}</span>
+            <div class="avail-detail" style="margin-bottom: 5px; font-size:13.5px;">
+                <b>Ventana exacta:</b> De <b>${r.winFrom}</b> a <b>${r.winTo}</b> · ${r.detail}
+            </div>
+            <div class="avail-next" style="font-size:12.5px; color:var(--ink-soft);">Siguiente salida: ${r.proxima}</div>
+        </div>`).join('');
+
+    openSheet(`
+        <h2>⏱ Disponibilidad por Ventana Horaria</h2>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;background:var(--surface-2);padding:8px 10px;border-radius:12px;">
+            <label style="font-size:13px;font-weight:800;">Consultar a las:</label>
+            <input type="time" value="${timeVal}" class="input-field" style="margin:0;padding:6px 10px;width:auto;min-height:38px;font-size:14px;" onchange="verDisponibilidad(this.value)">
+            <button type="button" class="hour-toggle restore-btn-block" onclick="verDisponibilidad('06:30')">Ver 06:30</button>
+            <button type="button" class="hour-toggle" onclick="verDisponibilidad()">Ahora</button>
+        </div>
+        <div style="max-height:58vh;overflow-y:auto;">${html || '<p style="text-align:center;color:gray;padding:20px;">No hay operadores activos registrados.</p>'}</div>
+        <button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>
+    `);
+};
+
+window.verVacios = function() {
+    let trips = (store.days[store.currentDay] && store.days[store.currentDay].trips) ? store.days[store.currentDay].trips : [];
+    let ds = getDayState(); var groups = {};
+    let baselineOp = {}; if(store.globalFleet) { store.globalFleet.forEach(g => { if(g && g.u && g.n) baselineOp[String(g.u)] = g.n; }); }
+
+    trips.forEach(t => {
+      let asg = resolveTripAssignment(t, ds, baselineOp);
+      if(asg.op) { if (!groups[asg.op]) groups[asg.op] = { nombre: asg.op, unidad: asg.unit, trips: [] }; groups[asg.op].trips.push(t); }
+    });
+    
+    var results = [];
+    Object.keys(groups).forEach(g => {
+      var list = groups[g].trips.slice().sort((a,b) => a.h.localeCompare(b.h));
+      for (var i=0; i<list.length-1; i++){
+        var cur = list[i], nxt = list[i+1];
+        let curDest = normLoc(cur.d), nxtOrig = normLoc(nxt.o);
+        if (curDest !== nxtOrig) {
+          if(curDest.includes("CU2") || nxtOrig.includes("CU2")) {
+              results.push({ nombre: groups[g].nombre, unidad: groups[g].unidad, viajeActual: `${cur.o} a ${cur.d}`, horaActual: cur.h, viajeProximo: `${nxt.o} a ${nxt.d}`, horaProximo: nxt.h, vacioFrom: curDest, vacioTo: nxtOrig });
+          }
+        }
+      }
+    });
+
+    var nowMin = new Date().getHours()*60 + new Date().getMinutes();
+    var upcoming = results.filter(r => hhmmToMins(r.horaProximo) > nowMin).sort((a,b) => hhmmToMins(a.horaProximo) - hhmmToMins(b.horaProximo));
+    
+    var upcomingHtml = upcoming.length ? upcoming.map(r => `<div class="avail-row"><div class="avail-top"><span class="avail-name" style="color:var(--pend)">🚎 Vacío: ${r.vacioFrom} ➔ ${r.vacioTo}</span><span class="avail-unit">${r.unidad ? 'U-'+r.unidad : 'S/U'}</span></div><div class="avail-detail" style="font-size:13.5px;"><b>Operador:</b> ${r.nombre} ${renderPuntualidadBadge(r.nombre)}</div><div class="avail-detail" style="margin-top:6px;font-size:13.5px;"><b>Viaje Actual:</b> ${formatRouteName(r.viajeActual.split(' a ')[0], r.viajeActual.split(' a ')[1])} (${r.horaActual})</div><div class="avail-next" style="color:var(--bad);font-size:13.5px;margin-top:3px;"><b>Próximo Viaje:</b> ${formatRouteName(r.viajeProximo.split(' a ')[0], r.viajeProximo.split(' a ')[1])} (${r.horaProximo})</div></div>`).join("") : '<div class="empty"><div class="big" style="padding: 20px; text-align: center; color: gray;">No hay vacíos pendientes para CU2</div></div>';
+    openSheet(`<h2>🚎 Traslados en Vacío (Solo CU2)</h2><div class="desc" style="font-size:13.5px; color:gray; margin-bottom:10px;">Vueltas donde el operador termina y debe trasladarse hacia o desde CU2.</div><div style="max-height:60vh;overflow-y:auto;">${upcomingHtml}</div><button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
+};
+
+function obtenerHistorialFiltrado() {
+    const hist = getGlobalHistory();
+    return [...hist].reverse().filter(c => {
+        if (!c) return false;
+        if (historyFilterDay !== "ALL" && (c.day || "Hoy") !== historyFilterDay) return false;
+        if (historySearchTerm) {
+            let texto = `${c.day||''} ${c.route||''} ${c.tripTime||''} ${c.clave||''} ${c.oldUnit||''} ${c.newUnit||''} ${c.oldOp||''} ${c.newOp||''} ${c.reason||''}`.toLowerCase();
+            if (!texto.includes(historySearchTerm)) return false;
+        }
+        return true;
+    });
+}
+
+window.filtrarModalHistorial = function() {
+    const sel = document.getElementById("histDayFilter");
+    const inp = document.getElementById("histSearchInput");
+    if (sel) historyFilterDay = sel.value;
+    if (inp) historySearchTerm = inp.value.trim().toLowerCase();
+    renderListaHistorialModal();
+};
+
+function renderListaHistorialModal() {
+    const container = document.getElementById("histListContainer");
+    const countLabel = document.getElementById("histCountLabel");
+    if (!container) return;
+    const filtrados = obtenerHistorialFiltrado();
+    if (countLabel) countLabel.innerText = `${filtrados.length} registro(s)`;
+
+    if (!filtrados.length) {
+        container.innerHTML = '<p style="text-align:center;color:gray;padding:20px">No hay cambios que coincidan con el filtro.</p>';
+        return;
+    }
+
+    container.innerHTML = filtrados.map(c => {
+        const uAnt = (!c.oldUnit || c.oldUnit === 'VACIO' || c.oldUnit === 'S/U' || c.oldUnit === '—') ? 'S/U' : `U-${String(c.oldUnit).replace(/^U-/i,'')}`;
+        const uNue = (!c.newUnit || c.newUnit === 'VACIO' || c.newUnit === 'S/U' || c.newUnit === '—') ? 'S/U' : `U-${String(c.newUnit).replace(/^U-/i,'')}`;
+        const opAnt = (!c.oldOp || c.oldOp === 'VACIO') ? 'Sin Asignar' : c.oldOp;
+        const opNue = (!c.newOp || c.newOp === 'VACIO') ? 'Sin Asignar' : c.newOp;
+        const isCrit = ESTADOS_CRITICOS.includes(c.reason);
+
+        return `
+        <div class="avail-row" style="${isCrit ? 'background:#fae3e6;border-color:var(--bad);' : ''}">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <b>${c.tripTime && c.tripTime !== '—' ? `[${c.tripTime}] ` : ''}${c.route || 'Cambio'}</b>
+                <span style="font-size:11.5px;background:var(--surface-2);padding:3px 8px;border-radius:6px;font-weight:800;color:var(--accent);">${c.day || 'Histórico'}</span>
+            </div>
+            <div style="font-size:12px;color:var(--ink-soft);margin-top:3px;">
+                ${c.time ? new Date(c.time).toLocaleString('es-MX') : ''} ${c.clave && c.clave !== '—' ? `· Clave: <b>${c.clave}</b>` : ''}
+            </div>
+            <div style="font-size:13.5px;margin-top:6px;line-height:1.5;">
+                <b>Unidad:</b> ${uAnt} → <span style="color:var(--accent);font-weight:800;">${uNue}</span><br>
+                <b>Operador:</b> ${opAnt} → <span style="color:var(--accent);font-weight:800;">${opNue}</span>
+            </div>
+            <div style="font-size:12.5px;margin-top:5px;padding-top:4px;border-top:1px dashed var(--line);color:var(--ink-soft);">
+                <b style="color:${isCrit ? 'var(--bad)' : 'var(--accent)'};">Motivo:</b> <span style="color:var(--ink);font-weight:700;">${c.reason || 'Cambio operativo'}</span> ${c.scope ? `· (${c.scope})` : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+window.verCambios = function() {
+    const hist = getGlobalHistory();
+    const daysSet = [...new Set(hist.filter(Boolean).map(h => h.day || "Hoy"))];
+    const dayOpts = [`<option value="ALL" ${historyFilterDay==='ALL'?'selected':''}>📚 Todo el Historial (${hist.length})</option>`]
+        .concat(daysSet.map(d => `<option value="${d}" ${historyFilterDay===d?'selected':''}>📅 Solo ${d}</option>`))
+        .join('');
+
+    openSheet(`
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <h2 style="margin:0;">🔄 Historial Histórico</h2>
+            <span id="histCountLabel" style="font-size:12.5px;font-weight:800;color:var(--ink-soft);"></span>
+        </div>
+        <button type="button" class="btn-primary" style="background:var(--done);margin-top:0;margin-bottom:12px;padding:12px;" onclick="descargarHistorialExcel()">
+            📥 Descargar Historial en Excel (.xlsx)
+        </button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+            <select id="histDayFilter" class="input-field" style="margin-bottom:0;padding:10px;font-size:13.5px;appearance:auto;" onchange="filtrarModalHistorial()">
+                ${dayOpts}
+            </select>
+            <input id="histSearchInput" type="text" class="input-field" style="margin-bottom:0;padding:10px;font-size:13.5px;" placeholder="🔍 Buscar unidad, op..." value="${historySearchTerm}" oninput="filtrarModalHistorial()">
+        </div>
+        <div id="histListContainer" style="max-height:52vh;overflow-y:auto;"></div>
+        <button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>
+    `);
+    renderListaHistorialModal();
+};
+
+window.descargarHistorialExcel = async function() {
+    const registros = obtenerHistorialFiltrado();
+    if (!registros.length) {
+        showAggressiveToast("No hay registros en el historial para exportar a Excel.");
+        return;
+    }
+
+    try {
+        await ensureXLSXLoaded();
+        const filasExcel = registros.map(c => ({
+            "Fecha Operativa": c.day || "—",
+            "Fecha y Hora del Cambio": c.time ? new Date(c.time).toLocaleString('es-MX') : "—",
+            "Tipo": c.type || "Viaje",
+            "Alcance": c.scope || "Horario individual",
+            "Hora Corrida": c.tripTime || "—",
+            "Ruta": c.route || "—",
+            "Clave": c.clave || "—",
+            "Unidad Anterior": (!c.oldUnit || c.oldUnit === "VACIO" || c.oldUnit === "S/U") ? "S/U" : String(c.oldUnit),
+            "Unidad Nueva": (!c.newUnit || c.newUnit === "VACIO" || c.newUnit === "S/U") ? "S/U" : String(c.newUnit),
+            "Operador Anterior": (!c.oldOp || c.oldOp === "VACIO") ? "Sin Asignar" : String(c.oldOp),
+            "Operador Nuevo": (!c.newOp || c.newOp === "VACIO") ? "Sin Asignar" : String(c.newOp),
+            "Motivo / Estatus": c.reason || "—"
+        }));
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(filasExcel);
+        ws['!cols'] = [
+            { wch: 16 }, { wch: 22 }, { wch: 10 }, { wch: 24 }, { wch: 12 },
+            { wch: 22 }, { wch: 10 }, { wch: 15 }, { wch: 15 },
+            { wch: 28 }, { wch: 28 }, { wch: 32 }
+        ];
+        XLSX.utils.book_append_sheet(wb, ws, "Historial_Historico");
+        const fechaArchivo = new Date().toISOString().slice(0, 10);
+        XLSX.writeFile(wb, `Historial_Operativo_STU_${fechaArchivo}.xlsx`);
+    } catch (err) {
+        showAggressiveToast(err.message);
+    }
+};
+
+function uniqueSorted(trips, prop) {
+    return [...new Set((trips || []).map(t => t && t[prop]).filter(v => v !== null && v !== undefined && String(v).trim() !== "").map(v => normLoc(v)))].sort((a, b) => a.localeCompare(b, "es", { numeric: true, sensitivity: "base" }));
+}
+
+function crearFiltroSheet(title, options, selected, onPick){
+    var rows = '<button type="button" class="opt-row'+(!selected?' sel':'')+'" data-val="">Todos'+(!selected?'<span class="ck">'+ICO.check+'</span>':'')+'</button>';
+    options.forEach(function(o){ rows += `<button type="button" class="opt-row${o===selected?' sel':''}" data-val="${o}">${o}${o===selected?`<span class="ck">${ICO.check}</span>`:''}</button>`; });
+    openSheet(`<h2>${title}</h2><div class="opt-list">${rows}</div><button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
+    document.querySelectorAll("#sheetContent .opt-row").forEach(btn => {
+        btn.addEventListener("click", function(){
+            onPick(btn.getAttribute("data-val") || null);
+            closeSheet();
+        });
+    });
+}
+
+document.getElementById("btnOrigen").addEventListener("click", function(){
+    let trips = (store.days[store.currentDay] && store.days[store.currentDay].trips) ? store.days[store.currentDay].trips : [];
+    let unique = uniqueSorted(trips, "o");
+    let top = [], rest = [];
+    unique.forEach(o => { if(o === "CU" || o === "CU2") top.push(o); else rest.push(o); });
+    crearFiltroSheet("📍 Punto de inicio", top.concat(rest), activeOrigin, v => { activeOrigin = v; render(); });
+});
+
+document.getElementById("btnDestino").addEventListener("click", function(){
+    let trips = (store.days[store.currentDay] && store.days[store.currentDay].trips) ? store.days[store.currentDay].trips : [];
+    let unique = uniqueSorted(trips, "d");
+    let top = [], rest = [];
+    unique.forEach(o => { if(o === "CU" || o === "CU2") top.push(o); else rest.push(o); });
+    crearFiltroSheet("🚩 Punto final", top.concat(rest), activeDest, v => { activeDest = v; render(); });
+});
+
+let searchDebounce = null;
+document.getElementById('search').addEventListener('input', e => {
+    if (searchDebounce) clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => {
+        searchTerm = e.target.value.trim().toLowerCase();
+        render();
+    }, 120);
+});
+
+document.getElementById("fileAsignacion").addEventListener("change", e => handleExcel(e.target.files[0], 'asignacion', e.target));
+document.getElementById("fileSeguimiento").addEventListener("change", e => handleExcel(e.target.files[0], 'seguimiento', e.target));
+
+async function handleExcel(file, type, inputEl) {
+    if(!file) return;
+    let msgBox = document.getElementById("uploadMsg");
+    if(msgBox) msgBox.innerHTML = `<span style="color:var(--pend)">Procesando ${file.name} y subiendo a la nube...</span>`;
+    try {
+        await ensureXLSXLoaded();
+    } catch (err) {
+        if(msgBox) msgBox.innerHTML = `<span style="color:var(--bad)">${err.message}</span>`;
+        inputEl.value = "";
+        return;
+    }
+
+    let reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const backupHistory = [...getGlobalHistory()];
+        let wb = XLSX.read(e.target.result, {type: 'array'});
+
+        if(type === 'seguimiento') {
+            store.operadoresDB = {};
+            store.operadoresMeta = {};
+            store.tallerDB = {};
+            store.globalFleet = [];
+            store.unassignedReasons = {};
+            
+            if(store.state) {
+                Object.keys(store.state).forEach(day => {
+                    store.state[day].unitOverride = {};
+                    store.state[day].opOverride = {};
+                    store.state[day].tripUnitOverride = {};
+                    store.state[day].tripOpOverride = {};
+                });
+            }
+
+            let opSheetName = wb.SheetNames.find(n => /OP|DATOS|PLANTILLA|PERSONAL/i.test(n)) || wb.SheetNames[0];
+            if(opSheetName) {
+                let sheetObj = wb.Sheets[opSheetName];
+                let rawData = XLSX.utils.sheet_to_json(sheetObj, {header:1, defval: null});
+                let hRow = -1;
+                for(let r=0; r<Math.min(rawData.length, 30); r++) {
+                    if((rawData[r]||[]).some(c => /NOMBRE OPERADOR|NOMBRE|OPERADOR/i.test(String(c||"")))) { hRow = r; break; }
+                }
+
+                if(hRow !== -1) {
+                    let headers = rawData[hRow].map(h => String(h||"").toUpperCase().trim());
+                    let colNombre = headers.findIndex(h => h.includes("NOMBRE OPERADOR") || h === "NOMBRE" || h.includes("OPERADOR"));
+                    let colClave = headers.findIndex(h => h.includes("CLAVE") || h === "ID" || h.includes("NOMINA"));
+                    let colUnidad = headers.findIndex(h => h.includes("UNIDAD") || h === "ECON" || h.includes("AUTOBUS"));
+                    let colPuntHeader = headers.findIndex(h => h.includes("PUNTUALIDAD") || h.includes("CALIF"));
+
+                    const COL_G_PERSONAL = 6;  // Columna G
+                    const COL_H_EMPRESA  = 7;  // Columna H
+                    const COL_AS_PUNT    = 44; // Columna AS
+
+                    if(colNombre !== -1) {
+                        for(let i=hRow+1; i<rawData.length; i++) {
+                            let row = rawData[i] || [];
+                            let rawName = row[colNombre];
+                            if(!rawName || String(rawName).trim() === "") continue;
+                            let opName = String(rawName).replace(/\s+/g, " ").trim();
+                            if (/^(NOMBRE|OPERADOR|TOTAL)$/i.test(opName)) continue;
+                            
+                            let opClave = colClave !== -1 && row[colClave] != null ? String(row[colClave]).trim() : null;
+                            let opUnit = colUnidad !== -1 && row[colUnidad] != null ? String(row[colUnidad]).trim() : null;
+                            if (opUnit && !isNaN(Number(opUnit))) opUnit = String(Math.round(Number(opUnit)));
+
+                            let cellG = sheetObj[XLSX.utils.encode_cell({r: i, c: COL_G_PERSONAL})];
+                            let cellH = sheetObj[XLSX.utils.encode_cell({r: i, c: COL_H_EMPRESA})];
+                            let rawTelG = (cellG && cellG.v !== undefined) ? cellG.v : row[COL_G_PERSONAL];
+                            let rawTelH = (cellH && cellH.v !== undefined) ? cellH.v : row[COL_H_EMPRESA];
+
+                            let telPersonal = cleanPhone10(rawTelG);
+                            let telEmpresa  = cleanPhone10(rawTelH);
+
+                            let cellAS = sheetObj[XLSX.utils.encode_cell({r: i, c: COL_AS_PUNT})];
+                            let rawPunt = (cellAS && cellAS.v !== undefined && String(cellAS.v).trim() !== "")
+                                ? cellAS.v
+                                : ((row[COL_AS_PUNT] !== undefined && row[COL_AS_PUNT] !== null && String(row[COL_AS_PUNT]).trim() !== "")
+                                    ? row[COL_AS_PUNT]
+                                    : (colPuntHeader !== -1 ? row[colPuntHeader] : null));
+
+                            let puntualidad = null;
+                            if (rawPunt !== null && rawPunt !== undefined && String(rawPunt).trim() !== "") {
+                                let numP = Number(String(rawPunt).replace(/[^0-9.-]/g, ""));
+                                if (!isNaN(numP)) {
+                                    if (numP > 10 && numP <= 100) numP = Math.round((numP / 10) * 10) / 10;
+                                    puntualidad = numP;
+                                }
+                            }
+
+                            let rowJoined = row.map(c => String(c || "")).join(" ").toUpperCase();
+                            let esTurismo = /TURISMO/i.test(rowJoined);
+                            let esBaja = /\bBAJA\b/i.test(rowJoined) || (puntualidad !== null && puntualidad === 0);
+
+                            let safeClave = fbKey(opClave || opName);
+                            let safeOpKey = fbKey(opName);
+                            store.operadoresDB[safeClave] = opName;
+
+                            store.operadoresMeta[safeOpKey] = {
+                                clave: opClave || "",
+                                u: opUnit || "",
+                                puntualidad: puntualidad,
+                                telPersonal: telPersonal,
+                                telEmpresa: telEmpresa,
+                                tel: telEmpresa || telPersonal || "",
+                                esTurismo: esTurismo,
+                                esBaja: esBaja
+                            };
+
+                            if (esTurismo) {
+                                setReasonForEntity(safeOpKey, "Apoyo Turismo");
+                            } else if (esBaja) {
+                                setReasonForEntity(safeOpKey, "Baja");
+                            } else if (/\bAPOYO\b/i.test(rowJoined)) {
+                                setReasonForEntity(safeOpKey, "Apoyo");
+                            }
+
+                            if (!esTurismo && !esBaja && (opUnit || opName)) {
+                                store.globalFleet.push({ u: opUnit || "", k: safeClave, n: opName, estatus: "Activa" });
+                            }
+                        }
+                    }
+                }
+            }
+
+            wb.SheetNames.forEach(sheetName => {
+                if (/TALLER|MANTENIMIENTO|DETENID|FALLA|SINIESTRO|PARQUE|FLOTA|UNIDAD/i.test(sheetName)) {
+                    let fData = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {header:1, defval: null});
+                    let isDedicatedTallerSheet = /TALLER|MANTENIMIENTO|DETENID|FALLA|SINIESTRO/i.test(sheetName);
+                    let hRow = fData.findIndex(row => (row||[]).some(c => /UNIDAD|ECON|AUTOBUS|CARRO|NO\./i.test(String(c||""))));
+
+                    let colUnidad = -1, colMotivo = -1, colEstado = -1;
+                    if (hRow !== -1) {
+                        let headers = (fData[hRow] || []).map(h => String(h||"").toUpperCase());
+                        colUnidad = headers.findIndex(h => /UNIDAD|ECON|AUTOBUS|CARRO|NUM/.test(h));
+                        colMotivo = headers.findIndex(h => /MOTIVO|FALLA|CAUSA|TRABAJO|OBSERV|REPARACION|DETALLE/.test(h));
+                        colEstado = headers.findIndex(h => /ESTADO|ESTATUS|SITUACION/.test(h));
+                    }
+
+                    let startRow = hRow !== -1 ? hRow + 1 : 0;
+                    for (let r = startRow; r < fData.length; r++) {
+                        let row = fData[r] || [];
+                        let foundUnit = null;
+
+                        if (colUnidad !== -1 && row[colUnidad] != null) {
+                            let cand = String(row[colUnidad]).replace(/\D/g, "");
+                            if (FLOTA_SET.has(cand)) foundUnit = cand;
+                        }
+                        if (!foundUnit) {
+                            for (let c = 0; c < Math.min(row.length, 10); c++) {
+                                let cand = String(row[c] || "").replace(/^U-/i, "").trim();
+                                if (FLOTA_SET.has(cand)) { foundUnit = cand; break; }
+                            }
+                        }
+
+                        if (foundUnit) {
+                            let mot = colMotivo !== -1 && row[colMotivo] != null ? String(row[colMotivo]).trim() : "";
+                            let est = colEstado !== -1 && row[colEstado] != null ? String(row[colEstado]).trim() : "";
+                            let rowStr = row.map(x => String(x || "")).join(" ");
+
+                            if (isDedicatedTallerSheet) {
+                                if (!/\b(LIBERAD[AO]|OPERANDO|EN RUTA|ACTIVA)\b/i.test(est)) {
+                                    let finalMot = mot || est || "Taller";
+                                    store.tallerDB[foundUnit] = finalMot;
+                                    setReasonForEntity(foundUnit, "Taller");
+                                }
+                            } else if (/TALLER|SINIESTRO|FALLA|DETENID|CORRALON|MOTOR|CAJA/i.test(rowStr)) {
+                                let finalMot = mot || est || "Taller";
+                                store.tallerDB[foundUnit] = finalMot;
+                                setReasonForEntity(foundUnit, "Taller");
+                            }
+                        }
+                    }
+                }
+            });
+
+            store.globalHistory = backupHistory;
+            let countTaller = Object.keys(store.tallerDB || {}).length;
+            let countActivos = Object.values(store.operadoresDB || {}).filter(op => isOperadorActivo(op)).length;
+            render();
+            saveStore((err) => {
+                if (!err && msgBox) {
+                    msgBox.innerHTML = `<span style="color:var(--done)">✅ ¡Sincronizado en la nube para todos los celulares! (${countActivos} ops activos y ${countTaller} unidades en Taller).</span>`;
+                    setTimeout(closeSheet, 1400);
+                }
+            });
+        } else {
+            let result = parseWorkbook(e.target.result);
+            if (!result.days.length) throw new Error("No se encontraron horarios en el archivo.");
+            
+            store.days = {};
+            result.days.forEach(function(d){ 
+                let safeDayKey = fbKey(d.key);
+                store.days[safeDayKey] = { label: d.key, trips: d.trips, fleet: [] }; 
+                let oldUnitChanges = (store.state && store.state[safeDayKey] && store.state[safeDayKey].unitChanges) ? store.state[safeDayKey].unitChanges : [];
+                store.state[safeDayKey] = { trips: {}, unitOverride: {}, tripUnitOverride: {}, unitChanges: oldUnitChanges, opOverride: {}, tripOpOverride: {}, resolvedOverlaps: [], resolvedMissing: [] }; 
+            });
+            store.currentDay = fbKey(result.days[0].key);
+            store.globalHistory = backupHistory;
+            render();
+            saveStore((err) => {
+                if (!err && msgBox) {
+                    msgBox.innerHTML = `<span style="color:var(--done)">✅ ¡Rol sincronizado en la nube! Todos los celulares y APKs ya lo tienen activo.</span>`;
+                    setTimeout(closeSheet, 1400);
+                }
+            });
+        }
+      } catch (err) {
+          if(msgBox) msgBox.innerHTML = `<span style="color:var(--bad)">Error: ${err.message}</span>`;
+      }
+      inputEl.value = ""; 
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function parseWorkbook(arrayBuffer){
+    var wb = XLSX.read(new Uint8Array(arrayBuffer), {type:'array'});
+    var grids = {}, hrCounts = {}, opSheetName = null;
+    wb.SheetNames.forEach(function(name){
+        var grid = XLSX.utils.sheet_to_json(wb.Sheets[name], {header:1, raw:true, defval:null});
+        grids[name] = grid;
+        var cnt = 0;
+        grid.forEach(function(row){ (row||[]).forEach(function(v){ if (v === 'HR') cnt++; }); });
+        hrCounts[name] = cnt;
+        if (!opSheetName && /operador/i.test(name)) opSheetName = name;
+    });
+    
+    var claveToName = {}, unidadToName = {};
+    if (opSheetName && Object.keys(store.operadoresDB || {}).length === 0){
+      var opGrid = grids[opSheetName];
+      for (var i=1;i<opGrid.length;i++){
+        var row = opGrid[i] || [];
+        var unidad = row[0], clave = row[1], nombre = row[2];
+        var nm = nombre ? String(nombre).replace(/\s+/g,' ').trim() : null;
+        var unidadNum = (unidad != null && !isNaN(Number(unidad))) ? Math.round(Number(unidad)) : null;
+        var claveNum = (clave != null && !isNaN(Number(clave))) ? Math.round(Number(clave)) : null;
+        let finalName = nm || (store.operadoresDB && store.operadoresDB[claveNum] ? store.operadoresDB[claveNum] : null);
+        if (claveNum != null) claveToName[claveNum] = finalName;
+        if (unidadNum != null) unidadToName[unidadNum] = finalName; 
+      }
+    }
+
+    var days = [];
+    wb.SheetNames.forEach(function(name){
+      if (hrCounts[name] < 3) return;
+      var grid = grids[name];
+      var hrCells = [];
+      for (var r=0;r<grid.length;r++) for (var c=0;c<(grid[r]||[]).length;c++) if (grid[r][c] === 'HR') hrCells.push([r,c]);
+      var records = [];
+      hrCells.forEach(function(hc){
+        var r = hc[0], c = hc[1];
+        function getVal(ro,co) {
+            for(let i=ro-1; i>=Math.max(ro-8,0); i--) {
+                for(let j=co-3; j<co+7; j++) {
+                    if(grid[i] && typeof grid[i][j] === 'string' && grid[i][j].includes('/')) return grid[i][j];
+                }
+            }
+            return null;
+        }
+        var label = getVal(r, c);
+        var od = label ? label.split('/') : ['Bloque '+c, ''];
+        var rr = r+1;
+        while (rr < grid.length){
+          var hrVal = grid[rr] ? grid[rr][c] : null, busVal = grid[rr] ? grid[rr][c+1] : null, claveVal = grid[rr] ? grid[rr][c+2] : null;
+          if (hrVal == null && busVal == null) break;
+          
+          var hStr = null;
+          if (typeof hrVal === 'number' && hrVal >= 0){
+            var min = Math.round((hrVal - Math.floor(hrVal))*24*60); 
+            hStr = String(Math.floor(min/60)).padStart(2,'0') + ':' + String(min%60).padStart(2,'0'); 
+          } else if (typeof hrVal === 'string' && hrVal.trim().includes(':')) {
+            var parts = hrVal.trim().split(':');
+            if (parts.length >= 2 && !isNaN(parseInt(parts[0])) && !isNaN(parseInt(parts[1]))) {
+                hStr = String(parseInt(parts[0])).padStart(2,'0') + ':' + String(parseInt(parts[1])).padStart(2,'0');
+            }
+          }
+
+          if (hStr != null){
+            var busNum = (typeof busVal === 'number') ? Math.round(busVal) : (busVal ? String(busVal).trim() : null); 
+            var claveNum2 = (typeof claveVal === 'number') ? Math.round(claveVal) : (claveVal ? String(claveVal).trim() : null);
+            var safeClave = claveNum2 != null ? fbKey(claveNum2) : null;
+            
+            var nameOp = null; 
+            if (safeClave != null && store.operadoresDB && store.operadoresDB[safeClave]) nameOp = store.operadoresDB[safeClave]; 
+            else if (claveNum2 != null && claveToName[claveNum2] !== undefined) nameOp = claveToName[claveNum2]; 
+            else if (busNum != null && unidadToName[busNum] !== undefined) nameOp = unidadToName[busNum];
+            
+            if (!nameOp && claveNum2 != null) {
+                nameOp = String(claveNum2).trim();
+            }
+
+            records.push({
+                id: 'u'+r+'_'+c+'_'+rr,
+                o: (od[0]||'').trim() || "Desconocido",
+                d: (od[1]||'').trim() || "Desconocido",
+                h: hStr || "00:00",
+                u: busNum != null ? String(busNum) : "",
+                k: safeClave != null ? String(safeClave) : "",
+                n: nameOp || ""
+            });
+          }
+          rr++;
+        }
+      });
+      if (records.length) {
+          records.sort((a,b)=>a.h.localeCompare(b.h));
+          days.push({ key: name, trips: records });
+      }
+    });
+    return { days: days, fleet: [] }; 
+}
+
+if (loadLocalCache()) {
+    setSyncStatus(false, "Caché listo", true);
+    render();
+}
+initFirebaseConnection();
+
+// FORZAR AL SERVICE WORKER A DESCARGAR SIEMPRE LA VERSIÓN MÁS NUEVA DE GITHUB
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').then(reg => {
+            reg.update();
+        }).catch(() => {});
+    });
+}
+</script>
+</body>
+</html>
