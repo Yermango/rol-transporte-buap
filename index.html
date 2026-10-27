@@ -2,7 +2,8 @@
 <html lang="es" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<!-- Bloqueo estricto para evitar modo escritorio automático en el APK -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Rol Operativo Pro - STU BUAP</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -16,34 +17,18 @@
 
 <style>
   :root {
-    /* COLORES CORPORATIVOS ESTRELLA ROJA */
-    --bg: #F4F6F9; 
-    --surface: #FFFFFF; 
-    --surface-2: #F2F4F7;
-    --ink: #121826; 
-    --ink-soft: #5B6472; 
-    --ink-faint: #8A93A0;
-    --line: #DCE1E8; 
-    --accent: #00509d; 
-    --accent-ink: #FFFFFF;
-    --pend: #B4790A; 
-    --pend-bg: #FBF0DA; 
-    --done: #2E7D4F; 
-    --done-bg: #E2F3E7;
-    --bad: #D81A32; 
-    --bad-bg: #FAE3E6; 
-    --chip-bg: #E8EDF2; 
-    --chip-active-bg: #121826;
+    --bg: #EAEDF1; --surface: #FFFFFF; --surface-2: #F2F4F7;
+    --ink: #121826; --ink-soft: #5B6472; --ink-faint: #8A93A0;
+    --line: #DCE1E8; --accent: #0E6E78; --accent-ink:#FFFFFF;
+    --pend: #B4790A; --pend-bg: #FBF0DA; --done: #2E7D4F; --done-bg: #E2F3E7;
+    --bad: #C1495A; --bad-bg: #FAE3E6; --chip-bg: #F2F4F7; --chip-active-bg: #121826;
     --radius: 14px;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "IBM Plex Sans", sans-serif; padding-bottom: 40px; transition: background 0.3s; position: relative; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "IBM Plex Sans", sans-serif; padding-bottom: 40px; transition: background 0.3s; }
   .mono { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; }
   
-  /* MARCA DE AGUA */
-  .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; max-width: 350px; height: 50vh; opacity: 0.04; pointer-events: none; z-index: 0; background-image: url('Logo Estrella Roja.webp'); background-size: contain; background-repeat: no-repeat; background-position: center; }
-
-  .shell { max-width: 480px; margin: 0 auto; position: relative; z-index: 1; transition: max-width 0.3s ease; }
+  .shell { max-width: 480px; margin: 0 auto; position: relative; transition: max-width 0.3s ease; }
   body.pc-view .shell { max-width: 1400px; padding: 0 20px; }
   body.pc-view header { border-bottom: 1px solid var(--line); border-radius: 0 0 16px 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
   
@@ -60,11 +45,10 @@
   body.pc-view .trip-sub { grid-column: 3; margin-top: 0; font-size: 13.5px; display: flex; align-items: center; gap: 8px;}
   body.pc-view .trip-actions { grid-column: 4; justify-content: flex-end; }
 
-  /* ESTILOS DE LA TABLA EXCEL (FLOTA) */
   .table-container { width: 100%; overflow-x: auto; background: var(--surface); border-radius: 12px; border: 1px solid var(--line); box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
   .excel-table { width: 100%; border-collapse: collapse; font-size: 13.5px; text-align: left; }
   .excel-table th { background: var(--surface-2); position: sticky; top: 0; padding: 12px 10px; font-weight: 700; color: var(--ink); cursor: pointer; border-bottom: 2px solid var(--line); white-space: nowrap; user-select: none; }
-  .excel-table th:hover { background: #e5e9f0; color: var(--accent); }
+  .excel-table th:hover { background: #e5e9f0; }
   .excel-table td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
   .excel-table tr:last-child td { border-bottom: none; }
   .excel-table tr:hover td { filter: brightness(0.96); cursor: pointer; }
@@ -75,16 +59,16 @@
   .row-ok { background: var(--surface); }
   .row-disp { background: #e6f4ea; color: #137333; }
   .row-disp td { font-weight: 500; }
-  .row-bad { background: #fce8e6; color: var(--bad); }
+  .row-bad { background: #fce8e6; color: #c5221f; }
   .row-bad td { font-weight: 600; }
   .row-warn { background: #fff4e6; color: #b06000; }
   .row-warn td { font-weight: 500; }
-  .row-gray { background: #e2e6eb; color: #4b5563; }
+  .row-gray { background: #f2f4f7; color: #5B6472; }
   .row-gray td { font-weight: 500; }
 
   header { position: sticky; top: 0; z-index: 30; background: var(--bg); padding-top: 10px; }
   .clock-container { display: flex; justify-content: center; align-items: center; margin-bottom: 4px; position: relative; gap: 15px; }
-  .clock { font-size: 32px; font-weight: 700; color: var(--accent); letter-spacing: -1px; }
+  .clock { font-size: 32px; font-weight: 700; color: var(--ink); letter-spacing: -1px; }
   
   .header-actions { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); display: flex; gap: 10px; z-index: 90;}
   .icon-btn-top { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px; cursor: pointer; color: var(--ink-soft); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -98,34 +82,38 @@
   .sync-dot.busy { background: #B4790A; animation: pulse 1s infinite; }
   @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
   
-  .alert-banner { background: var(--surface); border-left: 4px solid var(--pend); padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--ink); font-weight: 500; margin-bottom: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);}
-  .alert-banner.critical { background: var(--bad-bg); border-left-color: var(--bad); border: 1px solid #f5c2c7; }
+  .alert-banner { background: var(--pend-bg); border-left: 4px solid var(--pend); padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--ink); font-weight: 500; margin-bottom: 8px;}
+  .alert-banner.critical { background: var(--bad-bg); border-left-color: var(--bad); color: var(--bad); border: 1px solid #f5c2c7; }
   .alert-main { flex: 1; min-width: 0; }
-  .alert-title { font-weight: 700; line-height: 1.25; font-size: 14px; color: var(--bad);}
-  .alert-detail { margin-top: 5px; color: var(--ink); font-size: 13px; line-height: 1.5; font-weight: 400; }
+  .alert-title { font-weight: 700; line-height: 1.25; font-size: 14px;}
+  .alert-detail { margin-top: 5px; color: var(--ink-soft); font-size: 13px; line-height: 1.4; font-weight: 400; }
+  .alert-banner.critical .alert-detail { color: #842029; font-weight: 600; }
   .alert-close { flex: 0 0 auto; background: none; border: none; color: inherit; font-weight: bold; font-size: 18px; cursor: pointer; padding: 0 5px; line-height: 1; }
 
   .toolbar-wrap { display: flex; overflow-x: auto; padding: 0 14px 10px; gap: 8px; align-items: center; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .toolbar-wrap::-webkit-scrollbar { display: none; }
   
-  .tbtn { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; border: none; background: var(--chip-bg); color: var(--accent); font-weight: 600; padding: 8px 12px; border-radius: 11px; white-space: nowrap; cursor: pointer; pointer-events: auto; transition: 0.2s;}
+  .tbtn { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; border: none; background: var(--chip-bg); color: var(--ink-soft); font-weight: 600; padding: 8px 12px; border-radius: 11px; white-space: nowrap; cursor: pointer; pointer-events: auto; transition: 0.2s;}
   .tbtn:active { transform: scale(0.95); }
   .tbtn.active { background: var(--accent); color: #fff; }
   .tbtn.btn-revisar.active { background: var(--bad); color: white; }
   .tbtn svg { width: 16px; height: 16px; pointer-events: none;}
   
+  #btnSearch { padding: 0 8px 0 0; background: transparent; }
+  #btnSearch svg { width: 32px !important; height: 32px !important; color: var(--accent); }
+
   .badge-alert { background: var(--bad); color: white; padding: 2px 6px; border-radius: 10px; font-size: 12px; display: none; font-weight: 700; }
   .badge-alert.has-items { display: inline-block; animation: pop 0.3s; }
   @keyframes pop { 0% { transform: scale(0.8); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
 
-  .search-wrap { padding: 0 14px 10px; display: block; }
-  .search-wrap input { width: 100%; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 11px; padding: 10px 14px; font-size: 14px; outline: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);}
-  .search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
+  .search-wrap { padding: 0 14px 9px; display: none; }
+  .search-wrap.open { display: block; }
+  .search-wrap input { width: 100%; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 11px; padding: 9px 12px; font-size: 14px; outline: none; }
 
   .seg-wrap { padding: 0 14px 12px; }
   .seg { display: flex; background: var(--surface-2); border-radius: 11px; padding: 3px; }
   .seg button { border: none; background: transparent; padding: 8px; font-weight: 600; color: var(--ink-soft); cursor: pointer; border-radius: 8px; pointer-events: auto;}
-  .seg button.active { background: var(--surface); color: var(--accent); box-shadow: 0 1px 2px rgba(0,0,0,.1); }
+  .seg button.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.1); }
   .seg button.btn-activas { flex: 2; }
   .seg button.btn-flota { flex: 2; }
   .seg button.btn-ocultas { flex: 1; font-size: 12px; }
@@ -175,19 +163,18 @@
   .overlay.show { opacity: 1; pointer-events: auto; visibility: visible; }
   body.pc-view .overlay { align-items: center; justify-content: center; }
 
-  .sheet { background: var(--surface); width: 100%; max-width: 480px; margin: 0 auto; border-radius: 18px 18px 0 0; padding: 20px; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1); max-height: 90vh; overflow-y: auto; pointer-events: auto; box-shadow: 0 -10px 20px rgba(0,0,0,0.1);}
+  .sheet { background: var(--surface); width: 100%; max-width: 480px; margin: 0 auto; border-radius: 18px 18px 0 0; padding: 20px; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1); max-height: 90vh; overflow-y: auto; pointer-events: auto;}
   body.pc-view .sheet { max-width: 600px; border-radius: 18px; margin: auto; transform: scale(0.95); opacity: 0; transition: all 0.2s;}
   body.pc-view .overlay.show .sheet { transform: scale(1); opacity: 1; }
   
-  .sheet h2 { margin: 0 0 12px; font-size: 18px; color: var(--accent); }
+  .sheet h2 { margin: 0 0 12px; font-size: 18px; color: var(--ink); }
   .input-field { width: 100%; padding: 14px 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 16px; margin-bottom: 15px; outline: none; background-color: var(--surface-2); color: var(--ink); font-family: inherit; font-weight: 500; }
   .input-field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
 
-  .btn-primary { display: block; width: 100%; padding: 14px; background: var(--bad); color: #fff; font-weight: bold; font-size: 16px; border: none; border-radius: 12px; margin-top: 15px; cursor: pointer; box-shadow: 0 4px 12px rgba(216, 26, 50, 0.3); transition: 0.2s;}
+  .btn-primary { display: block; width: 100%; padding: 14px; background: var(--accent); color: #fff; font-weight: bold; font-size: 16px; border: none; border-radius: 12px; margin-top: 15px; cursor: pointer; box-shadow: 0 4px 12px rgba(14, 110, 120, 0.3); transition: 0.2s;}
   .btn-primary:active { transform: scale(0.98); }
-  .btn-outline { display: block; width: 100%; padding: 12px; background: transparent; color: var(--accent); border: 2px solid var(--accent); font-weight: bold; border-radius: 12px; margin-top: 10px; cursor: pointer; box-sizing: border-box; text-align: center; transition: 0.2s;}
-  .btn-outline:active { background: var(--accent); color: #fff; }
-  .btn-small { padding: 6px 12px; font-size: 13px; margin-top: 8px; border-radius: 6px; }
+  .btn-outline { display: block; width: 100%; padding: 12px; background: transparent; color: var(--ink); border: 1px solid var(--line); font-weight: bold; border-radius: 12px; margin-top: 10px; cursor: pointer; box-sizing: border-box; text-align: center; }
+  .btn-small { padding: 6px 12px; font-size: 12px; margin-top: 8px; border-radius: 6px; }
 
   .reason-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 5px 0 15px; }
   .reason-chip { border: 1px solid var(--line); padding: 10px 14px; border-radius: 20px; font-size: 14px; font-weight: 500; cursor: pointer; background: var(--surface); color: var(--ink-soft); transition: 0.2s;}
@@ -202,9 +189,6 @@
 </style>
 </head>
 <body>
-<!-- MARCA DE AGUA -->
-<div class="watermark"></div>
-
 <div class="shell" id="appShell">
   <header>
     <div class="clock-container">
@@ -214,7 +198,7 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
             </button>
             <button class="icon-btn-top" id="btnUploadGlobal" aria-label="Configuración" onclick="abrirConfiguracion()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
             </button>
         </div>
     </div>
@@ -222,11 +206,12 @@
     <div class="head-top">
       <div class="head-title">
         <h1>Rol Operativo <span class="sync-indicator"><span class="sync-dot" id="syncDot"></span><span id="syncText">Iniciando...</span></span></h1>
-        <span id="dayLabel" style="font-size:13px; color:var(--accent); font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:4px; padding: 4px 8px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 15%, transparent);" onclick="abrirMenuDias()">— <span>▼</span></span>
+        <span id="dayLabel" style="font-size:13px; color:var(--accent); font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:4px; padding: 4px 8px; border-radius: 6px; background: #EAF6F7;" onclick="abrirMenuDias()">— <span>▼</span></span>
       </div>
     </div>
     
     <div class="toolbar-wrap" id="toolbar">
+      <button type="button" class="tbtn iconOnly" id="btnSearch" aria-label="Buscar"></button>
       <button type="button" class="tbtn" id="btnOrigen"></button>
       <button type="button" class="tbtn" id="btnDestino"></button>
       <button type="button" class="tbtn btn-revisar" id="btnRevisar" onclick="toggleRevisar()">🔍 Por Revisar</button>
@@ -236,11 +221,12 @@
       </button>
       <button class="tbtn" id="btnAvail" onclick="verDisponibilidad()">⏱ Disponibilidad</button>
       <button class="tbtn" id="btnVacios" onclick="verVacios()">🚎 Vacíos CU2</button>
-      <button class="tbtn" id="btnCambios" onclick="verCambios()">🔄 Historial</button>
+      <button type="button" class="tbtn" id="btnEmpalmes" onclick="verEmpalmesRuta()">🔀 Empalmes de Ruta</button>
+      <button class="tbtn" id="btnCambios" onclick="verCambios()">🔄 Historial Cambios</button>
     </div>
 
     <div class="search-wrap" id="searchWrap">
-      <input id="search" type="text" inputmode="search" placeholder="🔍 Filtrar ruta, unidad, operador o estatus..." autocomplete="off">
+      <input id="search" type="text" inputmode="search" placeholder="Buscar ruta, unidad, operador o estatus..." autocomplete="off">
     </div>
 
     <div class="seg-wrap">
@@ -408,74 +394,36 @@ function openSheet(html) { document.getElementById("sheetContent").innerHTML = h
 window.closeSheet = function() { document.getElementById("overlay").classList.remove("show"); }
 document.getElementById("overlay").addEventListener("click", function(e){ if(e.target.id === "overlay") closeSheet(); });
 
+let dismissedAlerts = JSON.parse(localStorage.getItem('dismissedAlerts') || '[]');
+
 function actualizarBadgePendientes() {
     let ds = getDayState(); globalAlertsData = []; let alertCount = 0;
     
     if(globalCollisions.length > 0) {
         alertCount += globalCollisions.length;
         let mensajes = globalCollisions.map(c => 
-            `<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                <div>
-                    <b>${c.entity}</b> choca a las <b>${c.time}</b><br>
-                    <span style="color:gray;font-size:12px;">Se debe reasignar un viaje</span>
-                </div>
-                <button class="btn-outline btn-small" style="border-color:var(--bad); color:var(--bad); margin-top:0;" onclick="resolverEmpalmeRuta('${c.entity}', '${c.time}')">Resolver</button>
-             </div>`
+            `<b>${c.val}</b> tiene viajes simultáneos a las ${c.time} 
+             <button class="btn-outline btn-small" onclick="resolverEmpalmeRuta('${c.val}', '${c.time}')">Resolver</button>`
         ).join('<hr style="border:0; border-top:1px solid #ffcccc; margin:8px 0;">');
         globalAlertsData.push(`<div class="alert-banner critical"><div class="alert-main"><div class="alert-title">⚠️ EMPALMES (Fricción Física)</div><div class="alert-detail">${mensajes}</div></div></div>`);
     }
 
-    let allTrips = store.days[store.currentDay] ? store.days[store.currentDay].trips : [];
-    let missing = [];
-    let nowTime = new Date().getTime();
-    let baselineOp = {}; if(store.globalFleet) { store.globalFleet.forEach(g => { if(g.u && g.n) baselineOp[String(g.u)] = g.n; }); }
-
-    (allTrips || []).forEach(t => {
-        let state = getTripState(t.id);
-        let isHidden = state.hidden;
-        if (state.status === "formado" && state.formadoAt && (nowTime - state.formadoAt > 300000)) isHidden = true;
-        if (isHidden) return;
-
-        let overU = ds.tripUnitOverride[t.id] || ds.unitOverride[t.k || t.n] || ds.unitOverride[t.u];
-        let finalUnit = overU === "VACIO" ? "" : (overU || t.u);
-        let baseOp = baselineOp[finalUnit] || t.n;
-        let overOp = ds.tripOpOverride[t.id] || ds.opOverride[finalUnit] || ds.opOverride[t.n];
-        let finalOp = overOp === "VACIO" ? "" : (overOp || baseOp);
-
-        if (!finalUnit || !finalOp) {
-            let missingMsg = [];
-            if (!finalUnit) missingMsg.push("Unidad");
-            if (!finalOp) missingMsg.push("Operador");
-            missing.push({ trip: t, missing: missingMsg.join(" y "), unit: finalUnit, op: finalOp });
+    let activeChanges = ds.unitChanges.slice(-10).reverse(); 
+    activeChanges.forEach(c => {
+        let id = String(c.changeAt || Date.now());
+        if(!dismissedAlerts.includes(id)) {
+            alertCount++; let isCrit = ESTADOS_CRITICOS.includes(c.reason);
+            globalAlertsData.push(`
+                <div class="alert-banner ${isCrit ? 'critical' : ''}">
+                    <div class="alert-main"><div class="alert-title">🔄 ${c.route} (${c.tripTime})</div>
+                        <div class="alert-detail"><b>${c.newUnit === 'VACIO' ? 'S/U' : 'U-'+c.newUnit}</b> | ${c.nombre === 'VACIO' ? 'Sin Asignar' : c.nombre}<br><b style="color:${isCrit?'#842029':'var(--bad)'}">Motivo: ${c.reason || 'No especificado'}</b></div>
+                    </div><button class="alert-close" aria-label="Descartar" onclick="dismissAlert('${id}')">✖</button>
+                </div>`);
         }
     });
 
-    if (missing.length > 0) {
-        alertCount += missing.length;
-        let mensajes = missing.map(m =>
-            `<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                <div>
-                    <b>${m.trip.h}</b> - ${formatRouteName(m.trip.o, m.trip.d)}<br>
-                    <span style="color:var(--bad);font-size:12px;font-weight:bold;">Falta: ${m.missing}</span>
-                </div>
-                <button class="btn-outline btn-small" style="margin-top:0;" onclick="abrirModalDesdePendientes('${m.trip.id}', '${m.unit}', '${m.op}', '${m.trip.k || m.trip.n || ""}')">Modificar</button>
-             </div>`
-        ).join('<hr style="border:0; border-top:1px solid #ffcccc; margin:8px 0;">');
-        globalAlertsData.push(`<div class="alert-banner"><div class="alert-main"><div class="alert-title" style="color:var(--pend);">⚠️ FALTA ASIGNACIÓN</div><div class="alert-detail">${mensajes}</div></div></div>`);
-    }
-
     let badge = document.getElementById("badgeAlerts");
     if(badge) { badge.innerText = alertCount; if(alertCount > 0) badge.classList.add('has-items'); else badge.classList.remove('has-items'); }
-}
-
-window.abrirModalDesdePendientes = function(tripId, unit, op, k) {
-    let fakeCard = document.createElement('div');
-    fakeCard.setAttribute('data-id', tripId);
-    fakeCard.setAttribute('data-k', k);
-    fakeCard.setAttribute('data-u', unit || "");
-    fakeCard.setAttribute('data-n', op || "");
-    closeSheet();
-    setTimeout(() => openChangeModal(fakeCard), 250);
 }
 
 window.verEmpalmesRuta = function() {
@@ -551,8 +499,14 @@ window.resolverEmpalmeRuta = function(val, time) {
 }
 
 window.verPendientes = function() {
-    if(globalAlertsData.length === 0) { openSheet(`<h2>⚠️ Pendientes</h2><p style="text-align:center; color:gray; padding:20px;">Todo en orden. No hay alertas accionables en este momento.</p>`); return; }
-    openSheet(`<h2>⚠ Tareas Pendientes</h2><div style="font-size:13px; color:gray; margin-bottom:15px;">Gestiona choques físicos y falta de asignaciones al instante.</div>${globalAlertsData.join('')}`);
+    if(globalAlertsData.length === 0) { openSheet(`<h2>⚠️ Pendientes</h2><p style="text-align:center; color:gray; padding:20px;">No hay alertas pendientes.</p>`); return; }
+    openSheet(`<h2>⚠ Alertas y Pendientes</h2><div style="font-size:13px; color:gray; margin-bottom:15px;">Gestiona colisiones y notificaciones.</div>${globalAlertsData.join('')}`);
+}
+
+window.dismissAlert = function(id) {
+    if(!dismissedAlerts.includes(id)) dismissedAlerts.push(id);
+    localStorage.setItem('dismissedAlerts', JSON.stringify(dismissedAlerts));
+    actualizarBadgePendientes(); verPendientes(); 
 }
 
 window.abrirMenuDias = function() {
@@ -619,8 +573,8 @@ function render() {
     let nowMin = new Date().getHours() * 60 + new Date().getMinutes();
     let nowTime = new Date().getTime();
     let visible = [];
-
     let sortedTrips = [...trips];
+
     globalCollisions = obtenerEmpalmesRender(); 
     let ds = getDayState();
     
@@ -661,9 +615,9 @@ function render() {
       visible.push(t);
     });
 
-    actualizarBadgePendientes(); 
+    actualizarBadgePendientes();
     
-    if (!visible.length){ document.getElementById("list").innerHTML = "<div style='text-align:center;padding:40px;color:gray;'>No hay resultados con este filtro</div>"; return; }
+    if (!visible.length){ document.getElementById("list").innerHTML = "<div style='text-align:center;padding:40px;color:gray;'>No hay rutas con este filtro</div>"; return; }
 
     let groupedTrips = {};
     visible.forEach(t => { 
@@ -673,14 +627,20 @@ function render() {
     });
 
     let sortedHours = Object.keys(groupedTrips);
-    if (activeView === "ocultas") sortedHours.sort((a, b) => Number(b) - Number(a)); 
-    else sortedHours.sort((a, b) => Number(a) - Number(b)); 
+    if (activeView === "ocultas") {
+        sortedHours.sort((a, b) => Number(b) - Number(a));
+    } else {
+        sortedHours.sort((a, b) => Number(a) - Number(b));
+    }
 
     var html = "";
     for (let hour of sortedHours) {
         let tripsInHour = groupedTrips[hour];
-        if (activeView === "ocultas") tripsInHour.sort((a,b) => b.h.localeCompare(a.h));
-        else tripsInHour.sort((a,b) => a.h.localeCompare(b.h));
+        if (activeView === "ocultas") {
+            tripsInHour.sort((a,b) => b.h.localeCompare(a.h));
+        } else {
+            tripsInHour.sort((a,b) => a.h.localeCompare(b.h));
+        }
 
         let actionBtn = activeView === 'ocultas' ? `<button type="button" class="hour-toggle restore-btn-block" onclick="restaurarBloque('${hour}')">Restaurar bloque</button>` : `<button type="button" class="hour-toggle" onclick="ocultarBloque('${hour}')">Ocultar bloque</button>`;
 
@@ -756,7 +716,9 @@ function render() {
   function renderFlota() {
     let ds = getDayState();
     let opsMap = {}; if(store.operadoresDB) Object.keys(store.operadoresDB).forEach(k => opsMap[store.operadoresDB[k]] = k);
-    let baselineOp = {}; if(store.globalFleet) { store.globalFleet.forEach(g => { if(g.u && g.n) baselineOp[String(g.u)] = g.n; }); }
+    
+    let baselineOp = {};
+    if(store.globalFleet) { store.globalFleet.forEach(g => { if(g.u && g.n) baselineOp[String(g.u)] = g.n; }); }
 
     let unitToOp = {}; let opToUnit = {};
     
@@ -804,34 +766,32 @@ function render() {
         if(opName && !processedOps.has(opName)) { rows.push({ u: "", k: clave, n: opName }); processedOps.add(opName); }
     });
 
+    let currentEmpalmes = obtenerEmpalmesRender();
+    let empalmeEntities = new Set();
+    currentEmpalmes.forEach(e => empalmeEntities.add(e.entity));
+
     rows.forEach(r => {
         let uReason = store.unassignedReasons[r.u];
         let opReason = store.unassignedReasons[r.n] || store.unassignedReasons[r.k];
         
-        r.sortWeight = 1; 
-        let opLow = (opReason || "").toLowerCase();
-        let nLow = (r.n || "").toLowerCase();
-        let isBaja = opLow.includes("baja") || nLow.includes("baja");
-        let isApoyo = opLow.includes("apoyo") || nLow.includes("apoyo");
+        let hasCollision = empalmeEntities.has('U-'+r.u) || empalmeEntities.has(r.n);
+        r.isGray = false;
 
         if(r.u && r.n) {
             r.st = "Asignado"; r.cat = "row-ok";
-            if(isApoyo) { r.cat = "row-gray"; r.st = "Asignado (Apoyo)"; } 
             if(uReason) { r.st = `⚠️ Unidad en: ${uReason}`; r.cat = "row-bad"; }
-            else if(opReason && !isApoyo) { r.st = `⚠️ Operador: ${opReason}`; r.cat = "row-bad"; }
+            if(opReason) { r.st = `⚠️ Operador: ${opReason}`; r.cat = "row-bad"; }
         } else if(r.u && !r.n) {
             if(uReason) { r.st = `Inhábil (${uReason})`; r.cat = "row-bad"; }
             else { r.st = "Disponible (Sin Op)"; r.cat = "row-disp"; }
         } else if(!r.u && r.n) {
-            if(isBaja) {
-                r.st = opReason || "Baja"; r.cat = "row-gray"; r.sortWeight = 3; 
-            } else if (isApoyo) {
-                r.st = opReason || "Apoyo"; r.cat = "row-gray"; r.sortWeight = 2; 
-            } else if(opReason && ESTADOS_CRITICOS.includes(opReason)) {
-                r.st = `Inhábil (${opReason})`; r.cat = "row-bad";
-            } else {
-                r.st = "Habilitado (Sin unidad)"; r.cat = "row-warn";
-            }
+            if(opReason && ESTADOS_CRITICOS.includes(opReason)) { r.st = `Inhábil (${opReason})`; r.cat = "row-bad"; }
+            else if(opReason === "Apoyo" || (opReason || "").toLowerCase().includes("baja")) { r.st = opReason; r.cat = "row-gray"; r.isGray = true; }
+            else { r.st = "Habilitado (Sin unidad)"; r.cat = "row-warn"; }
+        }
+
+        if(hasCollision && r.cat !== "row-bad") {
+            r.st = "⚠️ EMPALME DE RUTA"; r.cat = "row-warn";
         }
     });
 
@@ -845,8 +805,7 @@ function render() {
     }
 
     rows.sort((a,b) => {
-        if (a.sortWeight !== b.sortWeight) return a.sortWeight - b.sortWeight;
-        
+        if (flotaSortCol === 'u' && a.isGray !== b.isGray) return a.isGray ? 1 : -1;
         let valA = a[flotaSortCol] || ""; let valB = b[flotaSortCol] || "";
         if(flotaSortCol === 'u' || flotaSortCol === 'k') return (Number(valA) - Number(valB)) * flotaSortDir;
         return String(valA).localeCompare(String(valB)) * flotaSortDir;
@@ -951,7 +910,6 @@ function render() {
 
       ds.unitChanges.push({ changeAt: Date.now(), scope: "Impacta a todas las vueltas planeadas", route: "Edición de Flota", tripTime: "Todo el día", newUnit: finalU || "VACIO", nombre: finalOp || "VACIO", reason: (stU!=='Activa'?stU: (stOp!=='Activo'?stOp: 'Cambio de asignación')) });
       saveStore(); closeSheet();
-      actualizarBadgePendientes(); 
   };
 
   window.abrirConfiguracion = function() {
@@ -964,7 +922,7 @@ function render() {
       </div>
       <div style="background:var(--surface-2); padding:15px; border-radius:12px;">
         <strong style="display:block;margin-bottom:5px;">2. Archivo: "rol"</strong>
-        <span style="font-size:12px;color:gray;">Asigna las rutas a la flota. (Soporta ambos formatos)</span>
+        <span style="font-size:12px;color:gray;">Asigna las rutas a la flota.</span>
         <button class="btn-outline" onclick="document.getElementById('fileAsignacion').click()">Seleccionar Excel</button>
       </div>
       <div id="uploadMsg" style="margin-top:10px;font-size:13px;font-weight:bold;color:var(--accent);text-align:center;"></div>
@@ -973,7 +931,7 @@ function render() {
 
   window.verCambios = function() {
     let ds = getDayState(); let c = ds.unitChanges.slice().reverse();
-    let html = c.length ? c.map(x => `<div style="padding:10px; border-bottom:1px solid #eee; font-size:13px; ${ESTADOS_CRITICOS.includes(x.reason) ? 'background:#fae3e6;' : ''}"><b>Ruta: ${x.route} (${x.tripTime})</b><br>Unidad: ${x.newUnit==='VACIO'?'S/U':'U-'+x.newUnit} | ${x.nombre==='VACIO'?'Sin asignar':x.nombre}<br><span style="color:gray">${x.scope}</span><br><b style="color:${ESTADOS_CRITICOS.includes(x.reason) ? 'var(--bad)' : 'var(--accent)'}">Motivo:</b> ${x.reason || 'N/A'}</div>`).join('') : '<p>Sin cambios hoy</p>';
+    let html = c.length ? c.map(x => `<div style="padding:10px; border-bottom:1px solid #eee; font-size:13px; ${ESTADOS_CRITICOS.includes(x.reason) ? 'background:#fae3e6;' : ''}"><b>Ruta: ${x.route} (${x.tripTime})</b><br>Unidad: ${x.newUnit==='VACIO'?'S/U':'U-'+x.newUnit} | ${x.nombre==='VACIO'?'Sin asignar':x.nombre}<br><span style="color:gray">${x.scope}</span><br><b style="color:${ESTADOS_CRITICOS.includes(x.reason) ? '#842029' : 'var(--bad)'}">Motivo:</b> ${x.reason || 'N/A'}</div>`).join('') : '<p>Sin cambios hoy</p>';
     openSheet(`<h2>Historial de Cambios</h2><div style="max-height: 60vh; overflow-y:auto;">${html}</div>`);
   }
 
@@ -1003,11 +961,6 @@ function render() {
     `);
   }
 
-  window.seleccionarMotivo = function(btn, motivo) {
-      document.querySelectorAll(".reason-chip").forEach(b => b.classList.remove("sel"));
-      btn.classList.add("sel"); window._selectedReason = motivo;
-  }
-
   window.procesarCambio = function(fleetKey, tripId, oldU, oldOp) {
     let newU = document.getElementById("newUInput").value; let newOp = document.getElementById("newOpInput").value.trim();
     if(newOp === "") newOp = "VACIO";
@@ -1027,7 +980,6 @@ function render() {
         ds.unitChanges.push({ changeAt: Date.now(), scope: scope === "all" ? "Todas las vueltas de este operador" : "Solo este horario", route: changedTrip ? `${changedTrip.o} ➔ ${changedTrip.d}` : "Ruta General", tripTime: changedTrip ? changedTrip.h : "N/A", newUnit: newU === "" ? "VACIO" : newU, nombre: newOp === "" ? "VACIO" : newOp, reason: reason });
     }
     saveStore(); closeSheet();
-    actualizarBadgePendientes(); 
   };
 
   window.verVacios = function() {
@@ -1118,7 +1070,10 @@ function render() {
     document.querySelectorAll(".opt-row").forEach(btn => { btn.addEventListener("click", function(){ onPick(btn.getAttribute("data-val") || null); closeSheet(); }); });
   }
   
-  var searchInput = document.getElementById("search");
+  var searchWrap = document.getElementById("searchWrap"); var searchInput = document.getElementById("search");
+  document.getElementById("btnSearch").addEventListener("click", function(){
+    searchWrap.classList.toggle("open"); if (searchWrap.classList.contains("open")) searchInput.focus(); else { searchInput.value = ""; searchTerm = ""; render(); }
+  });
   searchInput.addEventListener("input", function(){ searchTerm = searchInput.value.trim().toLowerCase(); render(); });
 
   document.getElementById("fileAsignacion").addEventListener("change", e => handleExcel(e.target.files[0], 'asignacion', e.target));
@@ -1202,6 +1157,7 @@ function render() {
             }
             if(msgBox) msgBox.innerHTML = `<span style="color:var(--done)">¡Archivo "datos" guardado en la nube! Base de datos reseteada.</span>`; saveStore();
         } else {
+            // ESTRUCTURA PREPARADA PARA EL PARSER DUAL - ESPERANDO ENCABEZADOS DEL FORMATO 2
             let result = parseWorkbook(e.target.result);
             if (!result.days.length) throw new Error("No se encontraron horarios en el archivo.");
             
@@ -1222,137 +1178,8 @@ function render() {
   }
 
   function parseWorkbook(arrayBuffer){
-    var wb = XLSX.read(new Uint8Array(arrayBuffer), {type:'array'}); 
-    
-    var isNewFormat = false;
-    var newData = null;
-    var newMap = null;
-    
-    // ESCANEO DINÁMICO: Determinar si es el formato nuevo (Columnas) o viejo (Bloques)
-    wb.SheetNames.forEach(function(name){
-      var sheet = XLSX.utils.sheet_to_json(wb.Sheets[name], {header:1, raw:true, defval:null});
-      if(sheet.length > 0) {
-          for(let r=0; r<Math.min(5, sheet.length); r++) {
-              let rStr = (sheet[r]||[]).join(" ").toUpperCase();
-              if(rStr.includes("RUTA CLIENTE") || rStr.includes("OPERADOR(NÓMINA)")) {
-                  isNewFormat = true;
-                  newData = sheet.slice(r); 
-                  break;
-              }
-              if(rStr.includes("ID RUTA") && rStr.includes("RUTA")) {
-                  newMap = sheet;
-              }
-          }
-      }
-    });
-
-    if (isNewFormat && newData) {
-        // --- PROCESAMIENTO NUEVO FORMATO (TABULAR CON DOBLE HOJA) ---
-        var routeMap = {};
-        if (newMap) {
-            let mapHRow = -1;
-            for(let r=0; r<Math.min(5, newMap.length); r++) {
-                if((newMap[r]||[]).join(" ").toUpperCase().includes("ID RUTA")) {
-                    mapHRow = r; break;
-                }
-            }
-            if(mapHRow !== -1) {
-                let mHeaders = newMap[mapHRow].map(h => String(h||"").toUpperCase().trim());
-                let colRuta = mHeaders.indexOf("RUTA");
-                let colIdRuta = mHeaders.indexOf("ID RUTA");
-                if (colRuta !== -1 && colIdRuta !== -1) {
-                    for(let r=mapHRow+1; r<newMap.length; r++) {
-                        let id = newMap[r][colIdRuta];
-                        let desc = newMap[r][colRuta];
-                        if (id) routeMap[String(id).trim()] = String(desc || "").trim();
-                    }
-                }
-            }
-        }
-
-        let headers = newData[0].map(h => String(h||"").toUpperCase().trim());
-        let colId = headers.findIndex(h => h.includes("RUTA CLIENTE"));
-        let colFecha = headers.findIndex(h => h.includes("FECHA"));
-        let colHora = headers.findIndex(h => h.includes("HORA"));
-        let colOp = headers.findIndex(h => h.includes("OPERADOR"));
-        let colUnidad = headers.findIndex(h => h.includes("UNIDAD"));
-        
-        var dayGroups = {};
-        for(let i=1; i<newData.length; i++) {
-            let row = newData[i];
-            let rawId = row[colId];
-            if (!rawId) continue;
-            
-            let fecha = colFecha !== -1 ? row[colFecha] : "Hoy";
-            if(fecha && !isNaN(Number(fecha))) { 
-                let d = new Date(Math.round((Number(fecha) - 25569) * 86400 * 1000));
-                let y = d.getUTCFullYear(), m = String(d.getUTCMonth()+1).padStart(2,'0'), dd = String(d.getUTCDate()).padStart(2,'0');
-                fecha = y + "/" + m + "/" + dd;
-            } else if (!fecha || String(fecha).trim() === "") {
-                fecha = "Hoy";
-            } else {
-                fecha = String(fecha).trim();
-            }
-            
-            let idRuta = String(rawId).trim();
-            let routeDesc = routeMap[idRuta] || idRuta;
-            
-            let p = routeDesc.split("-");
-            let od = p.length > 1 ? p[1].trim() : p[0].trim();
-            let odParts = od.split(/ a /i);
-            let o = odParts[0].trim();
-            let d = odParts.length > 1 ? odParts.slice(1).join(" a ").trim() : "Desconocido";
-            
-            let hStr = colHora !== -1 ? (row[colHora] !== null ? String(row[colHora]).trim() : "00:00") : "00:00";
-            if (hStr.includes(":")) {
-                let hp = hStr.split(":");
-                hStr = String(parseInt(hp[0])).padStart(2,'0') + ':' + String(parseInt(hp[1])).padStart(2,'0');
-            } else if (!isNaN(Number(hStr))) { 
-                let min = Math.round(Number(hStr)*24*60);
-                hStr = String(Math.floor(min/60)).padStart(2,'0') + ':' + String(min%60).padStart(2,'0'); 
-            }
-            
-            let unidad = colUnidad !== -1 ? row[colUnidad] : null;
-            let opClave = colOp !== -1 ? row[colOp] : null;
-            
-            let busNum = (unidad != null && !isNaN(Number(unidad))) ? Math.round(Number(unidad)) : (unidad ? String(unidad).trim() : null);
-            let claveNum = (opClave != null && !isNaN(Number(opClave))) ? Math.round(Number(opClave)) : (opClave ? String(opClave).trim() : null);
-            
-            let name = null;
-            if (claveNum != null && store.operadoresDB && store.operadoresDB[claveNum]) name = store.operadoresDB[claveNum];
-            if (!name && claveNum != null) {
-                let possibleName = String(claveNum).trim();
-                let foundKey = Object.keys(store.operadoresDB || {}).find(k => store.operadoresDB[k] === possibleName);
-                if (foundKey) name = possibleName;
-                else name = possibleName;
-            }
-
-            if (!dayGroups[fecha]) dayGroups[fecha] = [];
-            
-            let recordId = 'u' + i + '_' + idRuta.replace(/\W/g,'');
-            dayGroups[fecha].push({ id: recordId, o: o, d: d, h: hStr, u: busNum, k: claveNum, n: name });
-        }
-        
-        let days = [];
-        Object.keys(dayGroups).forEach(k => {
-            let trips = dayGroups[k];
-            trips.sort((a,b) => a.h.localeCompare(b.h));
-            days.push({ key: k, trips: trips });
-        });
-        
-        return { days: days, fleet: [] };
-    }
-    
-    // --- PROCESAMIENTO FORMATO ANTERIOR (BLOQUES HORIZONTALES) ---
-    var grids = {}, hrCounts = {}, opSheetName = null;
-    wb.SheetNames.forEach(function(name){
-      var grid = XLSX.utils.sheet_to_json(wb.Sheets[name], {header:1, raw:true, defval:null}); 
-      grids[name] = grid; 
-      var cnt = 0; 
-      grid.forEach(function(row){ (row||[]).forEach(function(v){ if (v === 'HR') cnt++; }); }); 
-      hrCounts[name] = cnt; 
-      if (!opSheetName && /operador/i.test(name)) opSheetName = name; 
-    });
+    var wb = XLSX.read(new Uint8Array(arrayBuffer), {type:'array'}); var grids = {}, hrCounts = {}, opSheetName = null;
+    wb.SheetNames.forEach(function(name){ var grid = XLSX.utils.sheet_to_json(wb.Sheets[name], {header:1, raw:true, defval:null}); grids[name] = grid; var cnt = 0; grid.forEach(function(row){ (row||[]).forEach(function(v){ if (v === 'HR') cnt++; }); }); hrCounts[name] = cnt; if (!opSheetName && /operador/i.test(name)) opSheetName = name; });
     
     var claveToName = {}, unidadToName = {};
     if (opSheetName && Object.keys(store.operadoresDB || {}).length === 0){
