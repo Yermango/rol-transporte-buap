@@ -1,0 +1,30 @@
+{
+  "id": "/rol-transporte-buap/",
+  "name": "Rol Operativo Pro - STU BUAP",
+  "short_name": "Rol STU",
+  "description": "Sistema de Torre de Control y Despacho Operativo STU BUAP",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#EEF2F6",
+  "theme_color": "#00509d",
+  "lang": "es-MX",
+  "dir": "ltr",
+  "categories": ["productivity", "business", "utilities"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3448/3448339.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3448/3448339.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
