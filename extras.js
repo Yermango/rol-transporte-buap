@@ -1,95 +1,22 @@
 /* ==========================================================================
    EXTRAS.JS - ROL OPERATIVO PRO (STU BUAP)
-   - Auto-Fullscreen en Android al primer toque (sin tener que darle al botón)
-   - Modo Web con Notificaciones de Escritorio persistentes en Computadora (PC)
+   - Forzado de formato móvil Android + Pantalla Completa
    - Lectura automática de teléfonos G3 (Personal) y H3 (Trabajo) con prioridad a Trabajo (H)
    - Lector Dual de Excel para "rol" (Formato 1: Bloques HR | Formato 2: Tabular Órdenes 24h)
    - Rediseño compacto de tarjetas en "Activas" (Teléfono y WhatsApp mini para ver bien la ruta)
+   - Avisos rojos persistentes por cada cambio (ruta, horario, operador, unidad y motivo) que se quitan a mano
+   - Conexión ligera a Firebase (sin bucles, junta ráfagas de cambios) y diagnóstico de consumo de datos
+   - Aviso de "versión nueva disponible" (trabaja junto con sw.js v8)
    ========================================================================== */
 
 (function () {
     "use strict";
 
-    // Detectar si el dispositivo es móvil (Android / iOS) o Computadora de Escritorio
-    function isMobileDevice() {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-            navigator.userAgent || ""
-        );
-    }
-
-    function isAndroidDevice() {
-        return /Android/i.test(navigator.userAgent || "");
-    }
-
     // =========================================================================
-    // 1. AUTO-PANTALLA COMPLETA EN ANDROID + MODO NOTIFICACIONES EN PC
+    // 1. FORZAR FORMATO DE TELÉFONO MÓVIL Y ESTILOS COMPACTOS EN "ACTIVAS"
     // =========================================================================
-    let userManuallyExitedFullscreen = false;
-
-    function tryEnterFullscreenSilent() {
-        if (!isAndroidDevice() || userManuallyExitedFullscreen) return;
-        const docEl = document.documentElement;
-        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-            if (docEl.requestFullscreen) {
-                docEl.requestFullscreen({ navigationUI: "hide" }).catch(() => {});
-            } else if (docEl.webkitRequestFullscreen) {
-                docEl.webkitRequestFullscreen();
-            }
-        }
-    }
-
-    function setupAndroidAutoFullscreen() {
-        if (!isAndroidDevice()) return;
-
-        // Intentar al cargar (funciona directo si ya está en WebView/APK instalado)
-        setTimeout(tryEnterFullscreenSilent, 300);
-
-        // Activar automáticamente en el primer toque o deslizamiento en cualquier parte de la pantalla
-        const autoTriggerEvents = ["touchstart", "click"];
-        const onFirstInteraction = function (e) {
-            // Si el usuario tocó el botón manual de pantalla completa, dejar que ese botón decida
-            if (e.target && e.target.closest && e.target.closest("#btnFullscreenApp")) return;
-            tryEnterFullscreenSilent();
-        };
-
-        autoTriggerEvents.forEach(evt => {
-            document.addEventListener(evt, onFirstInteraction, { passive: true });
-        });
-
-        // Si el usuario minimiza para ir a WhatsApp/Llamada y regresa a la app, reactivar al tocar
-        document.addEventListener("visibilitychange", () => {
-            if (!document.hidden && !userManuallyExitedFullscreen) {
-                setTimeout(tryEnterFullscreenSilent, 200);
-            }
-        });
-    }
-
-    function setupDesktopWebNotifications() {
-        // En Computadora: asegurar que el permiso de notificaciones del navegador esté activo
-        if (isMobileDevice()) return;
-        if (!("Notification" in window)) return;
-
-        if (Notification.permission === "default") {
-            // Pedir permiso automáticamente al primer clic en la computadora
-            const askPermOnPc = function () {
-                Notification.requestPermission().then(perm => {
-                    updatePcNotifButtonState();
-                    if (perm === "granted") {
-                        try {
-                            new Notification("🔔 Rol Operativo STU BUAP", {
-                                body: "Notificaciones de escritorio activadas en esta computadora.",
-                                icon: "./Logo%20Estrella%20Roja%20192.png"
-                            });
-                        } catch (e) {}
-                    }
-                });
-                document.removeEventListener("click", askPermOnPc);
-            };
-            document.addEventListener("click", askPermOnPc, { once: true });
-        }
-    }
-
     function enforceMobileViewportAndStyles() {
+        // Forzar etiqueta viewport móvil estricta
         let vp = document.querySelector('meta[name="viewport"]');
         if (!vp) {
             vp = document.createElement("meta");
@@ -101,19 +28,10 @@
             "width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover"
         );
 
-        const savedViewPref = localStorage.getItem("stu_force_pc_view");
-        if (isMobileDevice()) {
-            // En Android/iOS siempre arrancar en formato teléfono a menos que se cambie manualmente
-            if (savedViewPref !== "1") {
-                document.body.classList.remove("pc-view");
-                document.body.classList.add("mobile-forced");
-            }
-        } else {
-            // En Computadora usar vista cómoda de escritorio por defecto
-            if (savedViewPref !== "0") {
-                document.body.classList.add("pc-view");
-                document.body.classList.remove("mobile-forced");
-            }
+        // Asegurar que no arranque en modo escritorio a menos que el usuario lo pida
+        if (localStorage.getItem("stu_force_pc_view") !== "1") {
+            document.body.classList.remove("pc-view");
+            document.body.classList.add("mobile-forced");
         }
 
         if (document.getElementById("stu-extras-styles")) return;
@@ -128,22 +46,19 @@
                 margin: 0 auto !important;
             }
 
-            /* Botón de pantalla completa / Notificaciones PC en la barra superior */
+            /* Botón de pantalla completa en la barra superior */
             .fullscreen-btn-top {
                 background: rgba(255, 255, 255, 0.18);
                 border: 1px solid rgba(255, 255, 255, 0.28);
                 border-radius: 10px;
-                padding: 6px 8px;
+                padding: 6px;
                 cursor: pointer;
                 color: #FFFFFF;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                gap: 5px;
                 min-width: 38px;
                 min-height: 38px;
-                font-size: 11.5px;
-                font-weight: 700;
             }
             .fullscreen-btn-top svg {
                 width: 19px;
@@ -152,10 +67,6 @@
             }
             .fullscreen-btn-top:active {
                 transform: scale(0.93);
-            }
-            .fullscreen-btn-top.notif-ok {
-                background: rgba(34, 197, 94, 0.28);
-                border-color: rgba(74, 222, 128, 0.6);
             }
 
             /* REDISEÑO COMPACTO DE TARJETAS EN "ACTIVAS" PARA VER BIEN LA RUTA */
@@ -298,90 +209,28 @@
         document.head.appendChild(style);
     }
 
-    function updatePcNotifButtonState() {
-        const btnNotif = document.getElementById("btnPcNotif");
-        if (!btnNotif || !("Notification" in window)) return;
-        if (Notification.permission === "granted") {
-            btnNotif.classList.add("notif-ok");
-            btnNotif.innerHTML = `🔔 <span>Alertas PC ON</span>`;
-            btnNotif.title = "Notificaciones de escritorio activas (Clic para probar sonido y alerta)";
-        } else {
-            btnNotif.classList.remove("notif-ok");
-            btnNotif.innerHTML = `🔕 <span>Activar Alertas PC</span>`;
-            btnNotif.title = "Haz clic para permitir notificaciones en esta computadora";
-        }
-    }
-
-    window.activarOProbarNotificacionesPC = function () {
-        if (!("Notification" in window)) {
-            if (typeof showAggressiveToast === "function") {
-                showAggressiveToast("Este navegador no soporta notificaciones de escritorio.");
-            }
-            return;
-        }
-        if (Notification.permission !== "granted") {
-            Notification.requestPermission().then(perm => {
-                updatePcNotifButtonState();
-                if (perm === "granted") {
-                    if (typeof playAlertSound === "function") playAlertSound(false);
-                    new Notification("🔔 Notificaciones Activadas - STU BUAP", {
-                        body: "Recibirás alertas visuales y sonoras en esta computadora en tiempo real.",
-                        icon: "./Logo%20Estrella%20Roja%20192.png"
-                    });
-                } else if (typeof showAggressiveToast === "function") {
-                    showAggressiveToast("Permiso bloqueado. Actívalo en el candado junto a la URL del navegador.");
-                }
-            });
-        } else {
-            if (typeof playAlertSound === "function") playAlertSound(false);
-            new Notification("✅ Prueba de Alerta en PC - STU BUAP", {
-                body: "Las notificaciones de escritorio y el sonido están funcionando correctamente.",
-                icon: "./Logo%20Estrella%20Roja%20192.png"
-            });
-        }
-    };
-
-    function injectTopActionButtons() {
+    function injectFullscreenButton() {
         const rightBar = document.querySelector(".appbar-right");
-        if (!rightBar) return;
-
-        // En PC agregar botón de Notificaciones de Escritorio
-        if (!isMobileDevice() && !document.getElementById("btnPcNotif")) {
-            const btnNotif = document.createElement("button");
-            btnNotif.type = "button";
-            btnNotif.id = "btnPcNotif";
-            btnNotif.className = "fullscreen-btn-top";
-            btnNotif.onclick = function () {
-                window.activarOProbarNotificacionesPC();
-            };
-            rightBar.insertBefore(btnNotif, rightBar.firstChild);
-            updatePcNotifButtonState();
-        }
-
-        // Botón de pantalla completa (respaldo manual)
-        if (!document.getElementById("btnFullscreenApp")) {
-            const btn = document.createElement("button");
-            btn.type = "button";
-            btn.id = "btnFullscreenApp";
-            btn.className = "fullscreen-btn-top";
-            btn.title = "Pantalla Completa";
-            btn.setAttribute("aria-label", "Pantalla Completa");
-            btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>`;
-            btn.onclick = function () {
-                window.toggleAppFullscreen();
-            };
-            rightBar.insertBefore(btn, rightBar.firstChild);
-        }
+        if (!rightBar || document.getElementById("btnFullscreenApp")) return;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.id = "btnFullscreenApp";
+        btn.className = "fullscreen-btn-top";
+        btn.title = "Pantalla Completa";
+        btn.setAttribute("aria-label", "Pantalla Completa");
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>`;
+        btn.onclick = function () {
+            toggleAppFullscreen();
+        };
+        rightBar.insertBefore(btn, rightBar.firstChild);
     }
 
     window.toggleAppFullscreen = function () {
         const docEl = document.documentElement;
         if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-            userManuallyExitedFullscreen = false;
-            if (docEl.requestFullscreen) docEl.requestFullscreen({ navigationUI: "hide" }).catch(() => {});
+            if (docEl.requestFullscreen) docEl.requestFullscreen().catch(() => {});
             else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
         } else {
-            userManuallyExitedFullscreen = true;
             if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
             else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
         }
@@ -415,6 +264,7 @@
             .trim();
     }
 
+    // Limpiador universal de teléfonos (soporta números de Excel, espacios, guiones, +52 o varios números en una celda)
     window.cleanPhone10 = function (val) {
         if (val === null || val === undefined) return "";
         let str = "";
@@ -426,6 +276,7 @@
         }
         if (!str || /^(s\/n|sin|no|n\/a|ninguno|0|-+|null|undefined)$/i.test(str)) return "";
 
+        // Si hay dos teléfonos en la misma celda separados por /, -, coma o salto
         let parts = str.split(/[\/,;|\n]+/);
         for (let p of parts) {
             let d = p.replace(/\D/g, "");
@@ -442,6 +293,7 @@
         return "";
     };
 
+    // Buscador inteligente de metadatos del operador (cruza por Nombre, Nombre sin acentos, Clave/Nómina o Unidad)
     window.getOpMeta = function (opName, claveHint, unitHint) {
         const empty = {
             puntualidad: null,
@@ -458,6 +310,7 @@
 
         let foundMeta = null;
 
+        // 1) Búsqueda directa por llave del nombre
         if (opName && opName !== "Sin asignar" && opName !== "VACIO") {
             let kExact = fbKey(opName);
             let kNorm = fbKey(normTextKey(opName));
@@ -466,9 +319,9 @@
             else if (metaDB[kNorm]) foundMeta = metaDB[kNorm];
         }
 
+        // 2) Búsqueda por Clave / Nómina si se proporcionó o si opName es numérico
         if (!foundMeta) {
-            let possibleClave =
-                claveHint || (opName && /^\d+$/.test(String(opName).trim()) ? String(opName).trim() : "");
+            let possibleClave = claveHint || (opName && /^\d+$/.test(String(opName).trim()) ? String(opName).trim() : "");
             if (possibleClave) {
                 let kClave = "CLAVE_" + fbKey(possibleClave);
                 if (metaDB[kClave]) foundMeta = metaDB[kClave];
@@ -479,6 +332,7 @@
             }
         }
 
+        // 3) Búsqueda flexible comparando nombres normalizados (sin acentos) en operadoresMeta
         if (!foundMeta && opName && opName !== "Sin asignar" && opName !== "VACIO") {
             let targetNorm = normTextKey(opName);
             if (targetNorm) {
@@ -494,6 +348,7 @@
             }
         }
 
+        // 4) Búsqueda de respaldo por Unidad si la corrida tiene unidad
         if (!foundMeta && unitHint) {
             let kUnit = "UNIT_" + fbKey(unitHint);
             if (metaDB[kUnit]) foundMeta = metaDB[kUnit];
@@ -523,7 +378,10 @@
             telEmpresa = telFallback;
         }
 
-        // Priorizar siempre el teléfono de Trabajo (Columna H) sobre el Personal (Columna G)
+        // REGLA ESTRICTA DE PRIORIDAD:
+        // 1. Si tiene ambos (Trabajo H y Personal G) -> SIEMPRE priorizar Trabajo (Columna H)
+        // 2. Si solo tiene Trabajo (H) -> usar Trabajo (H)
+        // 3. Si solo tiene Personal (G) -> usar Personal (G)
         let telPrioritario = telEmpresa ? telEmpresa : telPersonal;
 
         return {
@@ -531,15 +389,15 @@
             telPersonal: telPersonal,
             telEmpresa: telEmpresa,
             tel: telPrioritario,
-            tipoTelActivo: telEmpresa ? "Trabajo (H)" : telPersonal ? "Personal (G)" : "",
+            tipoTelActivo: telEmpresa ? "Trabajo (H)" : (telPersonal ? "Personal (G)" : ""),
             esTurismo: esTurismo,
             esBaja: esBaja,
             clave: meta.clave || "",
-            rutasSabidas:
-                meta.rutasSabidas || (store.knownRoutes && store.knownRoutes[fbKey(opName)]) || ""
+            rutasSabidas: meta.rutasSabidas || (store.knownRoutes && store.knownRoutes[fbKey(opName)]) || ""
         };
     };
 
+    // CONTACTO AUTOMÁTICO CON PRIORIDAD DIRECTA AL TELÉFONO DE TRABAJO (COLUMNA H)
     window.contactarOperador = function (event, mode, opName, tripTime, routeName, unitNum, claveHint) {
         if (event) event.stopPropagation();
         if (!opName || opName === "Sin asignar" || opName === "VACIO") {
@@ -550,13 +408,16 @@
         }
 
         let meta = window.getOpMeta(opName, claveHint, unitNum);
+        // Priorizar siempre el teléfono de Trabajo (Columna H) sobre el Personal (Columna G)
         let telElegido = meta.telEmpresa || meta.telPersonal || meta.tel || "";
 
         if (!telElegido) {
+            // Solo si no existe ni en H ni en G en el Excel, permite registrarlo
             window.abrirModalEditarTelefonos(opName, mode, tripTime, routeName, unitNum);
             return;
         }
 
+        // Ejecuta la llamada o el WhatsApp de inmediato sin preguntar cuál de los dos números usar
         ejecutarContactoDirecto(mode, telElegido, opName, tripTime, routeName, unitNum);
     };
 
@@ -629,6 +490,7 @@
             return { o: code ? "Ruta " + code : "Desconocido", d: "CU" };
         }
         let clean = String(descRuta).trim();
+        // Quitar prefijo de código tipo "0101 - " o "0501-"
         clean = clean.replace(/^\d{3,4}\s*-\s*/i, "").trim();
 
         if (/\s+a\s+/i.test(clean)) {
@@ -712,12 +574,14 @@
         return claveStr || "";
     }
 
+    // LECTOR DUAL DE ARCHIVOS EXCEL DE "ROL" (SOPORTA FORMATO 1 Y FORMATO 2)
     window.parseWorkbook = function (arrayBuffer) {
         const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: "array" });
         const grids = {};
         const hrCounts = {};
         let opSheetName = null;
 
+        // Mapa dinámico de rutas por si viene Hoja2 (Formato 2)
         const routeCatalogMap = Object.assign({}, CATALOGO_RUTAS_BUAP);
 
         wb.SheetNames.forEach(function (name) {
@@ -732,15 +596,12 @@
             hrCounts[name] = cnt;
             if (!opSheetName && /operador/i.test(name)) opSheetName = name;
 
+            // Detectar si esta hoja tiene el catálogo de rutas (Ej: Hoja2 con "Ruta" y "ID RUTA")
             for (let r = 0; r < Math.min(grid.length, 15); r++) {
                 let row = grid[r] || [];
                 let rowUp = row.map(c => String(c || "").toUpperCase().trim());
-                let idxIdRuta = rowUp.findIndex(
-                    h => h === "ID RUTA" || h === "IDRUTA" || h === "CLAVE RUTA"
-                );
-                let idxDescRuta = rowUp.findIndex(
-                    h => h === "RUTA" || h === "DESCRIPCION" || h === "NOMBRE RUTA"
-                );
+                let idxIdRuta = rowUp.findIndex(h => h === "ID RUTA" || h === "IDRUTA" || h === "CLAVE RUTA");
+                let idxDescRuta = rowUp.findIndex(h => h === "RUTA" || h === "DESCRIPCION" || h === "NOMBRE RUTA");
                 if (idxIdRuta !== -1 && idxDescRuta !== -1) {
                     for (let rr = r + 1; rr < grid.length; rr++) {
                         let rRow = grid[rr] || [];
@@ -755,25 +616,18 @@
             }
         });
 
+        // Respaldo de operadores dentro del mismo Excel si aún no se ha subido "datos"
         const claveToName = {};
         const unidadToName = {};
         if (opSheetName) {
             const opGrid = grids[opSheetName];
             for (let i = 1; i < opGrid.length; i++) {
                 let row = opGrid[i] || [];
-                let unidad = row[0],
-                    clave = row[1],
-                    nombre = row[2];
+                let unidad = row[0], clave = row[1], nombre = row[2];
                 let nm = nombre ? String(nombre).replace(/\s+/g, " ").trim() : null;
-                let unidadNum =
-                    unidad != null && !isNaN(Number(unidad)) ? String(Math.round(Number(unidad))) : null;
-                let claveNum =
-                    clave != null && !isNaN(Number(clave)) ? String(Math.round(Number(clave))) : null;
-                let finalName =
-                    nm ||
-                    (claveNum && store.operadoresDB && store.operadoresDB[claveNum]
-                        ? store.operadoresDB[claveNum]
-                        : null);
+                let unidadNum = unidad != null && !isNaN(Number(unidad)) ? String(Math.round(Number(unidad))) : null;
+                let claveNum = clave != null && !isNaN(Number(clave)) ? String(Math.round(Number(clave))) : null;
+                let finalName = nm || (claveNum && store.operadoresDB && store.operadoresDB[claveNum] ? store.operadoresDB[claveNum] : null);
                 if (claveNum != null && finalName) claveToName[claveNum] = finalName;
                 if (unidadNum != null && finalName) unidadToName[unidadNum] = finalName;
             }
@@ -781,32 +635,21 @@
 
         const days = [];
 
-        // INTENTO A: FORMATO 2 (TABULAR "Plantilla_Ordenes_Servicio")
+        // =====================================================================
+        // INTENTO A: DETECTAR FORMATO 2 (TABULAR "Plantilla_Ordenes_Servicio")
+        // =====================================================================
         wb.SheetNames.forEach(function (name) {
             const grid = grids[name];
             if (!grid || grid.length < 2) return;
 
             let headerRowIdx = -1;
-            let colRutaCliente = -1,
-                colRutaId = -1,
-                colFecha = -1,
-                colHora = -1,
-                colOpNomina = -1,
-                colUnidadEcon = -1;
+            let colRutaCliente = -1, colRutaId = -1, colFecha = -1, colHora = -1, colOpNomina = -1, colUnidadEcon = -1;
 
             for (let r = 0; r < Math.min(grid.length, 15); r++) {
                 let row = (grid[r] || []).map(c => normTextKey(c));
                 let hasHora = row.some(h => h === "HORA" || h === "HR SALIDA" || h === "HORARIO");
-                let hasRuta = row.some(
-                    h => h.includes("RUTA CLIENTE") || h === "RUTA ID" || h === "RUTA"
-                );
-                let hasOpOrUnit = row.some(
-                    h =>
-                        h.includes("OPERADOR") ||
-                        h.includes("NOMINA") ||
-                        h.includes("UNIDAD") ||
-                        h.includes("ECONOMICO")
-                );
+                let hasRuta = row.some(h => h.includes("RUTA CLIENTE") || h === "RUTA ID" || h === "RUTA");
+                let hasOpOrUnit = row.some(h => h.includes("OPERADOR") || h.includes("NOMINA") || h.includes("UNIDAD") || h.includes("ECONOMICO"));
 
                 if (hasHora && hasRuta && hasOpOrUnit) {
                     headerRowIdx = r;
@@ -814,12 +657,8 @@
                     colRutaId = row.findIndex(h => h.includes("RUTA ID") || h === "RUTA");
                     colFecha = row.findIndex(h => h.includes("FECHA") || h === "DIA");
                     colHora = row.findIndex(h => h === "HORA" || h.includes("HORA"));
-                    colOpNomina = row.findIndex(
-                        h => h.includes("OPERADOR") || h.includes("NOMINA") || h === "CLAVE"
-                    );
-                    colUnidadEcon = row.findIndex(
-                        h => h.includes("UNIDAD") || h.includes("ECONOMICO") || h === "AUTOBUS"
-                    );
+                    colOpNomina = row.findIndex(h => h.includes("OPERADOR") || h.includes("NOMINA") || h === "CLAVE");
+                    colUnidadEcon = row.findIndex(h => h.includes("UNIDAD") || h.includes("ECONOMICO") || h === "AUTOBUS");
                     break;
                 }
             }
@@ -832,9 +671,7 @@
                     if (!hStr) continue;
 
                     const rawRouteVal =
-                        colRutaCliente !== -1 &&
-                        row[colRutaCliente] !== null &&
-                        row[colRutaCliente] !== undefined
+                        colRutaCliente !== -1 && row[colRutaCliente] !== null && row[colRutaCliente] !== undefined
                             ? row[colRutaCliente]
                             : colRutaId !== -1
                             ? row[colRutaId]
@@ -893,11 +730,14 @@
             }
         });
 
+        // Si ya encontró corridas con el Formato 2, las devuelve directamente
         if (days.length > 0) {
             return { days: days, fleet: [] };
         }
 
+        // =====================================================================
         // INTENTO B: FORMATO 1 (CLÁSICO POR BLOQUES "HR" CON DIAGONAL "/")
+        // =====================================================================
         wb.SheetNames.forEach(function (name) {
             if ((hrCounts[name] || 0) < 1) return;
             const grid = grids[name];
@@ -911,16 +751,11 @@
             }
             const records = [];
             hrCells.forEach(function (hc) {
-                const r = hc[0],
-                    c = hc[1];
+                const r = hc[0], c = hc[1];
                 function getVal(ro, co) {
                     for (let i = ro - 1; i >= Math.max(ro - 8, 0); i--) {
                         for (let j = co - 3; j < co + 7; j++) {
-                            if (
-                                grid[i] &&
-                                typeof grid[i][j] === "string" &&
-                                grid[i][j].includes("/")
-                            ) {
+                            if (grid[i] && typeof grid[i][j] === "string" && grid[i][j].includes("/")) {
                                 return grid[i][j];
                             }
                         }
@@ -981,6 +816,7 @@
         return { days: days, fleet: [] };
     };
 
+    // SOBRESCRIBIR HANDLEEXCEL PARA LEER G3 Y H3 ABAJO CON PRECISIÓN Y GUARDAR EN NUBE
     window.handleExcel = async function (file, type, inputEl) {
         if (!file) return;
         let msgBox = document.getElementById("uploadMsg");
@@ -998,8 +834,7 @@
         const reader = new FileReader();
         reader.onload = e => {
             try {
-                const backupHistory =
-                    typeof getGlobalHistory === "function" ? [...getGlobalHistory()] : [];
+                const backupHistory = typeof getGlobalHistory === "function" ? [...getGlobalHistory()] : [];
                 const wb = XLSX.read(e.target.result, { type: "array" });
 
                 if (type === "seguimiento") {
@@ -1020,18 +855,14 @@
                     }
 
                     let opSheetName =
-                        wb.SheetNames.find(n =>
-                            /OP|DATOS|PLANTILLA|PERSONAL|SEGUIMIENTO/i.test(n)
-                        ) || wb.SheetNames[0];
+                        wb.SheetNames.find(n => /OP|DATOS|PLANTILLA|PERSONAL|SEGUIMIENTO/i.test(n)) ||
+                        wb.SheetNames[0];
 
                     let countConTelefono = 0;
 
                     if (opSheetName) {
                         const sheetObj = wb.Sheets[opSheetName];
-                        const rawData = XLSX.utils.sheet_to_json(sheetObj, {
-                            header: 1,
-                            defval: null
-                        });
+                        const rawData = XLSX.utils.sheet_to_json(sheetObj, { header: 1, defval: null });
 
                         let hRow = -1;
                         for (let r = 0; r < Math.min(rawData.length, 25); r++) {
@@ -1044,30 +875,17 @@
                                 break;
                             }
                         }
-                        if (hRow === -1) hRow = 1;
+                        if (hRow === -1) hRow = 1; // Por defecto fila 2 es encabezado y fila 3 (índice 2 = G3/H3) son datos
 
-                        const headers = (rawData[hRow] || []).map(h =>
-                            String(h || "").toUpperCase().trim()
-                        );
+                        const headers = (rawData[hRow] || []).map(h => String(h || "").toUpperCase().trim());
                         let colNombre = headers.findIndex(
-                            h =>
-                                h.includes("NOMBRE OPERADOR") ||
-                                h === "NOMBRE" ||
-                                h.includes("OPERADOR")
+                            h => h.includes("NOMBRE OPERADOR") || h === "NOMBRE" || h.includes("OPERADOR")
                         );
                         let colClave = headers.findIndex(
-                            h =>
-                                h.includes("CLAVE") ||
-                                h === "ID" ||
-                                h.includes("NOMINA") ||
-                                h.includes("NÓMINA")
+                            h => h.includes("CLAVE") || h === "ID" || h.includes("NOMINA") || h.includes("NÓMINA")
                         );
                         let colUnidad = headers.findIndex(
-                            h =>
-                                h.includes("UNIDAD") ||
-                                h === "ECON" ||
-                                h.includes("AUTOBUS") ||
-                                h.includes("ECONÓMICO")
+                            h => h.includes("UNIDAD") || h === "ECON" || h.includes("AUTOBUS") || h.includes("ECONÓMICO")
                         );
                         let colPuntHeader = headers.findIndex(
                             h => h.includes("PUNTUALIDAD") || h.includes("CALIF")
@@ -1076,14 +894,16 @@
                             h => h.includes("RUTA") || h.includes("CONOCE") || h.includes("DOMINA")
                         );
 
+                        // Si no encontró encabezado estándar, asumir columnas clásicas de plantilla
                         if (colNombre === -1) colNombre = 2;
                         if (colClave === -1) colClave = 1;
                         if (colUnidad === -1) colUnidad = 0;
 
-                        const COL_G_PERSONAL = 6;
-                        const COL_H_TRABAJO = 7;
-                        const COL_AS_PUNT = 44;
+                        const COL_G_PERSONAL = 6; // Celda G3 hacia abajo (Teléfono Personal)
+                        const COL_H_TRABAJO  = 7; // Celda H3 hacia abajo (Teléfono del Trabajo / Empresa)
+                        const COL_AS_PUNT    = 44; // Columna AS (Puntualidad)
 
+                        // Empezar desde fila 3 de Excel (índice 2) o justo debajo del encabezado
                         const startRowIdx = Math.max(hRow + 1, 2);
 
                         for (let i = startRowIdx; i < rawData.length; i++) {
@@ -1094,21 +914,18 @@
                             if (/^(NOMBRE|NOMBRE OPERADOR|OPERADOR|TOTAL)$/i.test(opName)) continue;
 
                             let opClave =
-                                colClave !== -1 && row[colClave] != null
-                                    ? String(row[colClave]).trim()
-                                    : "";
+                                colClave !== -1 && row[colClave] != null ? String(row[colClave]).trim() : "";
                             if (opClave && !isNaN(Number(opClave))) {
                                 opClave = String(Math.round(Number(opClave)));
                             }
 
                             let opUnit =
-                                colUnidad !== -1 && row[colUnidad] != null
-                                    ? String(row[colUnidad]).trim()
-                                    : "";
+                                colUnidad !== -1 && row[colUnidad] != null ? String(row[colUnidad]).trim() : "";
                             if (opUnit && !isNaN(Number(opUnit))) {
                                 opUnit = String(Math.round(Number(opUnit)));
                             }
 
+                            // Lectura directa de celda G(i+1) y H(i+1) (G3 y H3 hacia abajo)
                             const cellG = sheetObj[XLSX.utils.encode_cell({ r: i, c: COL_G_PERSONAL })];
                             const cellH = sheetObj[XLSX.utils.encode_cell({ r: i, c: COL_H_TRABAJO })];
 
@@ -1126,10 +943,12 @@
                                     : row[COL_H_TRABAJO];
 
                             const telPersonal = window.cleanPhone10(rawTelG);
-                            const telTrabajo = window.cleanPhone10(rawTelH);
+                            const telTrabajo  = window.cleanPhone10(rawTelH);
+                            // Prioridad estricta: Trabajo (H) sobre Personal (G)
                             const telPrioritario = telTrabajo ? telTrabajo : telPersonal;
                             if (telPrioritario) countConTelefono++;
 
+                            // Puntualidad en columna AS
                             const cellAS = sheetObj[XLSX.utils.encode_cell({ r: i, c: COL_AS_PUNT })];
                             const rawPunt =
                                 cellAS && cellAS.v !== undefined && String(cellAS.v).trim() !== ""
@@ -1143,19 +962,15 @@
                                     : null;
 
                             let puntualidad = null;
-                            if (
-                                rawPunt !== null &&
-                                rawPunt !== undefined &&
-                                String(rawPunt).trim() !== ""
-                            ) {
+                            if (rawPunt !== null && rawPunt !== undefined && String(rawPunt).trim() !== "") {
                                 let numP = Number(String(rawPunt).replace(/[^0-9.-]/g, ""));
                                 if (!isNaN(numP)) {
-                                    if (numP > 10 && numP <= 100)
-                                        numP = Math.round((numP / 10) * 10) / 10;
+                                    if (numP > 10 && numP <= 100) numP = Math.round((numP / 10) * 10) / 10;
                                     puntualidad = numP;
                                 }
                             }
 
+                            // Rutas que conoce el operador
                             let rutasSabidas = "";
                             if (colRutas !== -1 && row[colRutas]) {
                                 rutasSabidas = String(row[colRutas]).trim();
@@ -1164,8 +979,7 @@
                             const rowJoined = row.map(c => String(c || "")).join(" ").toUpperCase();
                             const esTurismo = /TURISMO/i.test(rowJoined);
                             const esBaja =
-                                /\bBAJA\b/i.test(rowJoined) ||
-                                (puntualidad !== null && puntualidad === 0);
+                                /\bBAJA\b/i.test(rowJoined) || (puntualidad !== null && puntualidad === 0);
 
                             const safeClave = fbKey(opClave || opName);
                             const safeOpKey = fbKey(opName);
@@ -1189,6 +1003,7 @@
                                 esBaja: esBaja
                             };
 
+                            // Guardar indexado por Nombre, Nombre sin acentos, Clave y Unidad para cruce instantáneo
                             store.operadoresMeta[safeOpKey] = metaRecord;
                             if (safeNormKey && safeNormKey !== safeOpKey) {
                                 store.operadoresMeta[safeNormKey] = metaRecord;
@@ -1219,40 +1034,28 @@
                         }
                     }
 
+                    // Lectura de Hoja de Taller
                     wb.SheetNames.forEach(sheetName => {
-                        if (
-                            /TALLER|MANTENIMIENTO|DETENID|FALLA|SINIESTRO|PARQUE|FLOTA|UNIDAD/i.test(
-                                sheetName
-                            )
-                        ) {
+                        if (/TALLER|MANTENIMIENTO|DETENID|FALLA|SINIESTRO|PARQUE|FLOTA|UNIDAD/i.test(sheetName)) {
                             const fData = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {
                                 header: 1,
                                 defval: null
                             });
-                            const isDedicatedTallerSheet =
-                                /TALLER|MANTENIMIENTO|DETENID|FALLA|SINIESTRO/i.test(sheetName);
+                            const isDedicatedTallerSheet = /TALLER|MANTENIMIENTO|DETENID|FALLA|SINIESTRO/i.test(
+                                sheetName
+                            );
                             const hRow = fData.findIndex(row =>
-                                (row || []).some(c =>
-                                    /UNIDAD|ECON|AUTOBUS|CARRO|NO\./i.test(String(c || ""))
-                                )
+                                (row || []).some(c => /UNIDAD|ECON|AUTOBUS|CARRO|NO\./i.test(String(c || "")))
                             );
 
-                            let colUnidad = -1,
-                                colMotivo = -1,
-                                colEstado = -1;
+                            let colUnidad = -1, colMotivo = -1, colEstado = -1;
                             if (hRow !== -1) {
-                                const headers = (fData[hRow] || []).map(h =>
-                                    String(h || "").toUpperCase()
-                                );
-                                colUnidad = headers.findIndex(h =>
-                                    /UNIDAD|ECON|AUTOBUS|CARRO|NUM/.test(h)
-                                );
+                                const headers = (fData[hRow] || []).map(h => String(h || "").toUpperCase());
+                                colUnidad = headers.findIndex(h => /UNIDAD|ECON|AUTOBUS|CARRO|NUM/.test(h));
                                 colMotivo = headers.findIndex(h =>
                                     /MOTIVO|FALLA|CAUSA|TRABAJO|OBSERV|REPARACION|DETALLE/.test(h)
                                 );
-                                colEstado = headers.findIndex(h =>
-                                    /ESTADO|ESTATUS|SITUACION/.test(h)
-                                );
+                                colEstado = headers.findIndex(h => /ESTADO|ESTATUS|SITUACION/.test(h));
                             }
 
                             const startRow = hRow !== -1 ? hRow + 1 : 0;
@@ -1266,9 +1069,7 @@
                                 }
                                 if (!foundUnit) {
                                     for (let c = 0; c < Math.min(row.length, 10); c++) {
-                                        let cand = String(row[c] || "")
-                                            .replace(/^U-/i, "")
-                                            .trim();
+                                        let cand = String(row[c] || "").replace(/^U-/i, "").trim();
                                         if (FLOTA_SET.has(cand)) {
                                             foundUnit = cand;
                                             break;
@@ -1288,18 +1089,12 @@
                                     const rowStr = row.map(x => String(x || "")).join(" ");
 
                                     if (isDedicatedTallerSheet) {
-                                        if (
-                                            !/\b(LIBERAD[AO]|OPERANDO|EN RUTA|ACTIVA)\b/i.test(est)
-                                        ) {
+                                        if (!/\b(LIBERAD[AO]|OPERANDO|EN RUTA|ACTIVA)\b/i.test(est)) {
                                             const finalMot = mot || est || "Taller";
                                             store.tallerDB[foundUnit] = finalMot;
                                             setReasonForEntity(foundUnit, "Taller");
                                         }
-                                    } else if (
-                                        /TALLER|SINIESTRO|FALLA|DETENID|CORRALON|MOTOR|CAJA/i.test(
-                                            rowStr
-                                        )
-                                    ) {
+                                    } else if (/TALLER|SINIESTRO|FALLA|DETENID|CORRALON|MOTOR|CAJA/i.test(rowStr)) {
                                         const finalMot = mot || est || "Taller";
                                         store.tallerDB[foundUnit] = finalMot;
                                         setReasonForEntity(foundUnit, "Taller");
@@ -1309,6 +1104,7 @@
                         }
                     });
 
+                    // Si ya hay días del rol cargados, actualizar nombres de operadores que estaban como clave numérica
                     if (store.days) {
                         Object.keys(store.days).forEach(dKey => {
                             let dTrips = (store.days[dKey] && store.days[dKey].trips) || [];
@@ -1349,9 +1145,7 @@
                         const safeDayKey = fbKey(d.key);
                         store.days[safeDayKey] = { label: d.key, trips: d.trips, fleet: [] };
                         const oldUnitChanges =
-                            store.state &&
-                            store.state[safeDayKey] &&
-                            store.state[safeDayKey].unitChanges
+                            store.state && store.state[safeDayKey] && store.state[safeDayKey].unitChanges
                                 ? store.state[safeDayKey].unitChanges
                                 : [];
                         store.state[safeDayKey] = {
@@ -1467,6 +1261,7 @@
             const finalUnit = asg.unit;
             let finalOp = asg.op;
 
+            // Si finalOp quedó como número de nómina/clave y ya existe en operadoresDB, mostrar el nombre real
             if (finalOp && /^\d+$/.test(finalOp)) {
                 const resolvedName = resolverNombreOperadorPorClaveOUnidad(finalOp, finalUnit);
                 if (resolvedName) finalOp = resolvedName;
@@ -1598,6 +1393,7 @@
                     ? `${opMeta.tipoTelActivo}: ${opMeta.tel}`
                     : "Sin teléfono en G3/H3 (Toca para agregar)";
 
+                // Mini botones de Teléfono y WhatsApp compactos integrados en la fila del operador
                 const miniContactHtml =
                     activeView !== "ocultas"
                         ? `<span class="mini-contact-group">
@@ -1639,7 +1435,7 @@
     };
 
     // =========================================================================
-    // 5. PANEL DE CONFIGURACIÓN MEJORADO (NOTIFICACIONES PC Y ESTADO G3/H3)
+    // 5. PANEL DE CONFIGURACIÓN MEJORADO (ESTADO DE TELÉFONOS G3/H3 Y MODO VISTA)
     // =========================================================================
     window.abrirConfiguracion = function () {
         const trips = store.days?.[store.currentDay]?.trips || [];
@@ -1656,22 +1452,15 @@
         });
 
         const isPcMode = document.body.classList.contains("pc-view");
-        const notifStatus =
-            "Notification" in window && Notification.permission === "granted"
-                ? "🟢 Activas en este equipo"
-                : "🟠 Pendientes de activar";
 
         openSheet(`<h2>⚙️ Configuración y Nube</h2>
           <div style="background:var(--surface-2);padding:12px;border-radius:12px;font-size:13px;line-height:1.75;margin-bottom:12px">
             <b>Estado de Nube:</b> ${isConnectedToFirebase ? "🟢 Conectado en Tiempo Real" : "🟠 Modo Caché Local"}<br>
-            <b>Notificaciones PC / Web:</b> ${notifStatus}<br>
             <b>Fecha activa:</b> ${store.currentDay || "—"} (${trips.length} viajes)<br>
             <b>Operadores Activos:</b> ${totalOpsActivos} (${opsConTel} con teléfono G3/H3 automático)<br>
             <b>Unidades en Taller detectadas:</b> ${totalTaller} de ${FLOTA_FIJA.length}<br>
             <b>Historial Histórico:</b> ${totalHist} registro(s)
           </div>
-
-          <button type="button" class="btn-primary" style="background:#15803D;margin-top:0;margin-bottom:10px;padding:12px;" onclick="activarOProbarNotificacionesPC()">🔔 Activar / Probar Notificación en Computadora</button>
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
             <button type="button" class="btn-outline" style="margin:0;padding:10px;font-size:13px;${!isPcMode ? "background:var(--accent);color:#fff;" : ""}" onclick="cambiarModoPantalla('mobile')">📱 Formato Teléfono</button>
@@ -1692,18 +1481,521 @@
             <button type="button" class="btn-outline" onclick="document.getElementById('fileAsignacion').click()">📂 Seleccionar Excel "rol"</button>
           </div>
 
+          <button type="button" class="btn-outline" style="margin:0 0 10px 0;" onclick="verConsumoDatos()">📊 ¿Qué gasta mis datos?</button>
+
           <div id="uploadMsg" style="margin-top:10px;font-size:13.5px;font-weight:800;color:var(--accent);text-align:center;"></div>
           <button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
     };
 
     // =========================================================================
-    // 6. INICIALIZACIÓN AUTOMÁTICA AL CARGAR LA APP
+    // 6. AVISOS ROJOS PERSISTENTES DE CAMBIOS (SE QUITAN A MANO, UNO POR UNO)
+    //    - Cada cambio de ruta / horario / operador / unidad aparece como tarjeta roja.
+    //    - No desaparece sola: hay que tocar "Entendido" en cada una.
+    //    - Cada celular/computadora lleva su propia lista de avisos leídos.
+    //    - Los cambios que haces tú en ESTE equipo ya se consideran leídos.
+    // =========================================================================
+    const ALERTAS_HORAS_VIGENCIA = 12;   // Solo se muestran cambios de las últimas 12 horas
+    const ALERTAS_MAX_VISIBLES = 30;     // Máximo de tarjetas mostradas a la vez
+    const ALERTAS_STORAGE_KEY = "stu_alertas_vistas_v1";
+
+    let alertasVistasSet = null;
+    let alertasUltimaFirma = null;
+
+    function cargarAlertasVistas() {
+        if (alertasVistasSet) return alertasVistasSet;
+        let arr = [];
+        try {
+            const raw = JSON.parse(localStorage.getItem(ALERTAS_STORAGE_KEY) || "[]");
+            if (Array.isArray(raw)) arr = raw;
+        } catch (e) {
+            arr = [];
+        }
+        alertasVistasSet = new Set(arr);
+        return alertasVistasSet;
+    }
+
+    function guardarAlertasVistas() {
+        try {
+            const arr = Array.from(cargarAlertasVistas()).slice(-500);
+            localStorage.setItem(ALERTAS_STORAGE_KEY, JSON.stringify(arr));
+        } catch (e) {}
+    }
+
+    function marcarAlertaVista(id) {
+        if (!id) return;
+        cargarAlertasVistas().add(String(id));
+        guardarAlertasVistas();
+    }
+
+    function escHtml(v) {
+        return String(v === null || v === undefined ? "" : v)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+
+    function nombreOperadorAviso(v) {
+        const s = String(v || "").trim();
+        if (!s || s === "VACIO" || s === "—") return "Sin asignar";
+        return s;
+    }
+
+    function nombreUnidadAviso(v) {
+        const s = String(v || "").trim();
+        if (!s || s === "VACIO" || s === "S/U" || s === "—") return "S/U";
+        return /^U-/i.test(s) ? s : "U-" + s;
+    }
+
+    function horaDelAviso(ts) {
+        if (!ts) return "";
+        const d = new Date(ts);
+        return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    }
+
+    function obtenerAlertasPendientes() {
+        const hist = Array.isArray(store.globalHistory) ? store.globalHistory : [];
+        const vistas = cargarAlertasVistas();
+        const limite = Date.now() - ALERTAS_HORAS_VIGENCIA * 3600 * 1000;
+        const out = [];
+        (hist || []).forEach(h => {
+            if (!h || !h.id) return;
+            if (vistas.has(String(h.id))) return;
+            const ts = Number(h.changeAt) || Date.parse(h.time) || 0;
+            if (!ts || ts < limite) return;
+            out.push({ h: h, ts: ts });
+        });
+        out.sort((a, b) => b.ts - a.ts);
+        return out;
+    }
+
+    function inyectarEstilosAlertas() {
+        if (document.getElementById("stu-extras-alert-styles")) return;
+        const st = document.createElement("style");
+        st.id = "stu-extras-alert-styles";
+        st.textContent = `
+            #stuAlertDock { margin: 0 10px; }
+            #stuAlertDock:empty { display: none; }
+            .stu-alert-head {
+                background: #7F1020;
+                color: #FFFFFF;
+                font-weight: 800;
+                font-size: 13px;
+                padding: 8px 12px;
+                border-radius: 10px;
+                margin: 8px 0 6px 0;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            .stu-alert-card {
+                background: #D81A32;
+                color: #FFFFFF;
+                border-radius: 12px;
+                padding: 10px 12px;
+                margin-bottom: 8px;
+                box-shadow: 0 4px 12px rgba(216, 26, 50, 0.35);
+                font-size: 13px;
+                line-height: 1.4;
+            }
+            .stu-alert-top {
+                display: flex;
+                justify-content: space-between;
+                gap: 8px;
+                align-items: flex-start;
+            }
+            .stu-alert-route {
+                font-weight: 800;
+                font-size: 14.5px;
+                word-break: break-word;
+            }
+            .stu-alert-time {
+                font-weight: 700;
+                font-size: 11.5px;
+                opacity: 0.9;
+                white-space: nowrap;
+            }
+            .stu-alert-line { margin-top: 3px; word-break: break-word; }
+            .stu-alert-line b { font-weight: 800; }
+            .stu-alert-motivo {
+                margin-top: 5px;
+                background: rgba(0, 0, 0, 0.18);
+                border-radius: 8px;
+                padding: 4px 8px;
+                font-weight: 700;
+            }
+            .stu-alert-btn {
+                margin-top: 8px;
+                width: 100%;
+                border: none;
+                border-radius: 9px;
+                padding: 9px 10px;
+                background: #FFFFFF;
+                color: #B01229;
+                font-weight: 800;
+                font-size: 13px;
+                cursor: pointer;
+            }
+            .stu-alert-btn:active { transform: scale(0.98); }
+            .stu-alert-more {
+                font-size: 12px;
+                font-weight: 700;
+                color: var(--ink-soft);
+                text-align: center;
+                margin: 0 0 8px 0;
+            }
+        `;
+        document.head.appendChild(st);
+    }
+
+    function asegurarContenedorAlertas() {
+        let dock = document.getElementById("stuAlertDock");
+        if (dock) return dock;
+        const list = document.getElementById("list");
+        if (!list || !list.parentNode) return null;
+        dock = document.createElement("div");
+        dock.id = "stuAlertDock";
+        list.parentNode.insertBefore(dock, list);
+        dock.addEventListener("click", function (ev) {
+            const btn = ev.target && ev.target.closest ? ev.target.closest("[data-alerta-id]") : null;
+            if (!btn) return;
+            ev.stopPropagation();
+            marcarAlertaVista(btn.getAttribute("data-alerta-id"));
+            window.actualizarAvisosRojos();
+        });
+        return dock;
+    }
+
+    window.actualizarAvisosRojos = function () {
+        inyectarEstilosAlertas();
+        const dock = asegurarContenedorAlertas();
+        if (!dock) return;
+
+        const pendientes = obtenerAlertasPendientes();
+        const visibles = pendientes.slice(0, ALERTAS_MAX_VISIBLES);
+        const firma = visibles.map(p => p.h.id).join("|") + "#" + pendientes.length;
+        if (firma === alertasUltimaFirma) return;
+        alertasUltimaFirma = firma;
+
+        if (!visibles.length) {
+            dock.innerHTML = "";
+            return;
+        }
+
+        let html = `<div class="stu-alert-head">🚨 ${pendientes.length} cambio(s) sin leer. Toca "Entendido" en cada uno.</div>`;
+        visibles.forEach(p => {
+            const h = p.h;
+            const ruta = escHtml(h.route || "Cambio");
+            const horario = h.tripTime && h.tripTime !== "—" && h.tripTime !== "N/A" ? " · " + escHtml(h.tripTime) : "";
+            html += `
+              <div class="stu-alert-card">
+                <div class="stu-alert-top">
+                  <div class="stu-alert-route">${ruta}${horario}</div>
+                  <div class="stu-alert-time">${escHtml(horaDelAviso(p.ts))}</div>
+                </div>
+                <div class="stu-alert-line"><b>Operador:</b> ${escHtml(nombreOperadorAviso(h.oldOp))} ➜ <b>${escHtml(nombreOperadorAviso(h.newOp || h.nombre))}</b></div>
+                <div class="stu-alert-line"><b>Unidad:</b> ${escHtml(nombreUnidadAviso(h.oldUnit))} ➜ <b>${escHtml(nombreUnidadAviso(h.newUnit))}</b></div>
+                ${h.scope ? `<div class="stu-alert-line"><b>Aplica a:</b> ${escHtml(h.scope)}</div>` : ""}
+                <div class="stu-alert-motivo">Motivo: ${escHtml(h.reason || "Cambio operativo")}</div>
+                <button type="button" class="stu-alert-btn" data-alerta-id="${escHtml(h.id)}">Entendido ✕</button>
+              </div>`;
+        });
+        if (pendientes.length > visibles.length) {
+            html += `<div class="stu-alert-more">Hay ${pendientes.length - visibles.length} aviso(s) más. Aparecerán al quitar estos.</div>`;
+        }
+        dock.innerHTML = html;
+    };
+
+    // Los cambios hechos en este mismo equipo cuentan como ya leídos
+    function enlazarRegistroDeCambiosLocales() {
+        if (typeof window.registrarEnHistorial !== "function") return;
+        if (window.registrarEnHistorial._stuEnvuelta) return;
+        const original = window.registrarEnHistorial;
+        const envuelta = function () {
+            const rec = original.apply(this, arguments);
+            try {
+                if (rec && rec.id) marcarAlertaVista(rec.id);
+            } catch (e) {}
+            return rec;
+        };
+        envuelta._stuEnvuelta = true;
+        window.registrarEnHistorial = envuelta;
+    }
+
+    // Cada vez que la app se redibuja (cambio local, cambio de la nube, reloj) se actualizan los avisos
+    function enlazarRenderConAvisos() {
+        if (window.render && window.render._stuConAvisos) return;
+        const renderBase = window.render;
+        const renderConAvisos = function () {
+            if (typeof renderBase === "function") renderBase.apply(this, arguments);
+            try {
+                window.actualizarAvisosRojos();
+            } catch (e) {
+                console.error("Avisos rojos:", e);
+            }
+        };
+        renderConAvisos._stuConAvisos = true;
+        window.render = renderConAvisos;
+    }
+
+    // =========================================================================
+    // 7. CONEXIÓN LIGERA A FIREBASE + DIAGNÓSTICO DE DATOS + AVISO DE VERSIÓN NUEVA
+    //    - Sustituye la conexión original: sin bucle cada 150 ms, junta ráfagas de
+    //      cambios en una sola actualización y no se rompe si falla una notificación.
+    //    - Se define aquí arriba (al cargar el archivo) para ganarle al reintento
+    //      que index.html programa antes de que existan las librerías de Firebase.
+    // =========================================================================
+    let fbIntentosSDK = 0;
+    let fbYaConectado = false;
+    let fbEsperandoRed = false;
+
+    function avisarCambioRecibido(ult) {
+        try {
+            const isCritical = ESTADOS_CRITICOS.some(est =>
+                String(ult.reason || "").toLowerCase().includes(est.toLowerCase())
+            );
+            playAlertSound(isCritical);
+            if (navigator.vibrate) navigator.vibrate(isCritical ? [400, 200, 400, 200, 600] : [200, 100, 200]);
+
+            if ("Notification" in window && Notification.permission === "granted") {
+                try {
+                    new Notification((isCritical ? "⚠️ CRÍTICO: " : "🔄 Cambio: ") + ult.route, {
+                        body: `Unidad: ${ult.newUnit === "VACIO" || ult.newUnit === "S/U" ? "S/U" : "U-" + ult.newUnit} | Op: ${
+                            ult.newOp === "VACIO" ? "Sin Asignar" : ult.newOp || ult.nombre
+                        }\nMotivo: ${ult.reason || "N/A"}`
+                    });
+                } catch (e) {}
+            }
+            if (isCritical && !document.hidden && typeof showAggressiveToast === "function") {
+                showAggressiveToast(`Cambio urgente en ruta ${ult.route}.`);
+            }
+        } catch (e) {}
+    }
+
+    function procesarDatosDeNube(snap, esPrimeraCarga) {
+        const cloudVal = snap.val();
+        if (cloudVal) {
+            const prevHistLen = Array.isArray(store.globalHistory) ? store.globalHistory.length : 0;
+            const localHistoryBackup = Array.isArray(store.globalHistory) ? [...store.globalHistory] : [];
+
+            normalizeStoreStructure(cloudVal);
+
+            if (localHistoryBackup.length > 0) {
+                const ids = new Set(store.globalHistory.map(h => h && h.id).filter(Boolean));
+                localHistoryBackup.forEach(item => {
+                    if (item && item.id && !ids.has(item.id)) {
+                        store.globalHistory.push(item);
+                        ids.add(item.id);
+                    }
+                });
+            }
+            getGlobalHistory();
+            saveLocalCacheDebounced();
+
+            if (!esPrimeraCarga && store.globalHistory.length > prevHistLen && prevHistLen > 0) {
+                const ult = store.globalHistory[store.globalHistory.length - 1];
+                if (ult) avisarCambioRecibido(ult);
+            }
+        }
+        setSyncStatus(false, "En línea", false);
+        window.render();
+    }
+
+    window.initFirebaseConnection = function () {
+        if (fbYaConectado) return;
+        if (typeof db !== "undefined" && db) {
+            fbYaConectado = true;
+            return;
+        }
+
+        // Esperar a que carguen las librerías de Firebase, con pausas cada vez más largas
+        if (typeof firebase === "undefined" || !firebase.database) {
+            fbIntentosSDK++;
+            if (fbIntentosSDK > 30) {
+                setSyncStatus(false, "Sin red (Caché)", true);
+                if (!fbEsperandoRed) {
+                    fbEsperandoRed = true;
+                    window.addEventListener("online", function () {
+                        fbEsperandoRed = false;
+                        fbIntentosSDK = 0;
+                        window.initFirebaseConnection();
+                    }, { once: true });
+                }
+                return;
+            }
+            setTimeout(window.initFirebaseConnection, Math.min(250 * fbIntentosSDK, 3000));
+            return;
+        }
+
+        fbYaConectado = true;
+        try {
+            const firebaseConfig = {
+                apiKey: "AIzaSyCgRzOFk8XaCHZZV3brW9AtuJCVBP0cJhA",
+                authDomain: "rutas-operaciones.firebaseapp.com",
+                databaseURL: "https://rutas-operaciones-default-rtdb.firebaseio.com",
+                projectId: "rutas-operaciones"
+            };
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+            db = firebase.database().ref("operaciones_v6");
+
+            firebase.database().ref(".info/connected").on("value", snap => {
+                isConnectedToFirebase = !!snap.val();
+                if (isConnectedToFirebase) setSyncStatus(false, "En línea", false);
+                else setSyncStatus(false, "Sin red (Caché)", true);
+            });
+
+            let primera = true;
+            let snapPendiente = null;
+            let temporizador = null;
+            db.on(
+                "value",
+                snap => {
+                    snapPendiente = snap;
+                    if (temporizador) return; // ya hay una actualización en camino: solo se usa la más reciente
+                    temporizador = setTimeout(function () {
+                        temporizador = null;
+                        const s = snapPendiente;
+                        snapPendiente = null;
+                        const esPrimera = primera;
+                        primera = false;
+                        try {
+                            procesarDatosDeNube(s, esPrimera);
+                        } catch (e) {
+                            console.error("Error procesando datos de la nube:", e);
+                            setSyncStatus(false, "En línea", false);
+                        }
+                    }, primera ? 0 : 400);
+                },
+                () => setSyncStatus(false, "Caché local", true)
+            );
+        } catch (e) {
+            fbYaConectado = false;
+            setSyncStatus(false, "Modo caché", true);
+        }
+    };
+
+    // Si la app vuelve a primer plano y aún no conectó, reintenta de inmediato
+    document.addEventListener("visibilitychange", function () {
+        if (!document.hidden && !fbYaConectado) {
+            fbIntentosSDK = 0;
+            window.initFirebaseConnection();
+        }
+    });
+
+    // ----- Diagnóstico: ¿qué parte de los datos pesa más? -----
+    function pesoKB(obj) {
+        try {
+            const txt = JSON.stringify(obj === undefined ? null : obj);
+            return new Blob([txt]).size / 1024;
+        } catch (e) {
+            return 0;
+        }
+    }
+
+    function formatoPeso(kb) {
+        return kb >= 1024 ? (kb / 1024).toFixed(2) + " MB" : Math.round(kb) + " KB";
+    }
+
+    window.verConsumoDatos = async function () {
+        const secciones = [
+            ["days", "Rol (todas las corridas)"],
+            ["state", "Cambios y estados por día"],
+            ["operadoresMeta", "Datos de operadores (teléfonos, etc.)"],
+            ["operadoresDB", "Lista de operadores"],
+            ["globalHistory", "Historial de cambios"],
+            ["globalFleet", "Flota"],
+            ["knownRoutes", "Rutas que conoce cada operador"],
+            ["unassignedReasons", "Motivos (taller, baja, etc.)"],
+            ["tallerDB", "Unidades en taller"]
+        ];
+        let total = 0;
+        const filas = secciones
+            .map(function (s) {
+                const kb = pesoKB(store[s[0]]);
+                total += kb;
+                return { nombre: s[1], kb: kb };
+            })
+            .sort((a, b) => b.kb - a.kb);
+
+        let cacheLocalKB = 0;
+        try {
+            cacheLocalKB = ((localStorage.getItem(CACHE_KEY) || "").length * 2) / 1024;
+        } catch (e) {}
+
+        let usoNavegador = "";
+        try {
+            if (navigator.storage && navigator.storage.estimate) {
+                const est = await navigator.storage.estimate();
+                if (est && est.usage) usoNavegador = formatoPeso(est.usage / 1024);
+            }
+        } catch (e) {}
+
+        const nHist = Array.isArray(store.globalHistory) ? store.globalHistory.length : 0;
+        const nDias = Object.keys(store.days || {}).length;
+        const nEstados = Object.keys(store.state || {}).length;
+
+        let barras = "";
+        filas.forEach(function (f) {
+            const pct = total > 0 ? Math.max(1, Math.round((f.kb / total) * 100)) : 0;
+            barras += `<div style="margin-bottom:9px;">
+                <div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;">
+                  <span>${f.nombre}</span><span>${formatoPeso(f.kb)} (${pct}%)</span>
+                </div>
+                <div style="height:7px;background:var(--line);border-radius:6px;overflow:hidden;margin-top:3px;">
+                  <div style="height:100%;width:${pct}%;background:var(--accent);"></div>
+                </div>
+              </div>`;
+        });
+
+        openSheet(`<h2>📊 ¿Qué gasta mis datos?</h2>
+          <div style="background:var(--surface-2);padding:12px;border-radius:12px;font-size:13px;line-height:1.7;margin-bottom:12px">
+            <b>Total que se baja de la nube al conectar:</b> hasta ${formatoPeso(total)}<br>
+            <b>Copia guardada en este teléfono:</b> ${formatoPeso(cacheLocalKB)}<br>
+            ${usoNavegador ? `<b>Espacio usado por la app en el teléfono:</b> ${usoNavegador}<br>` : ""}
+            <b>Días del rol:</b> ${nDias} · <b>Días con cambios guardados:</b> ${nEstados} · <b>Registros de historial:</b> ${nHist}
+          </div>
+          ${barras}
+          <div style="font-size:12px;color:var(--ink-soft);margin:10px 0;">
+            Mándame una captura de esta pantalla y te digo exactamente qué parte conviene aligerar, sin borrar nada importante.
+          </div>
+          <button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
+    };
+
+    // ----- Aviso cuando hay una versión nueva de la app en GitHub -----
+    function mostrarBarraVersionNueva() {
+        if (document.getElementById("stuBarraVersion")) return;
+        const bar = document.createElement("div");
+        bar.id = "stuBarraVersion";
+        bar.style.cssText =
+            "position:fixed;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom, 0px) + 74px);z-index:10002;" +
+            "background:#00509d;color:#fff;border-radius:12px;padding:10px 12px;display:flex;align-items:center;" +
+            "gap:10px;font-weight:700;font-size:13px;box-shadow:0 6px 18px rgba(0,0,0,0.3);";
+        bar.innerHTML =
+            `<span style="flex:1;">Hay una versión nueva de la app.</span>` +
+            `<button type="button" id="stuBtnVersion" style="border:none;border-radius:9px;padding:8px 12px;background:#fff;color:#00509d;font-weight:800;cursor:pointer;">Actualizar</button>`;
+        document.body.appendChild(bar);
+        document.getElementById("stuBtnVersion").onclick = function () {
+            location.reload();
+        };
+    }
+
+    function registrarAvisoVersionNueva() {
+        if (!("serviceWorker" in navigator)) return;
+        navigator.serviceWorker.addEventListener("message", function (ev) {
+            if (ev.data && ev.data.type === "stu-version-nueva") mostrarBarraVersionNueva();
+        });
+    }
+
+    // =========================================================================
+    // 8. INICIALIZACIÓN AUTOMÁTICA AL CARGAR LA APP
     // =========================================================================
     function initExtras() {
         enforceMobileViewportAndStyles();
-        injectTopActionButtons();
-        setupAndroidAutoFullscreen();
-        setupDesktopWebNotifications();
+        injectFullscreenButton();
+        enlazarRegistroDeCambiosLocales();
+        enlazarRenderConAvisos();
+        registrarAvisoVersionNueva();
         if (typeof window.render === "function") {
             window.render();
         }

@@ -1,59 +1,226 @@
-const CACHE_NAME = "stu-buap-pwa-v7";
+/* ==========================================================================
+   SW.JS - ROL OPERATIVO PRO (STU BUAP)
+   Objetivo: que la app ABRA AL INSTANTE con cualquier señal y gaste pocos megas.
+   - La app (index.html, extras.js) se abre desde el teléfono al momento, sin esperar a internet.
+   - En segundo plano pregunta a GitHub si hay versión nueva (si no hay, casi no gasta datos).
+   - Fuentes de Google, Firebase y lector de Excel se descargan UNA sola vez y se guardan.
+   - Si las fuentes de Google tardan, la app NO se queda en blanco esperándolas.
+   ========================================================================== */
+
+const CACHE_NAME = "stu-buap-pwa-v8";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
+  "./extras.js",
   "./Logo%20Estrella%20Roja.webp"
 ];
+const ESPERA_MAX_FUENTES_MS = 2500;
+const SERVIDORES_GUARDAR_UNA_VEZ = ["fonts.gstatic.com", "cdnjs.cloudflare.com"];
 
-// Instala y guarda la estructura base
+// ---------------------------------------------------------------------------
+// Instalación: guarda lo básico (si un archivo falla, los demás se guardan igual)
+// ---------------------------------------------------------------------------
 self.addEventListener("install", (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS).catch(() => {});
-    })
-  );
-});
-
-// Limpia versiones viejas automáticamente
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      )
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.all(ASSETS.map((a) => cache.add(a).catch(() => {})))
     )
   );
-  self.clients.claim();
 });
 
-// Prioriza la red para reflejar siempre los cambios de la web y usa caché si no hay señal
-self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
+// Limpia versiones viejas
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(keys.map((k) => (k !== CACHE_NAME ? caches.delete(k) : null)))
+      )
+      .then(() => self.clients.claim())
+  );
+});
 
-  // No interceptar las conexiones en vivo de Firebase
-  if (
-    event.request.url.includes("firebaseio.com") ||
-    event.request.url.includes("googleapis.com") ||
-    event.request.url.includes("gstatic.com")
-  ) {
+// ---------------------------------------------------------------------------
+// Utilidades
+// ---------------------------------------------------------------------------
+async function traerConCors(req) {
+  try {
+    return await fetch(req.url, { mode: "cors", credentials: "omit" });
+  } catch (e) {
+    return fetch(req);
+  }
+}
+
+function firmaDeRespuesta(res) {
+  if (!res || !res.headers) return "";
+  return (
+    res.headers.get("etag") ||
+    res.headers.get("last-modified") ||
+    res.headers.get("content-length") ||
+    ""
+  );
+}
+
+async function avisarVersionNueva(urlTexto) {
+  try {
+    const u = new URL(urlTexto);
+    const esApp = /\/(index\.html|extras\.js)$/i.test(u.pathname) || /\/$/.test(u.pathname);
+    if (!esApp) return;
+    const clientes = await self.clients.matchAll({ type: "window" });
+    clientes.forEach((c) => c.postMessage({ type: "stu-version-nueva", url: urlTexto }));
+  } catch (e) {}
+}
+
+// Mantiene vivo el service worker mientras termina el trabajo en segundo plano
+function responder(event, manejador) {
+  let terminar = function () {};
+  event.waitUntil(
+    new Promise((res) => {
+      terminar = res;
+      setTimeout(res, 25000); // seguro: nunca se queda colgado
+    })
+  );
+  event.respondWith(
+    manejador(event.request, () => terminar()).catch(() => {
+      terminar();
+      return Response.error();
+    })
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Estrategias
+// ---------------------------------------------------------------------------
+
+// 1) La app propia: abre desde el teléfono al instante y se actualiza en segundo plano.
+//    Pregunta a GitHub con "no-cache": si no cambió, responde 304 (casi 0 datos).
+async function estrategiaApp(req, terminar) {
+  const cache = await caches.open(CACHE_NAME);
+  let guardado = await cache.match(req.url);
+  if (!guardado && req.mode === "navigate") guardado = await cache.match("./index.html");
+
+  const actualizar = fetch(req.url, { cache: "no-cache" })
+    .then(async (res) => {
+      if (res && res.ok && !res.redirected) {
+        const cambio =
+          guardado &&
+          firmaDeRespuesta(guardado) &&
+          firmaDeRespuesta(res) &&
+          firmaDeRespuesta(guardado) !== firmaDeRespuesta(res);
+        await cache.put(req.url, res.clone());
+        if (cambio) avisarVersionNueva(req.url);
+      }
+      return res;
+    })
+    .catch(() => null);
+
+  if (guardado) {
+    actualizar.then(terminar, terminar);
+    return guardado;
+  }
+
+  // Primera vez sin copia guardada: se necesita internet
+  let res = null;
+  try {
+    res = await fetch(req);
+  } catch (e) {
+    res = null;
+  }
+  terminar();
+  return (
+    res ||
+    new Response("Sin conexión y todavía no hay copia guardada. Abre la app una vez con internet.", {
+      status: 503,
+      headers: { "Content-Type": "text/plain; charset=utf-8" }
+    })
+  );
+}
+
+// 2) Archivos externos que no cambian (Firebase SDK, lector Excel, archivos de fuentes):
+//    se descargan una sola vez y de ahí siempre salen del teléfono.
+async function estrategiaGuardarUnaVez(req, terminar) {
+  const cache = await caches.open(CACHE_NAME);
+  const guardado = await cache.match(req.url);
+  if (guardado) {
+    terminar();
+    return guardado;
+  }
+  const res = await traerConCors(req);
+  if (res && res.ok) {
+    try {
+      await cache.put(req.url, res.clone());
+    } catch (e) {}
+  }
+  terminar();
+  return res;
+}
+
+// 3) Hoja de estilos de fuentes de Google: NUNCA debe dejar la pantalla en blanco.
+//    Si tarda más de 2.5 s, se abre la app con letra normal y se baja en segundo plano.
+async function estrategiaFuentesCss(req, terminar) {
+  const cache = await caches.open(CACHE_NAME);
+  const guardado = await cache.match(req.url);
+  if (guardado) {
+    terminar();
+    return guardado;
+  }
+
+  const descarga = traerConCors(req).then(async (res) => {
+    if (res && res.ok) {
+      try {
+        await cache.put(req.url, res.clone());
+      } catch (e) {}
+    }
+    return res;
+  });
+  descarga.then(terminar, terminar);
+
+  const limite = new Promise((r) => setTimeout(() => r(null), ESPERA_MAX_FUENTES_MS));
+  const res = await Promise.race([descarga.catch(() => null), limite]);
+  return (
+    res ||
+    new Response("/* fuentes de Google no disponibles por ahora */", {
+      headers: { "Content-Type": "text/css; charset=utf-8" }
+    })
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Enrutador
+// ---------------------------------------------------------------------------
+self.addEventListener("fetch", (event) => {
+  const req = event.request;
+  if (req.method !== "GET") return;
+
+  let url;
+  try {
+    url = new URL(req.url);
+  } catch (e) {
+    return;
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") return;
+
+  // Datos en vivo de Firebase: nunca se tocan
+  if (url.hostname.endsWith("firebaseio.com") || url.hostname.endsWith("firebasedatabase.app")) return;
+
+  if (url.hostname === "fonts.googleapis.com") {
+    responder(event, estrategiaFuentesCss);
     return;
   }
 
-  event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        const responseClone = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseClone);
-        });
-        return networkResponse;
-      })
-      .catch(() => caches.match(event.request))
-  );
+  if (
+    SERVIDORES_GUARDAR_UNA_VEZ.includes(url.hostname) ||
+    (url.hostname === "www.gstatic.com" && url.pathname.startsWith("/firebasejs/"))
+  ) {
+    responder(event, estrategiaGuardarUnaVez);
+    return;
+  }
+
+  if (url.origin === self.location.origin) {
+    responder(event, estrategiaApp);
+    return;
+  }
+  // Cualquier otra cosa externa: red normal
 });
