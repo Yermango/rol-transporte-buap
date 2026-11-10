@@ -1,0 +1,3787 @@
+/* ==========================================================================
+   EXTRAS.JS - ROL OPERATIVO PRO (STU BUAP)
+   - Forzado de formato móvil Android + Pantalla Completa
+   - Lectura automática de teléfonos G3 (Personal) y H3 (Trabajo) con prioridad a Trabajo (H)
+   - Lector Dual de Excel para "rol" (Formato 1: Bloques HR | Formato 2: Tabular Órdenes 24h)
+   - Rediseño compacto de tarjetas en "Activas" (Teléfono y WhatsApp mini para ver bien la ruta)
+   - Avisos rojos persistentes por cada cambio (ruta, horario, operador, unidad y motivo) que se quitan a mano
+   - Conexión ligera a Firebase (sin bucles, junta ráfagas de cambios) y diagnóstico de consumo de datos
+   - Aviso de "versión nueva disponible" (trabaja junto con sw.js v8)
+   - Corrección de sincronización: los cambios de operador/unidad (Todas las vueltas y Flota) ahora sí se reflejan
+   - "Fallas detectadas en rol" (🔎 arriba a la derecha): taller, bajas, claves que no existen, unidades repetidas, rol vs datos, Zacachimalpa
+   - "Iniciales (Smart)" (🚌 arriba a la derecha): sube el Monitor de Smart, sugiere quién hace las rutas INICIAL y revisa sus fallas
+   - Taller y unidades sin operador: solo hace caso a la hoja Taller (hoy o última fecha, sin status = lista) y a Unidades Faltantes de DATOS OP
+   - 🔧 "Taller y unidades sin operador": ver qué lee la app, actualizar SOLO taller sin borrar los cambios del día, y avisos si falla la lectura
+   - Letras en la columna UNIDAD de DATOS OP (B, I, C, P, Pr, T) = estado del operador, ya no son guardias · Vueltas redondas con circuitos CU–Camino Real/Tlaxcalancingo y CU–Cuautlancingo/Bachillerato
+   ========================================================================== */
+
+(function () {
+    "use strict";
+
+    // =========================================================================
+    // 1. FORZAR FORMATO DE TELÉFONO MÓVIL Y ESTILOS COMPACTOS EN "ACTIVAS"
+    // =========================================================================
+    function enforceMobileViewportAndStyles() {
+        // Forzar etiqueta viewport móvil estricta
+        let vp = document.querySelector('meta[name="viewport"]');
+        if (!vp) {
+            vp = document.createElement("meta");
+            vp.name = "viewport";
+            document.head.appendChild(vp);
+        }
+        vp.setAttribute(
+            "content",
+            "width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover"
+        );
+
+        // Asegurar que no arranque en modo escritorio a menos que el usuario lo pida
+        if (localStorage.getItem("stu_force_pc_view") !== "1") {
+            document.body.classList.remove("pc-view");
+            document.body.classList.add("mobile-forced");
+        }
+
+        if (document.getElementById("stu-extras-styles")) return;
+        const style = document.createElement("style");
+        style.id = "stu-extras-styles";
+        style.textContent = `
+            /* Bloqueo de formato móvil limpio en Android APK / WebView */
+            body.mobile-forced .shell {
+                max-width: 100% !important;
+                width: 100% !important;
+                padding: 0 !important;
+                margin: 0 auto !important;
+            }
+
+            /* Botón de pantalla completa en la barra superior */
+            .fullscreen-btn-top {
+                background: rgba(255, 255, 255, 0.18);
+                border: 1px solid rgba(255, 255, 255, 0.28);
+                border-radius: 10px;
+                padding: 6px;
+                cursor: pointer;
+                color: #FFFFFF;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 38px;
+                min-height: 38px;
+            }
+            .fullscreen-btn-top svg {
+                width: 19px;
+                height: 19px;
+                pointer-events: none;
+            }
+            .fullscreen-btn-top:active {
+                transform: scale(0.93);
+            }
+
+            /* REDISEÑO COMPACTO DE TARJETAS EN "ACTIVAS" PARA VER BIEN LA RUTA */
+            .trip {
+                margin: 0 10px !important;
+                padding: 10px 10px !important;
+                gap: 8px !important;
+                align-items: center !important;
+            }
+            .trip-time {
+                font-size: 15.5px !important;
+                font-weight: 800 !important;
+                width: 44px !important;
+                flex-shrink: 0 !important;
+                line-height: 1.1 !important;
+            }
+            .trip-main {
+                flex: 1 1 auto !important;
+                min-width: 0 !important;
+                overflow: hidden !important;
+            }
+            .trip-route {
+                font-size: 15px !important;
+                font-weight: 800 !important;
+                line-height: 1.22 !important;
+                color: var(--ink);
+                word-break: break-word !important;
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            .trip-sub {
+                font-size: 12.5px !important;
+                margin-top: 4px !important;
+                display: flex !important;
+                align-items: center !important;
+                flex-wrap: wrap !important;
+                gap: 4px !important;
+                line-height: 1.25 !important;
+            }
+            .trip-sub .unit {
+                font-size: 12px !important;
+                padding: 2px 6px !important;
+                border-radius: 5px !important;
+                flex-shrink: 0;
+            }
+            .trip-op-name {
+                font-weight: 700;
+                color: var(--ink);
+                max-width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .trip.trip-damaged .trip-op-name {
+                color: #FFFFFF !important;
+            }
+
+            /* Mini barra de contacto (Teléfono + WhatsApp compactos junto al operador) */
+            .mini-contact-group {
+                display: inline-flex;
+                align-items: center;
+                gap: 3px;
+                margin-left: 2px;
+                flex-shrink: 0;
+            }
+            .mini-contact-btn {
+                border: none;
+                border-radius: 7px;
+                width: 26px !important;
+                height: 26px !important;
+                min-width: 26px !important;
+                min-height: 26px !important;
+                padding: 0 !important;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: transform 0.12s;
+            }
+            .mini-contact-btn:active {
+                transform: scale(0.9);
+            }
+            .mini-contact-btn svg {
+                width: 14px !important;
+                height: 14px !important;
+                pointer-events: none;
+            }
+            .mini-contact-btn.call-btn {
+                color: #00509d;
+                background: #DBEAFE;
+                border: 1px solid #BFDBFE;
+            }
+            .mini-contact-btn.msg-btn {
+                color: #15803D;
+                background: #DCFCE7;
+                border: 1px solid #BBF7D0;
+            }
+            .mini-contact-btn.no-phone {
+                opacity: 0.42;
+                background: var(--surface-2);
+                color: var(--ink-soft);
+                border: 1px dashed var(--line);
+            }
+
+            /* Botones de estado de la derecha más compactos para no robar ancho a la ruta */
+            .trip-actions {
+                display: flex !important;
+                align-items: center !important;
+                gap: 3px !important;
+                flex: 0 0 auto !important;
+            }
+            .trip-actions .icon-btn {
+                min-width: 33px !important;
+                min-height: 33px !important;
+                width: 33px !important;
+                height: 33px !important;
+                padding: 5px !important;
+                border-radius: 8px !important;
+            }
+            .trip-actions .icon-btn svg {
+                width: 17px !important;
+                height: 17px !important;
+            }
+            .trip-actions .icon-btn.hide-btn svg {
+                width: 15px !important;
+                height: 15px !important;
+            }
+            .tag-foranea {
+                font-size: 10px !important;
+                padding: 1px 5px !important;
+                margin-left: 2px !important;
+            }
+            .punt-badge {
+                font-size: 10.5px !important;
+                padding: 1px 5px !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function injectFullscreenButton() {
+        const rightBar = document.querySelector(".appbar-right");
+        if (!rightBar || document.getElementById("btnFullscreenApp")) return;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.id = "btnFullscreenApp";
+        btn.className = "fullscreen-btn-top";
+        btn.title = "Pantalla Completa";
+        btn.setAttribute("aria-label", "Pantalla Completa");
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>`;
+        btn.onclick = function () {
+            toggleAppFullscreen();
+        };
+        rightBar.insertBefore(btn, rightBar.firstChild);
+    }
+
+    window.toggleAppFullscreen = function () {
+        const docEl = document.documentElement;
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            if (docEl.requestFullscreen) docEl.requestFullscreen().catch(() => {});
+            else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+        } else {
+            if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        }
+    };
+
+    window.cambiarModoPantalla = function (modo) {
+        if (modo === "pc") {
+            localStorage.setItem("stu_force_pc_view", "1");
+            document.body.classList.remove("mobile-forced");
+            document.body.classList.add("pc-view");
+        } else {
+            localStorage.setItem("stu_force_pc_view", "0");
+            document.body.classList.remove("pc-view");
+            document.body.classList.add("mobile-forced");
+        }
+        if (typeof window.render === "function") window.render();
+        if (typeof window.closeSheet === "function") window.closeSheet();
+    };
+
+    // =========================================================================
+    // 2. NORMALIZACIÓN Y EXTRACCIÓN AUTOMÁTICA DE TELÉFONOS (G3 Y H3 ABAJO)
+    // =========================================================================
+    function normTextKey(str) {
+        if (!str) return "";
+        return String(str)
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toUpperCase()
+            .replace(/[^A-Z0-9\s]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    // Limpiador universal de teléfonos (soporta números de Excel, espacios, guiones, +52 o varios números en una celda)
+    window.cleanPhone10 = function (val) {
+        if (val === null || val === undefined) return "";
+        let str = "";
+        if (typeof val === "number") {
+            if (!isFinite(val) || val <= 0) return "";
+            str = String(Math.trunc(val));
+        } else {
+            str = String(val).trim();
+        }
+        if (!str || /^(s\/n|sin|no|n\/a|ninguno|0|-+|null|undefined)$/i.test(str)) return "";
+
+        // Si hay dos teléfonos en la misma celda separados por /, -, coma o salto
+        let parts = str.split(/[\/,;|\n]+/);
+        for (let p of parts) {
+            let d = p.replace(/\D/g, "");
+            if (d.length === 12 && d.startsWith("52")) d = d.slice(2);
+            if (d.length === 13 && d.startsWith("521")) d = d.slice(3);
+            if (d.length === 10) return d;
+            if (d.length > 10) return d.slice(-10);
+        }
+
+        let allDigits = str.replace(/\D/g, "");
+        if (allDigits.length === 12 && allDigits.startsWith("52")) allDigits = allDigits.slice(2);
+        if (allDigits.length === 13 && allDigits.startsWith("521")) allDigits = allDigits.slice(3);
+        if (allDigits.length >= 10) return allDigits.slice(-10);
+        return "";
+    };
+
+    // Buscador inteligente de metadatos del operador (cruza por Nombre, Nombre sin acentos, Clave/Nómina o Unidad)
+    window.getOpMeta = function (opName, claveHint, unitHint) {
+        const empty = {
+            puntualidad: null,
+            telPersonal: "",
+            telEmpresa: "",
+            tel: "",
+            esTurismo: false,
+            esBaja: false,
+            clave: "",
+            rutasSabidas: ""
+        };
+        if (!store) return empty;
+        const metaDB = store.operadoresMeta || {};
+
+        let foundMeta = null;
+
+        // 1) Búsqueda directa por llave del nombre
+        if (opName && opName !== "Sin asignar" && opName !== "VACIO") {
+            let kExact = fbKey(opName);
+            let kNorm = fbKey(normTextKey(opName));
+            if (metaDB[kExact]) foundMeta = metaDB[kExact];
+            else if (metaDB[opName]) foundMeta = metaDB[opName];
+            else if (metaDB[kNorm]) foundMeta = metaDB[kNorm];
+        }
+
+        // 2) Búsqueda por Clave / Nómina si se proporcionó o si opName es numérico
+        if (!foundMeta) {
+            let possibleClave = claveHint || (opName && /^\d+$/.test(String(opName).trim()) ? String(opName).trim() : "");
+            if (possibleClave) {
+                let kClave = "CLAVE_" + fbKey(possibleClave);
+                if (metaDB[kClave]) foundMeta = metaDB[kClave];
+                else if (store.operadoresDB && store.operadoresDB[fbKey(possibleClave)]) {
+                    let mappedName = store.operadoresDB[fbKey(possibleClave)];
+                    foundMeta = metaDB[fbKey(mappedName)] || metaDB[fbKey(normTextKey(mappedName))] || null;
+                }
+            }
+        }
+
+        // 3) Búsqueda flexible comparando nombres normalizados (sin acentos) en operadoresMeta
+        if (!foundMeta && opName && opName !== "Sin asignar" && opName !== "VACIO") {
+            let targetNorm = normTextKey(opName);
+            if (targetNorm) {
+                for (let key in metaDB) {
+                    if (key.startsWith("CLAVE_") || key.startsWith("UNIT_")) continue;
+                    let item = metaDB[key];
+                    let itemNorm = normTextKey(item?.nombreOriginal || key);
+                    if (itemNorm === targetNorm) {
+                        foundMeta = item;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 4) Búsqueda de respaldo por Unidad si la corrida tiene unidad
+        if (!foundMeta && unitHint) {
+            let kUnit = "UNIT_" + fbKey(unitHint);
+            if (metaDB[kUnit]) foundMeta = metaDB[kUnit];
+        }
+
+        let meta = foundMeta || {};
+        let reason = typeof getReasonForEntity === "function" ? getReasonForEntity(opName) : "";
+        let rLow = String(reason || "").toLowerCase();
+        let nLow = String(opName || "").toLowerCase();
+
+        let punt =
+            meta.puntualidad !== undefined && meta.puntualidad !== null && meta.puntualidad !== ""
+                ? Number(meta.puntualidad)
+                : null;
+        let esTurismo = Boolean(meta.esTurismo) || rLow.includes("turismo") || nLow.includes("turismo");
+        let esBaja =
+            Boolean(meta.esBaja) ||
+            (punt !== null && punt <= 0) ||
+            rLow.includes("baja") ||
+            nLow.includes("baja");
+
+        let telPersonal = window.cleanPhone10(meta.telPersonal || "");
+        let telEmpresa = window.cleanPhone10(meta.telEmpresa || "");
+        let telFallback = window.cleanPhone10(meta.tel || "");
+
+        if (!telPersonal && !telEmpresa && telFallback) {
+            telEmpresa = telFallback;
+        }
+
+        // REGLA ESTRICTA DE PRIORIDAD:
+        // 1. Si tiene ambos (Trabajo H y Personal G) -> SIEMPRE priorizar Trabajo (Columna H)
+        // 2. Si solo tiene Trabajo (H) -> usar Trabajo (H)
+        // 3. Si solo tiene Personal (G) -> usar Personal (G)
+        let telPrioritario = telEmpresa ? telEmpresa : telPersonal;
+
+        return {
+            puntualidad: punt,
+            telPersonal: telPersonal,
+            telEmpresa: telEmpresa,
+            tel: telPrioritario,
+            tipoTelActivo: telEmpresa ? "Trabajo (H)" : (telPersonal ? "Personal (G)" : ""),
+            esTurismo: esTurismo,
+            esBaja: esBaja,
+            clave: meta.clave || "",
+            rutasSabidas: meta.rutasSabidas || (store.knownRoutes && store.knownRoutes[fbKey(opName)]) || ""
+        };
+    };
+
+    // CONTACTO AUTOMÁTICO CON PRIORIDAD DIRECTA AL TELÉFONO DE TRABAJO (COLUMNA H)
+    window.contactarOperador = function (event, mode, opName, tripTime, routeName, unitNum, claveHint) {
+        if (event) event.stopPropagation();
+        if (!opName || opName === "Sin asignar" || opName === "VACIO") {
+            if (typeof showAggressiveToast === "function") {
+                showAggressiveToast("Esta corrida aún no tiene operador asignado.");
+            }
+            return;
+        }
+
+        let meta = window.getOpMeta(opName, claveHint, unitNum);
+        // Priorizar siempre el teléfono de Trabajo (Columna H) sobre el Personal (Columna G)
+        let telElegido = meta.telEmpresa || meta.telPersonal || meta.tel || "";
+
+        if (!telElegido) {
+            // Solo si no existe ni en H ni en G en el Excel, permite registrarlo
+            window.abrirModalEditarTelefonos(opName, mode, tripTime, routeName, unitNum);
+            return;
+        }
+
+        // Ejecuta la llamada o el WhatsApp de inmediato sin preguntar cuál de los dos números usar
+        ejecutarContactoDirecto(mode, telElegido, opName, tripTime, routeName, unitNum);
+    };
+
+    // =========================================================================
+    // 3. CATÁLOGO DE RUTAS Y LECTOR DUAL DE EXCEL ("DATOS" Y DOS FORMATOS "ROL")
+    // =========================================================================
+    const CATALOGO_RUTAS_BUAP = {
+        "0101": { o: "Bachillerato", d: "CU" },
+        "0102": { o: "CU", d: "Bachillerato" },
+        "0201": { o: "Camino Real", d: "CU" },
+        "0202": { o: "CU", d: "Camino Real" },
+        "0301": { o: "CU", d: "Héroes" },
+        "0302": { o: "Héroes", d: "CU" },
+        "0401": { o: "Cholula", d: "Preparatoria Lázaro Cárdenas" },
+        "0402": { o: "Preparatoria Lázaro Cárdenas", d: "Cholula" },
+        "0501": { o: "CAPU", d: "CU" },
+        "0502": { o: "CU", d: "CAPU" },
+        "0601": { o: "Área de la Salud", d: "Entronque" },
+        "0602": { o: "Entronque", d: "Área de la Salud" },
+        "0701": { o: "Área de la Salud", d: "Cholula" },
+        "0702": { o: "Cholula", d: "Área de la Salud" },
+        "0801": { o: "CU", d: "Área de la Salud" },
+        "0802": { o: "Área de la Salud", d: "CU" },
+        "0901": { o: "CU", d: "Centro" },
+        "0902": { o: "Centro", d: "CU" },
+        "1001": { o: "CU", d: "Complejo Cultural" },
+        "1002": { o: "Complejo Cultural", d: "CU" },
+        "1101": { o: "San Ramón", d: "CU" },
+        "1102": { o: "CU", d: "San Ramón" },
+        "1201": { o: "Maravillas", d: "CU" },
+        "1202": { o: "CU", d: "Maravillas" },
+        "1301": { o: "Xonacatepec", d: "CU" },
+        "1302": { o: "CU", d: "Xonacatepec" },
+        "1401": { o: "Amalucan", d: "CU" },
+        "1402": { o: "CU", d: "Amalucan" },
+        "1501": { o: "San Bartolo", d: "CU" },
+        "1502": { o: "CU", d: "San Bartolo" },
+        "1601": { o: "Loma Bella", d: "CU" },
+        "1602": { o: "CU", d: "Loma Bella" },
+        "1701": { o: "Agua Santa", d: "CU" },
+        "1702": { o: "CU", d: "Agua Santa" },
+        "1801": { o: "CU2", d: "CU" },
+        "1802": { o: "CU", d: "CU2" },
+        "1901": { o: "CU", d: "Tecamachalco" },
+        "1902": { o: "Tecamachalco", d: "CU" },
+        "2001": { o: "CU", d: "Atlixco" },
+        "2002": { o: "Atlixco", d: "CU" },
+        "2101": { o: "CU", d: "San Martín" },
+        "2102": { o: "San Martín", d: "CU" },
+        "2201": { o: "CU", d: "Chiapa" },
+        "2202": { o: "Chiapa", d: "CU" },
+        "2301": { o: "CU", d: "Acajete" },
+        "2302": { o: "Acajete", d: "CU" }
+    };
+
+    function normalizarCodigoRuta(rawCode) {
+        if (rawCode === null || rawCode === undefined) return "";
+        let s = String(rawCode).trim();
+        if (!s) return "";
+        if (/^\d+$/.test(s) && s.length === 3) {
+            return "0" + s;
+        }
+        return s;
+    }
+
+    function separarOrigenDestinoTexto(descRuta, fallbackCode) {
+        if (!descRuta) {
+            let code = normalizarCodigoRuta(fallbackCode);
+            if (CATALOGO_RUTAS_BUAP[code]) return CATALOGO_RUTAS_BUAP[code];
+            return { o: code ? "Ruta " + code : "Desconocido", d: "CU" };
+        }
+        let clean = String(descRuta).trim();
+        // Quitar prefijo de código tipo "0101 - " o "0501-"
+        clean = clean.replace(/^\d{3,4}\s*-\s*/i, "").trim();
+
+        if (/\s+a\s+/i.test(clean)) {
+            let parts = clean.split(/\s+a\s+/i);
+            return {
+                o: parts[0].trim() || "Desconocido",
+                d: parts.slice(1).join(" a ").trim() || "Desconocido"
+            };
+        }
+        if (clean.includes("/")) {
+            let parts = clean.split("/");
+            return {
+                o: parts[0].trim() || "Desconocido",
+                d: parts.slice(1).join("/").trim() || "Desconocido"
+            };
+        }
+        if (clean.includes("-")) {
+            let parts = clean.split("-");
+            return {
+                o: parts[0].trim() || "Desconocido",
+                d: parts.slice(1).join("-").trim() || "Desconocido"
+            };
+        }
+        return { o: clean, d: "CU" };
+    }
+
+    function parseExcelTime(hrVal) {
+        if (hrVal === null || hrVal === undefined || hrVal === "") return null;
+        if (typeof hrVal === "number" && hrVal >= 0) {
+            let totalMins = Math.round((hrVal - Math.floor(hrVal)) * 24 * 60);
+            if (hrVal >= 1 && totalMins === 0) return null;
+            let hh = Math.floor(totalMins / 60) % 24;
+            let mm = totalMins % 60;
+            return String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
+        }
+        let s = String(hrVal).trim();
+        if (s.includes(":")) {
+            let parts = s.split(":");
+            let h = parseInt(parts[0], 10);
+            let m = parseInt(parts[1], 10);
+            if (!isNaN(h) && !isNaN(m)) {
+                return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
+            }
+        }
+        return null;
+    }
+
+    function parseExcelDateLabel(val, fallbackSheetName) {
+        if (val === null || val === undefined || String(val).trim() === "") {
+            return fallbackSheetName || "Hoy";
+        }
+        if (typeof val === "number" && val > 35000 && val < 65000) {
+            let utcDays = Math.floor(val - 25569);
+            let d = new Date(utcDays * 86400 * 1000);
+            let yyyy = d.getUTCFullYear();
+            let mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+            let dd = String(d.getUTCDate()).padStart(2, "0");
+            return `${yyyy}-${mm}-${dd}`;
+        }
+        return String(val).trim().replace(/\//g, "-");
+    }
+
+    function resolverNombreOperadorPorClaveOUnidad(claveRaw, unidadRaw) {
+        let claveStr = claveRaw !== null && claveRaw !== undefined ? String(claveRaw).trim() : "";
+        let unitStr = unidadRaw !== null && unidadRaw !== undefined ? String(unidadRaw).trim() : "";
+        let safeClave = fbKey(claveStr);
+
+        if (safeClave && store.operadoresDB && store.operadoresDB[safeClave]) {
+            return store.operadoresDB[safeClave];
+        }
+        if (claveStr && store.operadoresMeta && store.operadoresMeta["CLAVE_" + safeClave]) {
+            return store.operadoresMeta["CLAVE_" + safeClave].nombreOriginal || claveStr;
+        }
+        if (unitStr && store.operadoresMeta && store.operadoresMeta["UNIT_" + fbKey(unitStr)]) {
+            return store.operadoresMeta["UNIT_" + fbKey(unitStr)].nombreOriginal || "";
+        }
+        if (unitStr && Array.isArray(store.globalFleet)) {
+            let foundF = store.globalFleet.find(g => g && String(g.u) === unitStr && g.n);
+            if (foundF) return foundF.n;
+        }
+        return claveStr || "";
+    }
+
+    // LECTOR DUAL DE ARCHIVOS EXCEL DE "ROL" (SOPORTA FORMATO 1 Y FORMATO 2)
+    window.parseWorkbook = function (arrayBuffer) {
+        const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: "array" });
+        const grids = {};
+        const hrCounts = {};
+        let opSheetName = null;
+
+        // Mapa dinámico de rutas por si viene Hoja2 (Formato 2)
+        const routeCatalogMap = Object.assign({}, CATALOGO_RUTAS_BUAP);
+
+        wb.SheetNames.forEach(function (name) {
+            const grid = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, raw: true, defval: null });
+            grids[name] = grid;
+            let cnt = 0;
+            grid.forEach(function (row) {
+                (row || []).forEach(function (v) {
+                    if (String(v || "").trim().toUpperCase() === "HR") cnt++;
+                });
+            });
+            hrCounts[name] = cnt;
+            if (!opSheetName && /operador/i.test(name)) opSheetName = name;
+
+            // Detectar si esta hoja tiene el catálogo de rutas (Ej: Hoja2 con "Ruta" y "ID RUTA")
+            for (let r = 0; r < Math.min(grid.length, 15); r++) {
+                let row = grid[r] || [];
+                let rowUp = row.map(c => String(c || "").toUpperCase().trim());
+                let idxIdRuta = rowUp.findIndex(h => h === "ID RUTA" || h === "IDRUTA" || h === "CLAVE RUTA");
+                let idxDescRuta = rowUp.findIndex(h => h === "RUTA" || h === "DESCRIPCION" || h === "NOMBRE RUTA");
+                if (idxIdRuta !== -1 && idxDescRuta !== -1) {
+                    for (let rr = r + 1; rr < grid.length; rr++) {
+                        let rRow = grid[rr] || [];
+                        let idVal = normalizarCodigoRuta(rRow[idxIdRuta]);
+                        let descVal = rRow[idxDescRuta];
+                        if (idVal && descVal) {
+                            routeCatalogMap[idVal] = separarOrigenDestinoTexto(descVal, idVal);
+                        }
+                    }
+                    break;
+                }
+            }
+        });
+
+        // Respaldo de operadores dentro del mismo Excel si aún no se ha subido "datos"
+        const claveToName = {};
+        const unidadToName = {};
+        if (opSheetName) {
+            const opGrid = grids[opSheetName];
+            for (let i = 1; i < opGrid.length; i++) {
+                let row = opGrid[i] || [];
+                let unidad = row[0], clave = row[1], nombre = row[2];
+                let nm = nombre ? String(nombre).replace(/\s+/g, " ").trim() : null;
+                let unidadNum = unidad != null && !isNaN(Number(unidad)) ? String(Math.round(Number(unidad))) : null;
+                let claveNum = clave != null && !isNaN(Number(clave)) ? String(Math.round(Number(clave))) : null;
+                let finalName = nm || (claveNum && store.operadoresDB && store.operadoresDB[claveNum] ? store.operadoresDB[claveNum] : null);
+                if (claveNum != null && finalName) claveToName[claveNum] = finalName;
+                if (unidadNum != null && finalName) unidadToName[unidadNum] = finalName;
+            }
+        }
+
+        const days = [];
+
+        // =====================================================================
+        // INTENTO A: DETECTAR FORMATO 2 (TABULAR "Plantilla_Ordenes_Servicio")
+        // =====================================================================
+        wb.SheetNames.forEach(function (name) {
+            const grid = grids[name];
+            if (!grid || grid.length < 2) return;
+
+            let headerRowIdx = -1;
+            let colRutaCliente = -1, colRutaId = -1, colFecha = -1, colHora = -1, colOpNomina = -1, colUnidadEcon = -1;
+
+            for (let r = 0; r < Math.min(grid.length, 15); r++) {
+                let row = (grid[r] || []).map(c => normTextKey(c));
+                let hasHora = row.some(h => h === "HORA" || h === "HR SALIDA" || h === "HORARIO");
+                let hasRuta = row.some(h => h.includes("RUTA CLIENTE") || h === "RUTA ID" || h === "RUTA");
+                let hasOpOrUnit = row.some(h => h.includes("OPERADOR") || h.includes("NOMINA") || h.includes("UNIDAD") || h.includes("ECONOMICO"));
+
+                if (hasHora && hasRuta && hasOpOrUnit) {
+                    headerRowIdx = r;
+                    colRutaCliente = row.findIndex(h => h.includes("RUTA CLIENTE"));
+                    colRutaId = row.findIndex(h => h.includes("RUTA ID") || h === "RUTA");
+                    colFecha = row.findIndex(h => h.includes("FECHA") || h === "DIA");
+                    colHora = row.findIndex(h => h === "HORA" || h.includes("HORA"));
+                    colOpNomina = row.findIndex(h => h.includes("OPERADOR") || h.includes("NOMINA") || h === "CLAVE");
+                    colUnidadEcon = row.findIndex(h => h.includes("UNIDAD") || h.includes("ECONOMICO") || h === "AUTOBUS");
+                    break;
+                }
+            }
+
+            if (headerRowIdx !== -1 && colHora !== -1) {
+                const groupedByDate = {};
+
+                // Si un viaje viene SIN fecha, toma la fecha que más se repite en la hoja
+                // (antes se iba a un "día" fantasma con el nombre de la hoja y se perdía del rol).
+                const conteoFechas = {};
+                if (colFecha !== -1) {
+                    for (let rf = headerRowIdx + 1; rf < grid.length; rf++) {
+                        const vf = (grid[rf] || [])[colFecha];
+                        if (vf !== null && vf !== undefined && String(vf).trim() !== "") {
+                            const kf = parseExcelDateLabel(vf, name);
+                            conteoFechas[kf] = (conteoFechas[kf] || 0) + 1;
+                        }
+                    }
+                }
+                const fechaMasComun =
+                    Object.keys(conteoFechas).sort((x, y) => conteoFechas[y] - conteoFechas[x])[0] || name;
+                for (let rr = headerRowIdx + 1; rr < grid.length; rr++) {
+                    const row = grid[rr] || [];
+                    const hStr = parseExcelTime(row[colHora]);
+                    if (!hStr) continue;
+
+                    const rawRouteVal =
+                        colRutaCliente !== -1 && row[colRutaCliente] !== null && row[colRutaCliente] !== undefined
+                            ? row[colRutaCliente]
+                            : colRutaId !== -1
+                            ? row[colRutaId]
+                            : "";
+                    const codeRuta = normalizarCodigoRuta(rawRouteVal);
+                    let odObj = routeCatalogMap[codeRuta];
+                    if (!odObj) {
+                        odObj = separarOrigenDestinoTexto(String(rawRouteVal || ""), codeRuta);
+                    }
+
+                    let rawBus = colUnidadEcon !== -1 ? row[colUnidadEcon] : null;
+                    let busStr =
+                        typeof rawBus === "number"
+                            ? String(Math.round(rawBus))
+                            : rawBus !== null && rawBus !== undefined
+                            ? String(rawBus).trim()
+                            : "";
+
+                    let rawClave = colOpNomina !== -1 ? row[colOpNomina] : null;
+                    let claveStr =
+                        typeof rawClave === "number"
+                            ? String(Math.round(rawClave))
+                            : rawClave !== null && rawClave !== undefined
+                            ? String(rawClave).trim()
+                            : "";
+                    let safeClave = claveStr ? fbKey(claveStr) : "";
+
+                    let opName =
+                        resolverNombreOperadorPorClaveOUnidad(claveStr, busStr) ||
+                        claveToName[claveStr] ||
+                        unidadToName[busStr] ||
+                        claveStr ||
+                        "";
+
+                    const celdaFecha = colFecha !== -1 ? row[colFecha] : null;
+                    const fechaVacia = celdaFecha === null || celdaFecha === undefined || String(celdaFecha).trim() === "";
+                    let dateKey = colFecha === -1 ? name : fechaVacia ? fechaMasComun : parseExcelDateLabel(celdaFecha, name);
+                    if (!groupedByDate[dateKey]) groupedByDate[dateKey] = [];
+
+                    groupedByDate[dateKey].push({
+                        id: "f2_" + fbKey(dateKey) + "_" + rr,
+                        o: odObj.o || "Desconocido",
+                        d: odObj.d || "Desconocido",
+                        h: hStr,
+                        u: busStr,
+                        k: safeClave,
+                        n: opName
+                    });
+                }
+
+                Object.keys(groupedByDate).forEach(dKey => {
+                    let list = groupedByDate[dKey];
+                    if (list.length > 0) {
+                        list.sort((a, b) => a.h.localeCompare(b.h));
+                        days.push({ key: dKey, trips: list });
+                    }
+                });
+            }
+        });
+
+        // Si ya encontró corridas con el Formato 2, las devuelve directamente
+        if (days.length > 0) {
+            return { days: days, fleet: [] };
+        }
+
+        // =====================================================================
+        // INTENTO B: FORMATO 1 (CLÁSICO POR BLOQUES "HR" CON DIAGONAL "/")
+        // =====================================================================
+        wb.SheetNames.forEach(function (name) {
+            if ((hrCounts[name] || 0) < 1) return;
+            const grid = grids[name];
+            const hrCells = [];
+            for (let r = 0; r < grid.length; r++) {
+                for (let c = 0; c < (grid[r] || []).length; c++) {
+                    if (String(grid[r][c] || "").trim().toUpperCase() === "HR") {
+                        hrCells.push([r, c]);
+                    }
+                }
+            }
+            const records = [];
+            hrCells.forEach(function (hc) {
+                const r = hc[0], c = hc[1];
+                function getVal(ro, co) {
+                    for (let i = ro - 1; i >= Math.max(ro - 8, 0); i--) {
+                        for (let j = co - 3; j < co + 7; j++) {
+                            if (grid[i] && typeof grid[i][j] === "string" && grid[i][j].includes("/")) {
+                                return grid[i][j];
+                            }
+                        }
+                    }
+                    return null;
+                }
+                const label = getVal(r, c);
+                const od = label ? label.split("/") : ["Bloque " + c, ""];
+                let rr = r + 1;
+                while (rr < grid.length) {
+                    const hrVal = grid[rr] ? grid[rr][c] : null;
+                    const busVal = grid[rr] ? grid[rr][c + 1] : null;
+                    const claveVal = grid[rr] ? grid[rr][c + 2] : null;
+                    if (hrVal == null && busVal == null) break;
+
+                    const hStr = parseExcelTime(hrVal);
+                    if (hStr != null) {
+                        const busNum =
+                            typeof busVal === "number"
+                                ? String(Math.round(busVal))
+                                : busVal
+                                ? String(busVal).trim()
+                                : "";
+                        const claveNum2 =
+                            typeof claveVal === "number"
+                                ? String(Math.round(claveVal))
+                                : claveVal
+                                ? String(claveVal).trim()
+                                : "";
+                        const safeClave = claveNum2 ? fbKey(claveNum2) : "";
+
+                        let nameOp =
+                            resolverNombreOperadorPorClaveOUnidad(claveNum2, busNum) ||
+                            claveToName[claveNum2] ||
+                            unidadToName[busNum] ||
+                            claveNum2 ||
+                            "";
+
+                        records.push({
+                            id: "u" + r + "_" + c + "_" + rr,
+                            o: (od[0] || "").trim() || "Desconocido",
+                            d: (od[1] || "").trim() || "Desconocido",
+                            h: hStr || "00:00",
+                            u: busNum,
+                            k: safeClave,
+                            n: nameOp
+                        });
+                    }
+                    rr++;
+                }
+            });
+            if (records.length) {
+                records.sort((a, b) => a.h.localeCompare(b.h));
+                days.push({ key: name, trips: records });
+            }
+        });
+
+        return { days: days, fleet: [] };
+    };
+
+    // SOBRESCRIBIR HANDLEEXCEL PARA LEER G3 Y H3 ABAJO CON PRECISIÓN Y GUARDAR EN NUBE
+    window.handleExcel = async function (file, type, inputEl) {
+        if (!file) return;
+        let msgBox = document.getElementById("uploadMsg");
+        if (msgBox) {
+            msgBox.innerHTML = `<span style="color:var(--pend)">Procesando ${file.name} y sincronizando...</span>`;
+        }
+        try {
+            await ensureXLSXLoaded();
+        } catch (err) {
+            if (msgBox) msgBox.innerHTML = `<span style="color:var(--bad)">${err.message}</span>`;
+            if (inputEl) inputEl.value = "";
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                const backupHistory = typeof getGlobalHistory === "function" ? [...getGlobalHistory()] : [];
+                const wb = XLSX.read(e.target.result, { type: "array" });
+
+                if (type === "seguimiento") {
+                    store.operadoresDB = {};
+                    store.operadoresMeta = {};
+                    store.knownRoutes = store.knownRoutes || {};
+                    store.tallerDB = {};
+                    store.globalFleet = [];
+                    store.unassignedReasons = {};
+
+                    if (store.state) {
+                        Object.keys(store.state).forEach(day => {
+                            store.state[day].unitOverride = {};
+                            store.state[day].opOverride = {};
+                            store.state[day].tripUnitOverride = {};
+                            store.state[day].tripOpOverride = {};
+                        });
+                    }
+
+                    let opSheetName =
+                        wb.SheetNames.find(n => /OP|DATOS|PLANTILLA|PERSONAL|SEGUIMIENTO/i.test(n)) ||
+                        wb.SheetNames[0];
+
+                    let countConTelefono = 0;
+
+                    if (opSheetName) {
+                        const sheetObj = wb.Sheets[opSheetName];
+                        const rawData = XLSX.utils.sheet_to_json(sheetObj, { header: 1, defval: null });
+
+                        let hRow = -1;
+                        for (let r = 0; r < Math.min(rawData.length, 25); r++) {
+                            if (
+                                (rawData[r] || []).some(c =>
+                                    /NOMBRE OPERADOR|NOMBRE|OPERADOR/i.test(String(c || ""))
+                                )
+                            ) {
+                                hRow = r;
+                                break;
+                            }
+                        }
+                        if (hRow === -1) hRow = 1; // Por defecto fila 2 es encabezado y fila 3 (índice 2 = G3/H3) son datos
+
+                        const headers = (rawData[hRow] || []).map(h => String(h || "").toUpperCase().trim());
+                        let colNombre = headers.findIndex(
+                            h => h.includes("NOMBRE OPERADOR") || h === "NOMBRE" || h.includes("OPERADOR")
+                        );
+                        let colClave = headers.findIndex(
+                            h => h.includes("CLAVE") || h === "ID" || h.includes("NOMINA") || h.includes("NÓMINA")
+                        );
+                        let colUnidad = headers.findIndex(
+                            h => h.includes("UNIDAD") || h === "ECON" || h.includes("AUTOBUS") || h.includes("ECONÓMICO")
+                        );
+                        let colPuntHeader = headers.findIndex(
+                            h => h.includes("PUNTUALIDAD") || h.includes("CALIF")
+                        );
+                        let colRutas = headers.findIndex(
+                            h => h.includes("RUTA") || h.includes("CONOCE") || h.includes("DOMINA")
+                        );
+
+                        // Si no encontró encabezado estándar, asumir columnas clásicas de plantilla
+                        if (colNombre === -1) colNombre = 2;
+                        if (colClave === -1) colClave = 1;
+                        if (colUnidad === -1) colUnidad = 0;
+
+                        const COL_G_PERSONAL = 6; // Celda G3 hacia abajo (Teléfono Personal)
+                        const COL_H_TRABAJO  = 7; // Celda H3 hacia abajo (Teléfono del Trabajo / Empresa)
+                        const COL_AS_PUNT    = 44; // Columna AS (Puntualidad)
+
+                        // Empezar desde fila 3 de Excel (índice 2) o justo debajo del encabezado
+                        const startRowIdx = Math.max(hRow + 1, 2);
+
+                        for (let i = startRowIdx; i < rawData.length; i++) {
+                            const row = rawData[i] || [];
+                            const rawName = row[colNombre];
+                            if (!rawName || String(rawName).trim() === "") continue;
+                            const opName = String(rawName).replace(/\s+/g, " ").trim();
+                            if (/^(NOMBRE|NOMBRE OPERADOR|OPERADOR|TOTAL)$/i.test(opName)) continue;
+
+                            let opClave =
+                                colClave !== -1 && row[colClave] != null ? String(row[colClave]).trim() : "";
+                            if (opClave && !isNaN(Number(opClave))) {
+                                opClave = String(Math.round(Number(opClave)));
+                            }
+
+                            let opUnit =
+                                colUnidad !== -1 && row[colUnidad] != null ? String(row[colUnidad]).trim() : "";
+                            if (opUnit && !isNaN(Number(opUnit))) {
+                                opUnit = String(Math.round(Number(opUnit)));
+                            }
+
+                            // Letra en lugar de unidad (B, I, C, P, Pr, T): es un ESTADO del operador, no una unidad
+                            const codigoEstado = stuCodigoEstadoOperador(opUnit);
+                            if (codigoEstado) {
+                                opUnit = "";
+                            } else if (opUnit && !/^\d+$/.test(opUnit)) {
+                                // Letra que no está en la lista (ej. "V"): no es una unidad; el operador queda como estaba y se avisa
+                                (window._stuLetrasDesconocidas = window._stuLetrasDesconocidas || []).push({ letra: opUnit, nombre: opName });
+                                opUnit = "";
+                            }
+
+                            // Lectura directa de celda G(i+1) y H(i+1) (G3 y H3 hacia abajo)
+                            const cellG = sheetObj[XLSX.utils.encode_cell({ r: i, c: COL_G_PERSONAL })];
+                            const cellH = sheetObj[XLSX.utils.encode_cell({ r: i, c: COL_H_TRABAJO })];
+
+                            const rawTelG =
+                                cellG && cellG.v !== undefined && cellG.v !== null
+                                    ? cellG.v
+                                    : cellG && cellG.w
+                                    ? cellG.w
+                                    : row[COL_G_PERSONAL];
+                            const rawTelH =
+                                cellH && cellH.v !== undefined && cellH.v !== null
+                                    ? cellH.v
+                                    : cellH && cellH.w
+                                    ? cellH.w
+                                    : row[COL_H_TRABAJO];
+
+                            const telPersonal = window.cleanPhone10(rawTelG);
+                            const telTrabajo  = window.cleanPhone10(rawTelH);
+                            // Prioridad estricta: Trabajo (H) sobre Personal (G)
+                            const telPrioritario = telTrabajo ? telTrabajo : telPersonal;
+                            if (telPrioritario) countConTelefono++;
+
+                            // Puntualidad en columna AS
+                            const cellAS = sheetObj[XLSX.utils.encode_cell({ r: i, c: COL_AS_PUNT })];
+                            const rawPunt =
+                                cellAS && cellAS.v !== undefined && String(cellAS.v).trim() !== ""
+                                    ? cellAS.v
+                                    : row[COL_AS_PUNT] !== undefined &&
+                                      row[COL_AS_PUNT] !== null &&
+                                      String(row[COL_AS_PUNT]).trim() !== ""
+                                    ? row[COL_AS_PUNT]
+                                    : colPuntHeader !== -1
+                                    ? row[colPuntHeader]
+                                    : null;
+
+                            let puntualidad = null;
+                            if (rawPunt !== null && rawPunt !== undefined && String(rawPunt).trim() !== "") {
+                                let numP = Number(String(rawPunt).replace(/[^0-9.-]/g, ""));
+                                if (!isNaN(numP)) {
+                                    if (numP > 10 && numP <= 100) numP = Math.round((numP / 10) * 10) / 10;
+                                    puntualidad = numP;
+                                }
+                            }
+
+                            // Rutas que conoce el operador
+                            let rutasSabidas = "";
+                            if (colRutas !== -1 && row[colRutas]) {
+                                rutasSabidas = String(row[colRutas]).trim();
+                            }
+
+                            const rowJoined = row.map(c => String(c || "")).join(" ").toUpperCase();
+                            const esTurismo = /TURISMO/i.test(rowJoined) || codigoEstado === "Apoyo Turismo";
+                            const esBaja =
+                                /\bBAJA\b/i.test(rowJoined) || (puntualidad !== null && puntualidad === 0) || codigoEstado === "Baja";
+
+                            const safeClave = fbKey(opClave || opName);
+                            const safeOpKey = fbKey(opName);
+                            const safeNormKey = fbKey(normTextKey(opName));
+
+                            store.operadoresDB[safeClave] = opName;
+                            if (rutasSabidas) {
+                                store.knownRoutes[safeOpKey] = rutasSabidas;
+                            }
+
+                            const metaRecord = {
+                                nombreOriginal: opName,
+                                clave: opClave || "",
+                                u: opUnit || "",
+                                puntualidad: puntualidad,
+                                telPersonal: telPersonal,
+                                telEmpresa: telTrabajo,
+                                tel: telPrioritario,
+                                rutasSabidas: rutasSabidas,
+                                esTurismo: esTurismo,
+                                esBaja: esBaja
+                            };
+
+                            // Guardar indexado por Nombre, Nombre sin acentos, Clave y Unidad para cruce instantáneo
+                            store.operadoresMeta[safeOpKey] = metaRecord;
+                            if (safeNormKey && safeNormKey !== safeOpKey) {
+                                store.operadoresMeta[safeNormKey] = metaRecord;
+                            }
+                            if (opClave) {
+                                store.operadoresMeta["CLAVE_" + fbKey(opClave)] = metaRecord;
+                            }
+                            if (opUnit) {
+                                store.operadoresMeta["UNIT_" + fbKey(opUnit)] = metaRecord;
+                            }
+
+                            if (esTurismo) {
+                                setReasonForEntity(safeOpKey, "Apoyo Turismo");
+                            } else if (esBaja) {
+                                setReasonForEntity(safeOpKey, "Baja");
+                            } else if (codigoEstado) {
+                                setReasonForEntity(safeOpKey, codigoEstado);
+                            } else if (/\bAPOYO\b/i.test(rowJoined)) {
+                                setReasonForEntity(safeOpKey, "Apoyo");
+                            }
+
+                            if (!esTurismo && !esBaja && !codigoEstado && (opUnit || opName)) {
+                                store.globalFleet.push({
+                                    u: opUnit || "",
+                                    k: safeClave,
+                                    n: opName,
+                                    estatus: "Activa"
+                                });
+                            }
+                        }
+                    }
+
+                    // Lectura de Hoja de Taller
+                    wb.SheetNames.forEach(sheetName => {
+                        if (/TALLER|MANTENIMIENTO|DETENID|FALLA|SINIESTRO|PARQUE|FLOTA|UNIDAD/i.test(sheetName)) {
+                            const fData = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {
+                                header: 1,
+                                defval: null
+                            });
+                            const isDedicatedTallerSheet = /TALLER|MANTENIMIENTO|DETENID|FALLA|SINIESTRO/i.test(
+                                sheetName
+                            );
+                            const hRow = fData.findIndex(row =>
+                                (row || []).some(c => /UNIDAD|ECON|AUTOBUS|CARRO|NO\./i.test(String(c || "")))
+                            );
+
+                            let colUnidad = -1, colMotivo = -1, colEstado = -1;
+                            if (hRow !== -1) {
+                                const headers = (fData[hRow] || []).map(h => String(h || "").toUpperCase());
+                                colUnidad = headers.findIndex(h => /UNIDAD|ECON|AUTOBUS|CARRO|NUM/.test(h));
+                                colMotivo = headers.findIndex(h =>
+                                    /MOTIVO|FALLA|CAUSA|TRABAJO|OBSERV|REPARACION|DETALLE/.test(h)
+                                );
+                                colEstado = headers.findIndex(h => /ESTADO|ESTATUS|SITUACION/.test(h));
+                            }
+
+                            const startRow = hRow !== -1 ? hRow + 1 : 0;
+                            for (let r = startRow; r < fData.length; r++) {
+                                const row = fData[r] || [];
+                                let foundUnit = null;
+
+                                if (colUnidad !== -1 && row[colUnidad] != null) {
+                                    let cand = String(row[colUnidad]).replace(/\D/g, "");
+                                    if (FLOTA_SET.has(cand)) foundUnit = cand;
+                                }
+                                if (!foundUnit) {
+                                    for (let c = 0; c < Math.min(row.length, 10); c++) {
+                                        let cand = String(row[c] || "").replace(/^U-/i, "").trim();
+                                        if (FLOTA_SET.has(cand)) {
+                                            foundUnit = cand;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (foundUnit) {
+                                    const mot =
+                                        colMotivo !== -1 && row[colMotivo] != null
+                                            ? String(row[colMotivo]).trim()
+                                            : "";
+                                    const est =
+                                        colEstado !== -1 && row[colEstado] != null
+                                            ? String(row[colEstado]).trim()
+                                            : "";
+                                    const rowStr = row.map(x => String(x || "")).join(" ");
+
+                                    if (isDedicatedTallerSheet) {
+                                        if (!/\b(LIBERAD[AO]|OPERANDO|EN RUTA|ACTIVA)\b/i.test(est)) {
+                                            const finalMot = mot || est || "Taller";
+                                            store.tallerDB[foundUnit] = finalMot;
+                                            setReasonForEntity(foundUnit, "Taller");
+                                        }
+                                    } else if (/TALLER|SINIESTRO|FALLA|DETENID|CORRALON|MOTOR|CAJA/i.test(rowStr)) {
+                                        const finalMot = mot || est || "Taller";
+                                        store.tallerDB[foundUnit] = finalMot;
+                                        setReasonForEntity(foundUnit, "Taller");
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    // Si ya hay días del rol cargados, actualizar nombres de operadores que estaban como clave numérica
+                    if (store.days) {
+                        Object.keys(store.days).forEach(dKey => {
+                            let dTrips = (store.days[dKey] && store.days[dKey].trips) || [];
+                            dTrips.forEach(t => {
+                                if (t.k && store.operadoresDB[fbKey(t.k)]) {
+                                    t.n = store.operadoresDB[fbKey(t.k)];
+                                } else if (t.n && /^\d+$/.test(String(t.n).trim())) {
+                                    let resolved = resolverNombreOperadorPorClaveOUnidad(t.n, t.u);
+                                    if (resolved) t.n = resolved;
+                                }
+                            });
+                        });
+                    }
+
+                    store.globalHistory = backupHistory;
+                    const countTaller = Object.keys(store.tallerDB || {}).length;
+                    const countActivos = Object.values(store.operadoresDB || {}).filter(op =>
+                        isOperadorActivo(op)
+                    ).length;
+
+                    window.render();
+                    saveStore(err => {
+                        if (!err && msgBox) {
+                            msgBox.innerHTML = `<span style="color:var(--done)">✅ ¡Datos cargados! ${countActivos} operadores activos, ${countConTelefono} con teléfono (G3/H3) y ${countTaller} unidades en Taller.</span>`;
+                            setTimeout(closeSheet, 1600);
+                        }
+                    });
+                } else {
+                    const result = window.parseWorkbook(e.target.result);
+                    if (!result.days.length) {
+                        throw new Error(
+                            "No se detectaron corridas en el archivo (se aceptan bloques HR o Plantilla 24h)."
+                        );
+                    }
+
+                    store.days = {};
+                    result.days.forEach(function (d) {
+                        const safeDayKey = fbKey(d.key);
+                        store.days[safeDayKey] = { label: d.key, trips: d.trips, fleet: [] };
+                        const oldUnitChanges =
+                            store.state && store.state[safeDayKey] && store.state[safeDayKey].unitChanges
+                                ? store.state[safeDayKey].unitChanges
+                                : [];
+                        store.state[safeDayKey] = {
+                            trips: {},
+                            unitOverride: {},
+                            tripUnitOverride: {},
+                            unitChanges: oldUnitChanges,
+                            opOverride: {},
+                            tripOpOverride: {},
+                            resolvedOverlaps: [],
+                            resolvedMissing: []
+                        };
+                    });
+                    store.currentDay = fbKey(result.days[0].key);
+                    store.globalHistory = backupHistory;
+
+                    window.render();
+                    saveStore(err => {
+                        if (!err && msgBox) {
+                            msgBox.innerHTML = `<span style="color:var(--done)">✅ ¡Rol cargado (${result.days[0].trips.length} corridas) y sincronizado en la nube!</span>`;
+                            setTimeout(closeSheet, 1500);
+                        }
+                    });
+                }
+            } catch (err) {
+                if (msgBox) msgBox.innerHTML = `<span style="color:var(--bad)">Error: ${err.message}</span>`;
+            }
+            if (inputEl) inputEl.value = "";
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
+    // =========================================================================
+    // 4. SOBRESCRIBIR WINDOW.RENDER CON DISEÑO COMPACTO DE TELÉFONO Y WHATSAPP
+    // =========================================================================
+    window.render = function () {
+        if (!store.days || !store.days[store.currentDay]) {
+            document.getElementById("dayLabel").innerHTML = "Sin datos cargados <span>▼</span>";
+            document.getElementById("btnOrigen").innerHTML =
+                ICO.pin + "<span>" + (activeOrigin ? activeOrigin : "Origen") + "</span>";
+            document.getElementById("btnDestino").innerHTML =
+                ICO.flag + "<span>" + (activeDest ? activeDest : "Destino") + "</span>";
+            if (activeView === "flota") {
+                renderFlota();
+                return;
+            }
+            if (activeView === "tablero") {
+                renderTablero();
+                return;
+            }
+            document.getElementById("list").innerHTML = `
+              <div style="text-align:center;padding:45px 20px;color:var(--ink-soft);">
+                <div style="font-size:40px;margin-bottom:10px;">🚍</div>
+                <b style="font-size:16px;color:var(--ink);">Sincronizando rol operativo...</b>
+                <p style="font-size:14px;">Toca el botón para descargar los datos de la nube o sube tus archivos Excel desde ⚙️ arriba a la derecha.</p>
+                <button type="button" class="btn-primary" style="background:var(--accent);max-width:280px;margin:12px auto;" onclick="forzarSincronizacionNube()">🔄 Sincronizar desde la Nube</button>
+              </div>`;
+            return;
+        }
+
+        document.getElementById("dayLabel").innerHTML =
+            (store.days[store.currentDay].label || store.currentDay) + " <span>▼</span>";
+        document.getElementById("btnOrigen").innerHTML =
+            ICO.pin + "<span>" + (activeOrigin ? activeOrigin : "Origen") + "</span>";
+        document.getElementById("btnOrigen").classList.toggle("active", !!activeOrigin);
+        document.getElementById("btnDestino").innerHTML =
+            ICO.flag + "<span>" + (activeDest ? activeDest : "Destino") + "</span>";
+        document.getElementById("btnDestino").classList.toggle("active", !!activeDest);
+
+        globalCollisions = obtenerEmpalmesRender();
+        actualizarBadgePendientes();
+
+        if (activeView === "flota") {
+            renderFlota();
+            return;
+        }
+        if (activeView === "tablero") {
+            renderTablero();
+            return;
+        }
+
+        const trips = store.days[store.currentDay].trips || [];
+        const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+        const nowTime = new Date().getTime();
+        const visible = [];
+
+        const sortedTrips = [...trips];
+        const ds = getDayState();
+
+        const baselineOp = {};
+        if (store.globalFleet) {
+            store.globalFleet.forEach(g => {
+                if (g && g.u && g.n) baselineOp[String(g.u)] = g.n;
+            });
+        }
+
+        sortedTrips.forEach(t => {
+            const state = getTripState(t.id);
+            let isHidden = !!state.hidden;
+            if (state.status === "formado" && state.formadoAt && nowTime - state.formadoAt > 300000) {
+                isHidden = true;
+            }
+
+            let skip = false;
+            const fOrigin = normLoc(t.o);
+            const fDest = normLoc(t.d);
+
+            if (activeOrigin && fOrigin !== activeOrigin) skip = true;
+            if (activeDest && fDest !== activeDest) skip = true;
+            if (onlyForaneas && !isForaneaTrip(t)) skip = true;
+
+            const asg = resolveTripAssignment(t, ds, baselineOp);
+            const finalUnit = asg.unit;
+            let finalOp = asg.op;
+
+            // Si finalOp quedó como número de nómina/clave y ya existe en operadoresDB, mostrar el nombre real
+            if (finalOp && /^\d+$/.test(finalOp)) {
+                const resolvedName = resolverNombreOperadorPorClaveOUnidad(finalOp, finalUnit);
+                if (resolvedName) finalOp = resolvedName;
+            }
+
+            const isDamagedUnit = isUnidadEnTallerOInhabil(finalUnit);
+            const isDamagedOp = Boolean(finalOp && !isOperadorActivo(finalOp));
+
+            if (showRevisar) {
+                if (
+                    !finalUnit ||
+                    !finalOp ||
+                    isDamagedUnit ||
+                    isDamagedOp ||
+                    globalCollisions.some(c => c.t2Id === t.id)
+                ) {
+                    // conservar
+                } else {
+                    skip = true;
+                }
+            }
+
+            if (searchTerm) {
+                const motU = getMotivoUnidad(finalUnit);
+                const hay = (
+                    t.o +
+                    " a " +
+                    t.d +
+                    " " +
+                    (finalOp || "") +
+                    " " +
+                    (finalUnit || "") +
+                    " " +
+                    (t.k || "") +
+                    " " +
+                    motU
+                ).toLowerCase();
+                if (hay.indexOf(searchTerm) === -1) skip = true;
+            }
+
+            if (skip) return;
+            if (activeView === "activas" && isHidden) return;
+            if (activeView === "ocultas" && !isHidden) return;
+
+            t._finalUnit = finalUnit;
+            t._finalOp = finalOp;
+            t._isDamagedU = isDamagedUnit;
+            t._isDamagedOp = isDamagedOp;
+            visible.push(t);
+        });
+
+        if (!visible.length) {
+            document.getElementById("list").innerHTML =
+                "<div style='text-align:center;padding:40px;color:gray;font-weight:600;'>No hay corridas con este filtro</div>";
+            return;
+        }
+
+        const groupedTrips = {};
+        visible.forEach(t => {
+            const h = t.h.slice(0, 2);
+            if (!groupedTrips[h]) groupedTrips[h] = [];
+            groupedTrips[h].push(t);
+        });
+
+        const sortedHours = Object.keys(groupedTrips);
+        if (activeView === "ocultas") sortedHours.sort((a, b) => Number(b) - Number(a));
+        else sortedHours.sort((a, b) => Number(a) - Number(b));
+
+        let html = "";
+        for (const hour of sortedHours) {
+            const tripsInHour = groupedTrips[hour];
+            if (activeView === "ocultas") tripsInHour.sort((a, b) => b.h.localeCompare(a.h));
+            else tripsInHour.sort((a, b) => a.h.localeCompare(b.h));
+
+            const actionBtn =
+                activeView === "ocultas"
+                    ? `<button type="button" class="hour-toggle restore-btn-block" onclick="restaurarBloque('${hour}')">Restaurar bloque</button>`
+                    : `<button type="button" class="hour-toggle" onclick="ocultarBloque('${hour}')">Ocultar bloque</button>`;
+
+            html += `<div class="hour-section"><div class="hour-head"><span class="h mono">${hour}:00</span><span class="c">${tripsInHour.length} salida(s)</span>${actionBtn}</div><div class="trip-grid">`;
+
+            tripsInHour.forEach(t => {
+                const state = getTripState(t.id);
+                const opName = t._finalOp || "Sin asignar";
+                const unitName = t._finalUnit || "S/U";
+                const routeLabel = formatRouteName(t.o, t.d);
+                const foraneaBadge = isForaneaTrip(t) ? `<span class="tag-foranea">FORÁNEA</span>` : "";
+
+                const isCollision = globalCollisions.some(c => c.t2Id === t.id);
+                const isMissingUnit = !t._finalUnit;
+                const isMissingOp = !t._finalOp;
+
+                const hm = t.h.split(":");
+                const diff = +hm[0] * 60 + +hm[1] - nowMin;
+                let urgencyClass = "";
+                if (state.status !== "formado" && diff >= 0) {
+                    if (diff <= 10) urgencyClass = "urgency-10";
+                    else if (diff <= 20) urgencyClass = "urgency-20";
+                    else if (diff <= 30) urgencyClass = "urgency-30";
+                }
+
+                const extraClasses = `${urgencyClass} ${
+                    t._isDamagedU || t._isDamagedOp ? "trip-damaged" : ""
+                } ${isCollision ? "trip-collision" : ""} ${
+                    isMissingUnit || isMissingOp ? "trip-nounit" : ""
+                }`;
+
+                let reasonStr = "";
+                if (t._isDamagedU) {
+                    reasonStr = `Taller: ${getMotivoUnidad(t._finalUnit) || "Detenida"}`;
+                } else if (t._isDamagedOp) {
+                    const mOp = window.getOpMeta(t._finalOp, t.k, t._finalUnit);
+                    if (mOp.esTurismo) reasonStr = "Apoyo Turismo (No activo)";
+                    else if (mOp.puntualidad === 0) reasonStr = "Puntualidad 0 / Baja";
+                    else reasonStr = getReasonForEntity(t._finalOp) || "Inactivo";
+                }
+
+                const attrK = String(t.k !== null && t.k !== undefined ? t.k : "").replace(/"/g, "&quot;");
+                const attrU = String(t._finalUnit || "").replace(/"/g, "&quot;");
+                const attrN = String(opName || "").replace(/"/g, "&quot;");
+                const attrOrigU = String(t.u || "").replace(/"/g, "&quot;");
+
+                const opMeta = window.getOpMeta(t._finalOp, t.k, t._finalUnit);
+                const hasTel = Boolean(opMeta && opMeta.tel);
+                const safeOpCall = opName.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+                const safeRouteCall = routeLabel.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+                const safeClaveCall = String(t.k || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+                const titleTel = hasTel
+                    ? `${opMeta.tipoTelActivo}: ${opMeta.tel}`
+                    : "Sin teléfono en G3/H3 (Toca para agregar)";
+
+                // Mini botones de Teléfono y WhatsApp compactos integrados en la fila del operador
+                const miniContactHtml =
+                    activeView !== "ocultas"
+                        ? `<span class="mini-contact-group">
+                            <button type="button" class="mini-contact-btn call-btn ${hasTel ? "" : "no-phone"}" title="Llamar (${titleTel})" onclick="contactarOperador(event, 'call', '${safeOpCall}', '${t.h}', '${safeRouteCall}', '${t._finalUnit}', '${safeClaveCall}')">${ICO.phone}</button>
+                            <button type="button" class="mini-contact-btn msg-btn ${hasTel ? "" : "no-phone"}" title="WhatsApp (${titleTel})" onclick="contactarOperador(event, 'msg', '${safeOpCall}', '${t.h}', '${safeRouteCall}', '${t._finalUnit}', '${safeClaveCall}')">${ICO.msg}</button>
+                           </span>`
+                        : "";
+
+                html += `
+                  <div class="trip status-${state.status} ${extraClasses}" onclick="tapTrip(event, this)" data-id="${t.id}" data-k="${attrK}" data-origu="${attrOrigU}" data-u="${attrU}" data-n="${attrN}" data-time="${t.h}" data-status="${state.status}">
+                    <div class="trip-time mono">${t.h}</div>
+                    <div class="trip-main">
+                      <div class="trip-route">${routeLabel}${foraneaBadge}</div>
+                      <div class="trip-sub">
+                        <span class="unit">${unitName}</span>
+                        <span class="trip-op-name">${opName}</span>
+                        ${t._finalOp ? renderPuntualidadBadge(t._finalOp) : ""}
+                        ${miniContactHtml}
+                        ${reasonStr ? `<b style="font-size:10.5px; margin-left:2px;">[${reasonStr}]</b>` : ""}
+                        ${isCollision ? `<span class="collision-warn">¡EMPALME!</span>` : ""}
+                        ${(isMissingUnit || isMissingOp) && !reasonStr ? `<span style="color:var(--bad); font-weight:bold; font-size:10.5px;">(Falta asignar)</span>` : ""}
+                      </div>
+                    </div>
+                    <div class="trip-actions">
+                      ${
+                          activeView === "ocultas"
+                              ? `<button type="button" class="icon-btn restore-btn" aria-label="Restaurar" onclick="toggleStatus('${t.id}', 'restore', event)">${ICO.restore}</button>`
+                              : `<button type="button" class="icon-btn hide-btn" aria-label="Ocultar" onclick="toggleStatus('${t.id}', 'hide', event)">${ICO.hide}</button>
+                                 <button type="button" class="icon-btn terminal-btn ${state.status === "en_terminal" ? "on" : ""}" aria-label="En Terminal" onclick="toggleStatus('${t.id}', 'en_terminal', event)">${ICO.terminal}</button>
+                                 <button type="button" class="icon-btn formado-btn ${state.status === "formado" ? "on" : ""}" aria-label="Formado" onclick="toggleStatus('${t.id}', 'formado', event)">${ICO.formado}</button>`
+                      }
+                    </div>
+                  </div>`;
+            });
+            html += `</div></div>`;
+        }
+        document.getElementById("list").innerHTML = html;
+        if (typeof actualizarUrgenciaVisual === "function") actualizarUrgenciaVisual();
+    };
+
+    // =========================================================================
+    // 5. PANEL DE CONFIGURACIÓN MEJORADO (ESTADO DE TELÉFONOS G3/H3 Y MODO VISTA)
+    // =========================================================================
+    window.abrirConfiguracion = function () {
+        const trips = store.days?.[store.currentDay]?.trips || [];
+        const totalHist = typeof getGlobalHistory === "function" ? getGlobalHistory().length : 0;
+        const totalTaller = Object.keys(store.tallerDB || {}).length;
+        const totalOpsActivos = Object.values(store.operadoresDB || {}).filter(op =>
+            isOperadorActivo(op)
+        ).length;
+
+        let opsConTel = 0;
+        Object.values(store.operadoresDB || {}).forEach(opName => {
+            let m = window.getOpMeta(opName);
+            if (m.tel) opsConTel++;
+        });
+
+        const isPcMode = document.body.classList.contains("pc-view");
+
+        openSheet(`<h2>⚙️ Configuración y Nube</h2>
+          <div style="background:var(--surface-2);padding:12px;border-radius:12px;font-size:13px;line-height:1.75;margin-bottom:12px">
+            <b>Estado de Nube:</b> ${isConnectedToFirebase ? "🟢 Conectado en Tiempo Real" : "🟠 Modo Caché Local"}<br>
+            <b>Fecha activa:</b> ${store.currentDay || "—"} (${trips.length} viajes)<br>
+            <b>Operadores Activos:</b> ${totalOpsActivos} (${opsConTel} con teléfono G3/H3 automático)<br>
+            <b>Unidades en Taller detectadas:</b> ${totalTaller} de ${FLOTA_FIJA.length}<br>
+            <b>Historial Histórico:</b> ${totalHist} registro(s)
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+            <button type="button" class="btn-outline" style="margin:0;padding:10px;font-size:13px;${!isPcMode ? "background:var(--accent);color:#fff;" : ""}" onclick="cambiarModoPantalla('mobile')">📱 Formato Teléfono</button>
+            <button type="button" class="btn-outline" style="margin:0;padding:10px;font-size:13px;${isPcMode ? "background:var(--accent);color:#fff;" : ""}" onclick="cambiarModoPantalla('pc')">🖥️ Formato Escritorio</button>
+          </div>
+
+          <button type="button" class="btn-primary" style="background:var(--accent);margin-top:0;margin-bottom:12px;padding:12px;" onclick="closeSheet(); forzarSincronizacionNube();">🔄 Sincronizar Datos desde la Nube</button>
+
+          <div style="background:var(--surface-2); padding:14px; border-radius:12px; margin-bottom:10px;">
+            <strong style="display:block;margin-bottom:4px;">1. Subir Archivo: "datos" (Plantilla y Flota)</strong>
+            <span style="font-size:12px;color:var(--ink-soft);">Carga automáticamente los teléfonos de <b>G3 (Personal)</b> y <b>H3 (Trabajo - Prioritario)</b>, Puntualidad (Col AS) y Taller.</span>
+            <button type="button" class="btn-outline" onclick="document.getElementById('fileSeguimiento').click()">📂 Seleccionar Excel "datos"</button>
+          </div>
+
+          <div style="background:var(--surface-2); padding:14px; border-radius:12px; margin-bottom:10px;">
+            <strong style="display:block;margin-bottom:4px;">2. Subir Archivo: "rol" (Acepta los 2 Formatos)</strong>
+            <span style="font-size:12px;color:var(--ink-soft);">Compatible con el <b>Formato Clásico (Bloques HR)</b> y con el <b>Formato Nuevo (Plantilla Órdenes 24h)</b>.</span>
+            <button type="button" class="btn-outline" onclick="document.getElementById('fileAsignacion').click()">📂 Seleccionar Excel "rol"</button>
+          </div>
+
+          <button type="button" class="btn-outline" style="margin:0 0 10px 0;" onclick="verTallerLeido()">🔧 Taller y unidades sin operador</button>
+          <button type="button" class="btn-outline" style="margin:0 0 10px 0;" onclick="verInicialesSmart()">🚌 Iniciales (Smart)</button>
+          <button type="button" class="btn-outline" style="margin:0 0 10px 0;" onclick="verFallasRol()">🔎 Fallas detectadas en rol</button>
+          <button type="button" class="btn-outline" style="margin:0 0 10px 0;" onclick="verConsumoDatos()">📊 ¿Qué gasta mis datos?</button>
+
+          <div style="font-size:11px;color:var(--ink-soft);text-align:center;margin:0 0 8px;">Versión de la app: ${STU_VERSION}</div>
+          <div id="uploadMsg" style="margin-top:10px;font-size:13.5px;font-weight:800;color:var(--accent);text-align:center;"></div>
+          <button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
+    };
+
+    // =========================================================================
+    // 6. AVISOS ROJOS PERSISTENTES DE CAMBIOS (SE QUITAN A MANO, UNO POR UNO)
+    //    - Cada cambio de ruta / horario / operador / unidad aparece como tarjeta roja.
+    //    - No desaparece sola: hay que tocar "Entendido" en cada una.
+    //    - Cada celular/computadora lleva su propia lista de avisos leídos.
+    //    - Los cambios que haces tú en ESTE equipo ya se consideran leídos.
+    // =========================================================================
+    const ALERTAS_HORAS_VIGENCIA = 12;   // Solo se muestran cambios de las últimas 12 horas
+    const ALERTAS_MAX_VISIBLES = 30;     // Máximo de tarjetas mostradas a la vez
+    const ALERTAS_STORAGE_KEY = "stu_alertas_vistas_v1";
+
+    let alertasVistasSet = null;
+    let alertasUltimaFirma = null;
+
+    function cargarAlertasVistas() {
+        if (alertasVistasSet) return alertasVistasSet;
+        let arr = [];
+        try {
+            const raw = JSON.parse(localStorage.getItem(ALERTAS_STORAGE_KEY) || "[]");
+            if (Array.isArray(raw)) arr = raw;
+        } catch (e) {
+            arr = [];
+        }
+        alertasVistasSet = new Set(arr);
+        return alertasVistasSet;
+    }
+
+    function guardarAlertasVistas() {
+        try {
+            const arr = Array.from(cargarAlertasVistas()).slice(-500);
+            localStorage.setItem(ALERTAS_STORAGE_KEY, JSON.stringify(arr));
+        } catch (e) {}
+    }
+
+    function marcarAlertaVista(id) {
+        if (!id) return;
+        cargarAlertasVistas().add(String(id));
+        guardarAlertasVistas();
+    }
+
+    function escHtml(v) {
+        return String(v === null || v === undefined ? "" : v)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+
+    function nombreOperadorAviso(v) {
+        const s = String(v || "").trim();
+        if (!s || s === "VACIO" || s === "—") return "Sin asignar";
+        return s;
+    }
+
+    function nombreUnidadAviso(v) {
+        const s = String(v || "").trim();
+        if (!s || s === "VACIO" || s === "S/U" || s === "—") return "S/U";
+        return /^U-/i.test(s) ? s : "U-" + s;
+    }
+
+    function horaDelAviso(ts) {
+        if (!ts) return "";
+        const d = new Date(ts);
+        return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    }
+
+    function obtenerAlertasPendientes() {
+        const hist = Array.isArray(store.globalHistory) ? store.globalHistory : [];
+        const vistas = cargarAlertasVistas();
+        const limite = Date.now() - ALERTAS_HORAS_VIGENCIA * 3600 * 1000;
+        const out = [];
+        (hist || []).forEach(h => {
+            if (!h || !h.id) return;
+            if (vistas.has(String(h.id))) return;
+            const ts = Number(h.changeAt) || Date.parse(h.time) || 0;
+            if (!ts || ts < limite) return;
+            out.push({ h: h, ts: ts });
+        });
+        out.sort((a, b) => b.ts - a.ts);
+        return out;
+    }
+
+    function inyectarEstilosAlertas() {
+        if (document.getElementById("stu-extras-alert-styles")) return;
+        const st = document.createElement("style");
+        st.id = "stu-extras-alert-styles";
+        st.textContent = `
+            #stuAlertDock { margin: 0 10px; }
+            #stuAlertDock:empty { display: none; }
+            .stu-alert-head {
+                background: #7F1020;
+                color: #FFFFFF;
+                font-weight: 800;
+                font-size: 13px;
+                padding: 8px 12px;
+                border-radius: 10px;
+                margin: 8px 0 6px 0;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            .stu-alert-card {
+                background: #D81A32;
+                color: #FFFFFF;
+                border-radius: 12px;
+                padding: 10px 12px;
+                margin-bottom: 8px;
+                box-shadow: 0 4px 12px rgba(216, 26, 50, 0.35);
+                font-size: 13px;
+                line-height: 1.4;
+            }
+            .stu-alert-top {
+                display: flex;
+                justify-content: space-between;
+                gap: 8px;
+                align-items: flex-start;
+            }
+            .stu-alert-route {
+                font-weight: 800;
+                font-size: 14.5px;
+                word-break: break-word;
+            }
+            .stu-alert-time {
+                font-weight: 700;
+                font-size: 11.5px;
+                opacity: 0.9;
+                white-space: nowrap;
+            }
+            .stu-alert-line { margin-top: 3px; word-break: break-word; }
+            .stu-alert-line b { font-weight: 800; }
+            .stu-alert-motivo {
+                margin-top: 5px;
+                background: rgba(0, 0, 0, 0.18);
+                border-radius: 8px;
+                padding: 4px 8px;
+                font-weight: 700;
+            }
+            .stu-alert-btn {
+                margin-top: 8px;
+                width: 100%;
+                border: none;
+                border-radius: 9px;
+                padding: 9px 10px;
+                background: #FFFFFF;
+                color: #B01229;
+                font-weight: 800;
+                font-size: 13px;
+                cursor: pointer;
+            }
+            .stu-alert-btn:active { transform: scale(0.98); }
+            .stu-alert-more {
+                font-size: 12px;
+                font-weight: 700;
+                color: var(--ink-soft);
+                text-align: center;
+                margin: 0 0 8px 0;
+            }
+        `;
+        document.head.appendChild(st);
+    }
+
+    function asegurarContenedorAlertas() {
+        let dock = document.getElementById("stuAlertDock");
+        if (dock) return dock;
+        const list = document.getElementById("list");
+        if (!list || !list.parentNode) return null;
+        dock = document.createElement("div");
+        dock.id = "stuAlertDock";
+        list.parentNode.insertBefore(dock, list);
+        dock.addEventListener("click", function (ev) {
+            const btn = ev.target && ev.target.closest ? ev.target.closest("[data-alerta-id]") : null;
+            if (!btn) return;
+            ev.stopPropagation();
+            marcarAlertaVista(btn.getAttribute("data-alerta-id"));
+            window.actualizarAvisosRojos();
+        });
+        return dock;
+    }
+
+    window.actualizarAvisosRojos = function () {
+        inyectarEstilosAlertas();
+        const dock = asegurarContenedorAlertas();
+        if (!dock) return;
+
+        const pendientes = obtenerAlertasPendientes();
+        const visibles = pendientes.slice(0, ALERTAS_MAX_VISIBLES);
+        const firma = visibles.map(p => p.h.id).join("|") + "#" + pendientes.length;
+        if (firma === alertasUltimaFirma) return;
+        alertasUltimaFirma = firma;
+
+        if (!visibles.length) {
+            dock.innerHTML = "";
+            return;
+        }
+
+        let html = `<div class="stu-alert-head">🚨 ${pendientes.length} cambio(s) sin leer. Toca "Entendido" en cada uno.</div>`;
+        visibles.forEach(p => {
+            const h = p.h;
+            const ruta = escHtml(h.route || "Cambio");
+            const horario = h.tripTime && h.tripTime !== "—" && h.tripTime !== "N/A" ? " · " + escHtml(h.tripTime) : "";
+            html += `
+              <div class="stu-alert-card">
+                <div class="stu-alert-top">
+                  <div class="stu-alert-route">${ruta}${horario}</div>
+                  <div class="stu-alert-time">${escHtml(horaDelAviso(p.ts))}</div>
+                </div>
+                <div class="stu-alert-line"><b>Operador:</b> ${escHtml(nombreOperadorAviso(h.oldOp))} ➜ <b>${escHtml(nombreOperadorAviso(h.newOp || h.nombre))}</b></div>
+                <div class="stu-alert-line"><b>Unidad:</b> ${escHtml(nombreUnidadAviso(h.oldUnit))} ➜ <b>${escHtml(nombreUnidadAviso(h.newUnit))}</b></div>
+                ${h.scope ? `<div class="stu-alert-line"><b>Aplica a:</b> ${escHtml(h.scope)}</div>` : ""}
+                <div class="stu-alert-motivo">Motivo: ${escHtml(h.reason || "Cambio operativo")}</div>
+                <button type="button" class="stu-alert-btn" data-alerta-id="${escHtml(h.id)}">Entendido ✕</button>
+              </div>`;
+        });
+        if (pendientes.length > visibles.length) {
+            html += `<div class="stu-alert-more">Hay ${pendientes.length - visibles.length} aviso(s) más. Aparecerán al quitar estos.</div>`;
+        }
+        dock.innerHTML = html;
+    };
+
+    // Los cambios hechos en este mismo equipo cuentan como ya leídos
+    function enlazarRegistroDeCambiosLocales() {
+        if (typeof window.registrarEnHistorial !== "function") return;
+        if (window.registrarEnHistorial._stuEnvuelta) return;
+        const original = window.registrarEnHistorial;
+        const envuelta = function () {
+            const rec = original.apply(this, arguments);
+            try {
+                if (rec && rec.id) marcarAlertaVista(rec.id);
+            } catch (e) {}
+            return rec;
+        };
+        envuelta._stuEnvuelta = true;
+        window.registrarEnHistorial = envuelta;
+    }
+
+    // Cada vez que la app se redibuja (cambio local, cambio de la nube, reloj) se actualizan los avisos
+    function enlazarRenderConAvisos() {
+        if (window.render && window.render._stuConAvisos) return;
+        const renderBase = window.render;
+        const renderConAvisos = function () {
+            if (typeof renderBase === "function") renderBase.apply(this, arguments);
+            try {
+                window.actualizarAvisosRojos();
+                programarActualizacionFallas();
+            } catch (e) {
+                console.error("Avisos rojos:", e);
+            }
+        };
+        renderConAvisos._stuConAvisos = true;
+        window.render = renderConAvisos;
+    }
+
+    // =========================================================================
+    // 6B. CORRECCIÓN DE SINCRONIZACIÓN: LOS CAMBIOS DE OPERADOR / UNIDAD SÍ SE REFLEJAN
+    //     Problema que había: al guardar "Todas las vueltas del día", el operador nuevo
+    //     se guardaba con la clave del operador, pero la pantalla solo lo buscaba por
+    //     unidad o por nombre. Resultado: avisaba el cambio pero no se veía.
+    //     Orden de prioridad corregido (de mayor a menor):
+    //       1) Cambio "solo este horario"  2) Cambio de operador (todas sus vueltas)
+    //       3) Cambio hecho desde Flota (por unidad)  4) Lo planeado en el rol
+    // =========================================================================
+    window.resolveTripAssignment = function (t, ds, baselineOp) {
+        const ovU = (ds && ds.unitOverride) || {};
+        const ovO = (ds && ds.opOverride) || {};
+        const tU = (ds && ds.tripUnitOverride) || {};
+        const tO = (ds && ds.tripOpOverride) || {};
+
+        const kOp = fbKey(t.k || t.n || "");
+        const kU = fbKey(t.u || "");
+        const overU = tU[t.id] || ovU[kOp] || ovU[t.k || t.n] || ovU[kU] || ovU[t.u];
+        const finalUnit = overU === "VACIO" ? "" : overU || t.u || "";
+
+        const baseOp = (baselineOp && baselineOp[String(finalUnit)]) || t.n || "";
+
+        const kClave = t.k ? fbKey(t.k) : "";
+        const kNombre = t.n ? fbKey(t.n) : "";
+        const overOp =
+            tO[t.id] ||
+            (kClave && ovO[kClave]) ||
+            (t.k && ovO[t.k]) ||
+            (kNombre && ovO[kNombre]) ||
+            (t.n && ovO[t.n]) ||
+            ovO[fbKey(finalUnit)] ||
+            ovO[finalUnit];
+        const finalOp = overOp === "VACIO" ? "" : overOp || baseOp || "";
+
+        return { unit: String(finalUnit || ""), op: String(finalOp || "") };
+    };
+
+    // Al editar desde Flota, el cambio debe impactar TODAS las vueltas planeadas de esa
+    // unidad / ese operador (así lo dice el propio historial). Para que no lo tape un
+    // cambio viejo, se limpian los cambios anteriores que chocan, antes de guardar.
+    function instalarEnvolturaFlota() {
+        if (typeof window.guardarFlotaDedicado !== "function") return;
+        if (window.guardarFlotaDedicado._stuEnvuelta) return;
+        const original = window.guardarFlotaDedicado;
+
+        const nueva = function () {
+            let huboLimpiezaPorViaje = false;
+            try {
+                const ctx = window._flotaCtx || {};
+                const elU = document.getElementById("modalU");
+                const elOp = document.getElementById("modalOp");
+                const unidades = new Set();
+                const operadores = new Set();
+                const claves = new Set();
+
+                [ctx.origU, elU && elU.value].forEach(v => {
+                    if (v && v !== "VACIO") unidades.add(String(v));
+                });
+                [ctx.origOp, elOp && String(elOp.value || "").trim()].forEach(v => {
+                    if (v && v !== "VACIO") operadores.add(String(v));
+                });
+                if (ctx.origK) claves.add(fbKey(ctx.origK));
+                Object.keys(store.operadoresDB || {}).forEach(k => {
+                    if (operadores.has(store.operadoresDB[k])) claves.add(fbKey(k));
+                });
+
+                const ds = getDayState();
+                const trips = (store.days && store.days[store.currentDay] && store.days[store.currentDay].trips) || [];
+                trips.forEach(t => {
+                    const planeado =
+                        (t.u && unidades.has(String(t.u))) ||
+                        (t.n && operadores.has(String(t.n))) ||
+                        (t.k && claves.has(fbKey(t.k)));
+                    if (!planeado) return;
+
+                    if (ds.tripUnitOverride && ds.tripUnitOverride[t.id] !== undefined) {
+                        delete ds.tripUnitOverride[t.id];
+                        huboLimpiezaPorViaje = true;
+                    }
+                    if (ds.tripOpOverride && ds.tripOpOverride[t.id] !== undefined) {
+                        delete ds.tripOpOverride[t.id];
+                        huboLimpiezaPorViaje = true;
+                    }
+                    if (t.k) {
+                        delete ds.opOverride[fbKey(t.k)];
+                        delete ds.opOverride[t.k];
+                    }
+                    if (t.n) {
+                        delete ds.opOverride[fbKey(t.n)];
+                        delete ds.opOverride[t.n];
+                    }
+                });
+            } catch (e) {
+                console.error("Limpieza previa de Flota:", e);
+            }
+
+            const resultado = original.apply(this, arguments);
+
+            if (huboLimpiezaPorViaje) {
+                try {
+                    const dsFinal = getDayState();
+                    const dKey = fbKey(store.currentDay);
+                    savePatch({
+                        [`state/${dKey}/tripUnitOverride`]: dsFinal.tripUnitOverride,
+                        [`state/${dKey}/tripOpOverride`]: dsFinal.tripOpOverride
+                    });
+                } catch (e) {
+                    console.error("Guardado de limpieza de Flota:", e);
+                }
+            }
+            return resultado;
+        };
+        nueva._stuEnvuelta = true;
+        window.guardarFlotaDedicado = nueva;
+    }
+    instalarEnvolturaFlota();
+
+    // =========================================================================
+    // 6C. FALLAS DETECTADAS EN ROL (AUDITORÍA AUTOMÁTICA DEL DÍA)
+    //     Compara el rol del día contra los DATOS de operadores y la flota, y avisa:
+    //       🔴 Críticas: unidad en taller/falla, operador baja/turismo/falta/permiso,
+    //          unidad que no existe en la flota, viajes sin unidad o sin operador.
+    //       🟠 Revisar: el rol trae un operador distinto al que datos tiene para esa unidad,
+    //          operador con más de una unidad en el día, unidad con más de un
+    //          operador (la asignación es de todo el día), operador/clave que no existe
+    //          en datos, y Zacachimalpa (revisión especial).
+    //       🔵 Datos: el rol trae una unidad/operador distinto al de datos, y datos repetidos.
+    // =========================================================================
+    const AUDIT_ZACA_REGEX = /zacach/i;
+    const AUDIT_SEV_ORDEN = { alta: 0, media: 1, info: 2 };
+
+    function auditEtiquetaViaje(t) {
+        return { id: t.id, h: t.h || "", k: t.k || "", ruta: formatRouteName(t.o, t.d), zaca: AUDIT_ZACA_REGEX.test(String(t.o || "") + " " + String(t.d || "")) };
+    }
+
+    window.auditarRol = function () {
+        const dia = store.days && store.days[store.currentDay];
+        const trips = dia && Array.isArray(dia.trips) ? dia.trips : [];
+        const ds = getDayState();
+        const baselineOp = {};
+        (store.globalFleet || []).forEach(g => {
+            if (g && g.u && g.n) baselineOp[String(g.u)] = g.n;
+        });
+        const ignoradasSet = new Set(Array.isArray(ds.auditIgnored) ? ds.auditIgnored : Object.values(ds.auditIgnored || {}));
+        const opsDB = store.operadoresDB || {};
+        const nombresDB = new Set(Object.values(opsDB));
+        const datosCargados = Object.keys(opsDB).length > 0;
+
+        const mapa = {};
+        function agregar(tipo, entidad, sev, titulo, detalle, viaje) {
+            const id = tipo + "|" + entidad;
+            if (!mapa[id]) mapa[id] = { id: id, tipo: tipo, sev: sev, titulo: titulo, detalle: detalle, viajes: [], zaca: false };
+            if (viaje) {
+                mapa[id].viajes.push(viaje);
+                if (viaje.zaca) mapa[id].zaca = true;
+            }
+            return mapa[id];
+        }
+
+        const unidadesDeOp = {};
+        const opsDeUnidad = {};
+        const parejas = {};
+        const zacaViajes = [];
+
+        trips.forEach(t => {
+            const asg = resolveTripAssignment(t, ds, baselineOp);
+            const u = String(asg.unit || "");
+            const op = String(asg.op || "");
+            const v = auditEtiquetaViaje(t);
+            v.u = u;
+            v.op = op;
+            if (v.zaca) zacaViajes.push({ v: v, t: t });
+
+            if (!u) agregar("sin_unidad", "dia", "alta", "Viajes sin unidad asignada", "Hay viajes sin ninguna unidad.", v);
+            if (!op) agregar("sin_operador", "dia", "alta", "Viajes sin operador asignado", "Hay viajes sin ningún operador.", v);
+
+            // La nómina (clave) del rol NO existe en datos: la app "adivina" al operador por la unidad
+            if (datosCargados && t.k && !opsDB[fbKey(t.k)] && asg.op === String(t.n || "")) {
+                agregar(
+                    "clave_inexistente",
+                    String(t.k),
+                    "alta",
+                    `La clave ${t.k} no existe en datos`,
+                    `El rol trae la nómina ${t.k}, pero no está en los datos de operadores.` + (op ? ` La app está mostrando a ${op}${u ? " (por la unidad U-" + u + ")" : ""}.` : ""),
+                    v
+                );
+            }
+
+            // El rol dice un operador, pero en DATOS esa unidad es de otro (y la app muestra el de datos)
+            const planU = String(t.u || "");
+            const planOp = String(t.n || "");
+            if (datosCargados && planU && planOp && baselineOp[planU] && baselineOp[planU] !== planOp && asg.unit === planU && asg.op === baselineOp[planU]) {
+                agregar(
+                    "rol_vs_datos",
+                    planOp + "||" + planU,
+                    "media",
+                    `Rol: ${planOp} en U-${planU}`,
+                    `El rol trae a ${planOp} en la U-${planU}, pero en datos esa unidad es de ${baselineOp[planU]}. La app está mostrando a ${baselineOp[planU]}.`,
+                    v
+                );
+            }
+
+            if (u && store.datosRegla === "v2" && (store.unidadesFaltantes || []).map(String).includes(u) && !isUnidadEnTallerOInhabil(u)) {
+                agregar("unidad_faltante_en_rol", u, "media", `U-${u} no tiene operador en datos`, "Está en Unidades Faltantes de datos, pero el rol la usa.", v);
+            }
+            if (u) {
+                if (isUnidadEnTallerOInhabil(u)) {
+                    const mot = getMotivoUnidad(u) || "No disponible";
+                    agregar("unidad_no_disp", u, "alta", `U-${u} no disponible`, `Motivo: ${mot}. No debería tener viajes.`, v);
+                }
+                if (!FLOTA_SET.has(u)) {
+                    agregar("unidad_inexistente", u, "alta", `U-${u} no existe en la flota`, "Revisa si está mal escrita (la flota va de la 8002 a la 8127).", v);
+                }
+                if (!unidadesDeOp[op || "∅"]) unidadesDeOp[op || "∅"] = {};
+                if (op) {
+                    unidadesDeOp[op][u] = (unidadesDeOp[op][u] || 0) + 1;
+                    if (!opsDeUnidad[u]) opsDeUnidad[u] = {};
+                    opsDeUnidad[u][op] = (opsDeUnidad[u][op] || 0) + 1;
+                    parejas[op + "||" + u] = { op: op, u: u, viajes: (parejas[op + "||" + u] ? parejas[op + "||" + u].viajes : []).concat([v]) };
+                }
+            }
+
+            if (op) {
+                if (!isOperadorActivo(op)) {
+                    const m = getOpMeta(op);
+                    let motivo = "No disponible";
+                    if (m.esTurismo) motivo = "Apoyo de Turismo";
+                    else if (m.esBaja || (m.puntualidad !== null && m.puntualidad <= 0)) motivo = "Baja / puntualidad 0";
+                    else motivo = getReasonForEntity(op) || motivo;
+                    agregar("op_no_disp", op, "alta", `${op} no disponible`, `Motivo: ${motivo}. No debería tener viajes.`, v);
+                }
+                if (datosCargados && !nombresDB.has(op)) {
+                    const det = t.k ? `La clave ${t.k} no existe en los datos de operadores.` : "Este operador no está en los datos de operadores.";
+                    agregar("op_fuera_datos", op, "media", `${op} no está en datos`, det, v);
+                }
+            }
+        });
+
+        // La asignación es de todo el día: un operador = una unidad, una unidad = un operador
+        Object.keys(unidadesDeOp).forEach(op => {
+            if (op === "∅") return;
+            const us = Object.keys(unidadesDeOp[op]);
+            if (us.length > 1) {
+                const det = us.map(x => `U-${x} (${unidadesDeOp[op][x]} viajes)`).join(" y ");
+                const f = agregar("op_varias_unidades", op, "media", `${op} usa ${us.length} unidades`, `En el día aparece en: ${det}.`, null);
+                trips.forEach(t => {
+                    const a = resolveTripAssignment(t, ds, baselineOp);
+                    if (a.op === op) {
+                        const v = auditEtiquetaViaje(t);
+                        v.u = a.unit;
+                        v.op = a.op;
+                        f.viajes.push(v);
+                        if (v.zaca) f.zaca = true;
+                    }
+                });
+            }
+        });
+        Object.keys(opsDeUnidad).forEach(u => {
+            const ops = Object.keys(opsDeUnidad[u]);
+            if (ops.length > 1) {
+                const det = ops.map(x => `${x} (${opsDeUnidad[u][x]} viajes)`).join(" y ");
+                const f = agregar("unidad_varios_ops", u, "media", `U-${u} la manejan ${ops.length} operadores`, `En el día aparece con: ${det}.`, null);
+                trips.forEach(t => {
+                    const a = resolveTripAssignment(t, ds, baselineOp);
+                    if (a.unit === u) {
+                        const v = auditEtiquetaViaje(t);
+                        v.u = a.unit;
+                        v.op = a.op;
+                        f.viajes.push(v);
+                        if (v.zaca) f.zaca = true;
+                    }
+                });
+            }
+        });
+
+        // Rol del día contra datos (unidad planeada de cada operador)
+        if (datosCargados) {
+            Object.keys(parejas).forEach(key => {
+                const p = parejas[key];
+                const meta = (store.operadoresMeta && (store.operadoresMeta[fbKey(p.op)] || store.operadoresMeta[p.op])) || {};
+                const unidadDatos = String(meta.u || "");
+                const opDatos = baselineOp[p.u] || "";
+                const partes = [];
+                if (unidadDatos && unidadDatos !== p.u) partes.push(`En datos ${p.op} tiene la U-${unidadDatos}; hoy va en la U-${p.u}.`);
+                if (opDatos && opDatos !== p.op) partes.push(`En datos la U-${p.u} es de ${opDatos}; hoy la lleva ${p.op}.`);
+                if (partes.length) {
+                    const f = agregar("distinta_datos", key, "info", `${p.op} en U-${p.u}`, partes.join(" "), null);
+                    p.viajes.forEach(v => {
+                        f.viajes.push(v);
+                        if (v.zaca) f.zaca = true;
+                    });
+                }
+            });
+
+            // Datos mal capturados: mismo nombre con dos claves, o una unidad con dos operadores
+            const clavesPorNombre = {};
+            Object.keys(opsDB).forEach(k => {
+                const n = opsDB[k];
+                if (!clavesPorNombre[n]) clavesPorNombre[n] = [];
+                clavesPorNombre[n].push(k);
+            });
+            Object.keys(clavesPorNombre).forEach(n => {
+                if (clavesPorNombre[n].length > 1) {
+                    agregar("datos_nombre_repetido", n, "info", `${n} está repetido en datos`, `Aparece con ${clavesPorNombre[n].length} claves: ${clavesPorNombre[n].join(", ")}.`, null);
+                }
+            });
+            const nombresPorUnidad = {};
+            (store.globalFleet || []).forEach(g => {
+                if (g && g.u && g.n) {
+                    if (!nombresPorUnidad[g.u]) nombresPorUnidad[g.u] = new Set();
+                    nombresPorUnidad[g.u].add(g.n);
+                }
+            });
+            Object.keys(nombresPorUnidad).forEach(u => {
+                if (nombresPorUnidad[u].size > 1) {
+                    agregar("datos_unidad_repetida", u, "info", `U-${u} está con varios operadores en datos`, `En datos aparece con: ${Array.from(nombresPorUnidad[u]).join(", ")}.`, null);
+                }
+            });
+        }
+
+        // Zacachimalpa: revisión especial
+        if (zacaViajes.length) {
+            const porHoraYSentido = {};
+            const porSentido = {};
+            zacaViajes.forEach(z => {
+                const sentido = normLoc(z.t.o) + " ➜ " + normLoc(z.t.d);
+                const clave = z.v.h + "|" + sentido;
+                if (!porHoraYSentido[clave]) porHoraYSentido[clave] = [];
+                porHoraYSentido[clave].push(z.v);
+                porSentido[sentido] = (porSentido[sentido] || 0) + 1;
+            });
+            Object.keys(porHoraYSentido).forEach(clave => {
+                if (porHoraYSentido[clave].length > 1) {
+                    const partes = clave.split("|");
+                    const f = agregar("zaca_horario_repetido", clave, "media", `Zacachimalpa: horario repetido ${partes[0]}`, `Hay ${porHoraYSentido[clave].length} viajes ${partes[1]} a la misma hora.`, null);
+                    porHoraYSentido[clave].forEach(v => f.viajes.push(v));
+                    f.zaca = true;
+                }
+            });
+            const sentidos = Object.keys(porSentido);
+            if (sentidos.length === 1) {
+                const f = agregar("zaca_un_sentido", "dia", "media", "Zacachimalpa: solo hay un sentido", `Todos los viajes son ${sentidos[0]}; no hay viajes en sentido contrario.`, null);
+                zacaViajes.forEach(z => f.viajes.push(z.v));
+                f.zaca = true;
+            } else if (sentidos.length >= 2) {
+                const cuentas = sentidos.map(s => porSentido[s]);
+                if (Math.max.apply(null, cuentas) !== Math.min.apply(null, cuentas)) {
+                    const det = sentidos.map(s => `${s}: ${porSentido[s]}`).join(" · ");
+                    const f = agregar("zaca_desbalance", "dia", "media", "Zacachimalpa: salidas y regresos no cuadran", det, null);
+                    zacaViajes.forEach(z => f.viajes.push(z.v));
+                    f.zaca = true;
+                }
+            }
+        }
+
+        Object.keys(mapa).forEach(id => {
+            const f = mapa[id];
+            if (f.tipo === "unidad_faltante_en_rol") {
+                const ops = Array.from(new Set(f.viajes.map(v => v.op).filter(Boolean)));
+                f.detalle = "Está en Unidades Faltantes de datos (sin operador), pero el rol la usa" + (ops.length ? " con: " + ops.join(", ") : "") + ".";
+            }
+        });
+
+        let fallas = Object.keys(mapa).map(k => mapa[k]);
+        fallas.forEach(f => f.viajes.sort((a, b) => String(a.h).localeCompare(String(b.h))));
+        const cantIgnoradas = fallas.filter(f => ignoradasSet.has(f.id)).length;
+        fallas = fallas.filter(f => !ignoradasSet.has(f.id));
+        fallas.sort((a, b) => {
+            return (AUDIT_SEV_ORDEN[a.sev] - AUDIT_SEV_ORDEN[b.sev]) || ((b.zaca ? 1 : 0) - (a.zaca ? 1 : 0)) || (b.viajes.length - a.viajes.length);
+        });
+
+        zacaViajes.sort((a, b) => String(a.v.h).localeCompare(String(b.v.h)));
+        return {
+            fallas: fallas,
+            ignoradas: cantIgnoradas,
+            zaca: zacaViajes.map(z => z.v),
+            datosCargados: datosCargados,
+            totalViajes: trips.length
+        };
+    };
+
+    function inyectarEstilosFallas() {
+        if (document.getElementById("stu-extras-audit-styles")) return;
+        const st = document.createElement("style");
+        st.id = "stu-extras-audit-styles";
+        st.textContent = `
+            #btnFallasRol { position: relative; font-size: 18px; line-height: 1; }
+            #btnFallasRol .stu-fallas-badge {
+                position: absolute; top: -4px; right: -4px; min-width: 17px; height: 17px; padding: 0 4px;
+                border-radius: 9px; background: #D81A32; color: #fff; font-size: 10.5px; font-weight: 800;
+                display: none; align-items: center; justify-content: center; box-sizing: border-box;
+            }
+            .stu-falla { border-radius: 12px; padding: 11px 12px; margin-bottom: 10px; background: var(--surface-2); border-left: 5px solid #888; }
+            .stu-falla.alta { border-left-color: #D81A32; }
+            .stu-falla.media { border-left-color: #E8890C; }
+            .stu-falla.info { border-left-color: #00509d; }
+            .stu-falla-titulo { font-weight: 800; font-size: 14px; word-break: break-word; }
+            .stu-falla-det { font-size: 12.5px; color: var(--ink-soft); margin-top: 3px; line-height: 1.4; }
+            .stu-falla-horas { font-size: 12px; margin-top: 6px; font-weight: 700; word-break: break-word; }
+            .stu-falla-acc { display: flex; gap: 8px; margin-top: 9px; }
+            .stu-falla-acc button { flex: 1; margin: 0; padding: 9px 8px; font-size: 13px; border-radius: 9px; }
+            .stu-tag-zaca { background: #6a1b9a; color: #fff; border-radius: 6px; padding: 1px 6px; font-size: 10.5px; font-weight: 800; margin-left: 6px; }
+            .stu-chip-sev { display: inline-block; border-radius: 8px; padding: 3px 8px; font-size: 12px; font-weight: 800; margin: 0 6px 6px 0; }
+        `;
+        document.head.appendChild(st);
+    }
+
+    function injectFallasButton() {
+        const rightBar = document.querySelector(".appbar-right");
+        if (!rightBar || document.getElementById("btnFallasRol")) return;
+        inyectarEstilosFallas();
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.id = "btnFallasRol";
+        btn.className = "fullscreen-btn-top";
+        btn.title = "Fallas detectadas en rol";
+        btn.setAttribute("aria-label", "Fallas detectadas en rol");
+        btn.innerHTML = `🔎<span class="stu-fallas-badge">0</span>`;
+        btn.onclick = function () {
+            window.verFallasRol();
+        };
+        rightBar.insertBefore(btn, rightBar.firstChild);
+    }
+
+    let fallasTimer = null;
+    function programarActualizacionFallas() {
+        if (fallasTimer) return;
+        fallasTimer = setTimeout(function () {
+            fallasTimer = null;
+            try {
+                const btn = document.getElementById("btnFallasRol");
+                if (!btn) return;
+                const r = window.auditarRol();
+                const n = r.fallas.filter(f => f.sev !== "info").length;
+                const b = btn.querySelector(".stu-fallas-badge");
+                if (b) {
+                    b.textContent = n > 99 ? "99+" : String(n);
+                    b.style.display = n > 0 ? "flex" : "none";
+                }
+            } catch (e) {
+                console.error("Fallas en rol:", e);
+            }
+        }, 700);
+    }
+
+    function horasDeFalla(f) {
+        const horas = f.viajes.map(v => v.h).filter(Boolean);
+        const unicas = Array.from(new Set(horas));
+        const lista = unicas.slice(0, 8).join(", ");
+        return unicas.length > 8 ? `${lista} y ${unicas.length - 8} más` : lista;
+    }
+
+    window.verFallasRol = function () {
+        inyectarEstilosFallas();
+        const r = window.auditarRol();
+        window._auditUltimo = r;
+        const nAlta = r.fallas.filter(f => f.sev === "alta").length;
+        const nMedia = r.fallas.filter(f => f.sev === "media").length;
+        const nInfo = r.fallas.filter(f => f.sev === "info").length;
+
+        let html = `<h2>🔎 Fallas detectadas en rol</h2>
+          <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;">Día: <b>${escHtml(store.currentDay)}</b> · ${r.totalViajes} viajes revisados</div>
+          ${stuResumenTallerHtml()}
+          <div>
+            <span class="stu-chip-sev" style="background:#fde7ea;color:#B01229;">🔴 ${nAlta} críticas</span>
+            <span class="stu-chip-sev" style="background:#fff0dc;color:#9a5a00;">🟠 ${nMedia} por revisar</span>
+            <span class="stu-chip-sev" style="background:#e3eefb;color:#00509d;">🔵 ${nInfo} de datos</span>
+          </div>`;
+
+        if (!r.totalViajes) {
+            html += `<div style="padding:14px;background:var(--surface-2);border-radius:12px;font-size:13.5px;">No hay rol cargado para revisar.</div>`;
+        } else if (!r.datosCargados) {
+            html += `<div style="padding:10px 12px;background:#fff4d6;color:#7a5b00;border-radius:12px;font-size:12.5px;margin-bottom:10px;">Aún no hay datos de operadores cargados: las revisiones contra datos se omiten. Sube tu archivo de datos para revisar claves, bajas y unidades.</div>`;
+        }
+
+        if (r.totalViajes && !r.fallas.length) {
+            html += `<div style="padding:14px;background:var(--done-bg);color:var(--done);border-radius:12px;font-weight:800;font-size:14px;">✅ No se detectaron fallas en el rol de hoy.</div>`;
+        }
+
+        r.fallas.forEach((f, i) => {
+            const horas = horasDeFalla(f);
+            const etiqueta = f.sev === "alta" ? "🔴" : f.sev === "media" ? "🟠" : "🔵";
+            html += `<div class="stu-falla ${f.sev}">
+                <div class="stu-falla-titulo">${etiqueta} ${escHtml(f.titulo)}${f.zaca ? `<span class="stu-tag-zaca">ZACACHIMALPA</span>` : ""}</div>
+                <div class="stu-falla-det">${escHtml(f.detalle)}</div>
+                ${horas ? `<div class="stu-falla-horas">Horarios: ${escHtml(horas)}</div>` : ""}
+                <div class="stu-falla-acc">
+                  ${f.viajes.length ? `<button type="button" class="btn-outline" onclick="auditCorregir(${i})">Corregir</button>` : ""}
+                  <button type="button" class="btn-outline" style="color:var(--ink-soft);border-color:var(--ink-faint);" onclick="auditIgnorar(${i})">Ignorar hoy</button>
+                </div>
+              </div>`;
+        });
+
+        if (r.zaca.length) {
+            const filas = r.zaca
+                .map(v => `<div style="display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:4px 0;border-bottom:1px solid var(--line);">
+                    <b>${escHtml(v.h)}</b><span style="flex:1;">${escHtml(v.ruta)}</span><span>${v.u ? "U-" + escHtml(v.u) : "S/U"} · ${escHtml(v.op || "Sin op.")}</span></div>`)
+                .join("");
+            html += `<details style="margin:6px 0 12px;background:var(--surface-2);border-radius:12px;padding:10px 12px;">
+                <summary style="font-weight:800;font-size:13.5px;cursor:pointer;">Zacachimalpa: ${r.zaca.length} viajes para revisar a mano</summary>
+                <div style="margin-top:8px;">${filas}</div></details>`;
+        }
+
+        if (r.ignoradas) {
+            html += `<button type="button" class="btn-outline" style="margin:4px 0 8px;" onclick="auditRestaurar()">Mostrar de nuevo las ${r.ignoradas} ignoradas</button>`;
+        }
+        html += `<button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`;
+        openSheet(html);
+    };
+
+    window.auditCorregir = function (i) {
+        const r = window._auditUltimo;
+        const f = r && r.fallas[i];
+        if (!f || !f.viajes.length) return;
+        const v = f.viajes[0];
+        if (typeof window.abrirModalDesdePendientes === "function") {
+            window.abrirModalDesdePendientes(v.id, v.u || "", v.op || "", v.k || "");
+        }
+    };
+
+    window.auditIgnorar = function (i) {
+        const r = window._auditUltimo;
+        const f = r && r.fallas[i];
+        if (!f) return;
+        const ds = getDayState();
+        ds.auditIgnored = Array.isArray(ds.auditIgnored) ? ds.auditIgnored : Object.values(ds.auditIgnored || {});
+        if (!ds.auditIgnored.includes(f.id)) ds.auditIgnored.push(f.id);
+        savePatch({ [`state/${fbKey(store.currentDay)}/auditIgnored`]: ds.auditIgnored });
+        window.verFallasRol();
+        programarActualizacionFallas();
+    };
+
+    window.auditRestaurar = function () {
+        const ds = getDayState();
+        ds.auditIgnored = [];
+        savePatch({ [`state/${fbKey(store.currentDay)}/auditIgnored`]: [] });
+        window.verFallasRol();
+        programarActualizacionFallas();
+    };
+
+    // =========================================================================
+    // 6D. INICIALES (SMART): RUTAS "INICIAL" SIN OPERADOR + FALLAS DEL ROL DE SMART
+    //     - Se sube el Excel "Monitor" que programa tu jefe en Smart.
+    //     - Las filas INICIAL casi nunca traen operador/unidad. Aquí se sugiere quién
+    //       las hace, en este orden de confianza:
+    //         1) Tu rol de la app (misma ruta y hora parecida)
+    //         2) Quien maneja esa misma unidad en otros viajes de Smart
+    //         3) Quien hace esa misma ruta a otras horas
+    //       Siempre descartando a quien ya está ocupado en otro viaje a esa hora.
+    //     - También revisa el rol de Smart: operador baja/no existe en datos, unidad en
+    //       taller, traslapes del mismo operador o unidad, un operador con varias unidades.
+    //     - El archivo se guarda en ESTE equipo (no se sube a la nube, no gasta datos).
+    // =========================================================================
+    const SMART_KEY = "stu_smart_v1";
+    const SMART_STOP = new Set(["ENTRADA", "SALIDA", "ADMINISTRATIVA", "12X12", "ALIMENTADORA", "CENTRAL"]);
+    const SMART_TOLERANCIA_ROL_MIN = 15;
+    const SMART_TRASLAPE_MIN = 5;
+    let smartDatos = null;
+
+    function smartNorm(s) {
+        return String(s === null || s === undefined ? "" : s)
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toUpperCase()
+            .replace(/[^A-Z0-9 ]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    function smartTokens(s) {
+        return smartNorm(s).split(" ").filter(w => w.length >= 4 && !SMART_STOP.has(w));
+    }
+
+    // Convierte la celda de fecha (número de Excel, fecha o texto) en "minutos" comparables
+    function smartEpoch(v) {
+        if (v === null || v === undefined || v === "") return null;
+        if (v instanceof Date) {
+            return Math.round((Date.UTC(v.getFullYear(), v.getMonth(), v.getDate(), v.getHours(), v.getMinutes()) / 86400000 + 25569) * 1440);
+        }
+        if (typeof v === "number") return Math.round(v * 1440);
+        const txt = String(v).trim();
+        let m = txt.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})[ T](\d{1,2}):(\d{2})/);
+        if (m) return Math.round((Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) / 86400000 + 25569) * 1440);
+        m = txt.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})[ T](\d{1,2}):(\d{2})/);
+        if (m) return Math.round((Date.UTC(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]) / 86400000 + 25569) * 1440);
+        return null;
+    }
+
+    function smartMinDia(e) {
+        return ((e % 1440) + 1440) % 1440;
+    }
+
+    function smartHHMM(e) {
+        const mm = smartMinDia(e);
+        return String(Math.floor(mm / 60)).padStart(2, "0") + ":" + String(mm % 60).padStart(2, "0");
+    }
+
+    function smartFechaTexto(e) {
+        try {
+            return new Date((Math.floor(e / 1440) - 25569) * 86400000).toISOString().slice(0, 10);
+        } catch (err) {
+            return "";
+        }
+    }
+
+    // Nombres de Smart ("Nombre Apellido Apellido") contra datos, sin importar orden o acentos
+    function smartMismoNombre(aN, bN) {
+        if (!aN || !bN) return false;
+        if (aN === bN) return true;
+        const ta = aN.split(" ").filter(w => w.length >= 2);
+        const tb = bN.split(" ").filter(w => w.length >= 2);
+        if (!ta.length || !tb.length) return false;
+        let inter = 0;
+        ta.forEach(a => {
+            if (tb.some(b => b === a || (a.length >= 4 && b.length >= 4 && (a.startsWith(b) || b.startsWith(a))))) inter++;
+        });
+        return inter >= 2 && inter >= Math.min(ta.length, tb.length);
+    }
+
+    function smartGuardar() {
+        try {
+            if (!smartDatos) {
+                localStorage.removeItem(SMART_KEY);
+                return;
+            }
+            const compacto = {
+                v: 1,
+                nombre: smartDatos.nombre,
+                fecha: smartDatos.fecha,
+                ignoradas: smartDatos.ignoradas || [],
+                filas: smartDatos.filas.map(f => [f.est, f.no, f.cta, f.ruta, f.ini, f.fin, f.mod, f.op, f.veh, f.vehTxt])
+            };
+            localStorage.setItem(SMART_KEY, JSON.stringify(compacto));
+        } catch (e) {}
+    }
+
+    function smartFila(a) {
+        const op = String(a[7] || "").replace(/\s+/g, " ").trim();
+        return {
+            est: a[0], no: a[1], cta: a[2], ruta: a[3], rutaN: smartNorm(a[3]), ini: a[4], fin: a[5], mod: a[6],
+            op: op, opN: smartNorm(op), veh: a[8] || "", vehTxt: a[9] || ""
+        };
+    }
+
+    function smartCargarGuardado() {
+        try {
+            const raw = JSON.parse(localStorage.getItem(SMART_KEY) || "null");
+            if (raw && Array.isArray(raw.filas)) {
+                smartDatos = { nombre: raw.nombre || "Rol de Smart", fecha: raw.fecha || "", ignoradas: raw.ignoradas || [], filas: raw.filas.map(smartFila) };
+            }
+        } catch (e) {
+            smartDatos = null;
+        }
+    }
+
+    // Lee la tabla del Excel (lista de renglones) y la convierte en filas limpias
+    window.smartCargarDesdeTabla = function (grid, nombreArchivo) {
+        let h = -1;
+        for (let r = 0; r < Math.min(grid.length, 15); r++) {
+            if ((grid[r] || []).some(c => smartNorm(c) === "FECHA INICIAL")) {
+                h = r;
+                break;
+            }
+        }
+        if (h < 0) throw new Error("No encontré las columnas del Monitor de Smart (Fecha Inicial, Operador, Vehículo).");
+        const head = grid[h].map(smartNorm);
+        const col = re => head.findIndex(x => re.test(x));
+        const cNo = col(/^NO$/);
+        const cRuta = col(/^RUTA$/);
+        const cFi = col(/^FECHA INICIAL$/);
+        const cFf = col(/^FECHA FINAL$/);
+        const cMod = col(/^MODELO$/);
+        const cOp = col(/^OPERADOR$/);
+        const cVeh = col(/^VEHICULO$/);
+        const cCta = col(/^CUENTA$/);
+        const cEst = cNo > 0 ? cNo - 1 : 0;
+        if (cRuta < 0 || cFi < 0 || cOp < 0 || cVeh < 0) throw new Error("Faltan columnas en el archivo (Ruta, Fecha Inicial, Operador o Vehículo).");
+
+        const filas = [];
+        for (let r = h + 1; r < grid.length; r++) {
+            const row = grid[r] || [];
+            const ruta = row[cRuta];
+            if (ruta === null || ruta === undefined || String(ruta).trim() === "") continue;
+            const ini = smartEpoch(row[cFi]);
+            if (ini === null) continue;
+            let fin = cFf >= 0 ? smartEpoch(row[cFf]) : null;
+            if (fin === null || fin < ini) fin = ini + 60;
+            const vehTxt = String(row[cVeh] === null || row[cVeh] === undefined ? "" : row[cVeh]).trim();
+            const mv = vehTxt.match(/^(\d+)\s*-/);
+            filas.push(
+                smartFila([
+                    String(row[cEst] || "").trim().toUpperCase(),
+                    cNo >= 0 ? row[cNo] : "",
+                    cCta >= 0 ? String(row[cCta] || "").trim() : "",
+                    String(ruta).trim(),
+                    ini,
+                    fin,
+                    cMod >= 0 ? String(row[cMod] || "").trim().toUpperCase() : "",
+                    String(row[cOp] || ""),
+                    mv ? mv[1] : "",
+                    vehTxt
+                ])
+            );
+        }
+        if (!filas.length) throw new Error("El archivo no trae viajes legibles.");
+        smartDatos = { nombre: nombreArchivo || "Rol de Smart", fecha: smartFechaTexto(filas[0].ini), ignoradas: [], filas: filas };
+        smartGuardar();
+        return smartDatos;
+    };
+
+    function smartMotivoOp(nombre) {
+        const m = getOpMeta(nombre);
+        if (m.esTurismo) return "Apoyo de Turismo";
+        if (m.esBaja || (m.puntualidad !== null && m.puntualidad <= 0)) return "Baja / puntualidad 0";
+        return getReasonForEntity(nombre) || "No disponible";
+    }
+
+    function smartSolapa(a, b) {
+        return Math.min(a.fin, b.fin) - Math.max(a.ini, b.ini) > SMART_TRASLAPE_MIN;
+    }
+
+    function smartAnalizar() {
+        const d = smartDatos;
+        if (!d) return null;
+        const filas = d.filas.filter(f => f.est !== "CANCELADA");
+        const canceladas = d.filas.length - filas.length;
+        const ignoradas = new Set(d.ignoradas || []);
+        const opsDB = store.operadoresDB || {};
+        const datosCargados = Object.keys(opsDB).length > 0;
+        const datosNombres = Array.from(new Set(Object.values(opsDB))).map(n => ({ n: n, nN: smartNorm(n) }));
+
+        // ¿Cómo se llama este operador en datos y está disponible?
+        const cacheEstado = {};
+        function estadoOp(opN) {
+            if (!datosCargados) return { enDatos: null };
+            if (cacheEstado[opN]) return cacheEstado[opN];
+            let hallados = datosNombres.filter(x => x.nN === opN);
+            if (!hallados.length) hallados = datosNombres.filter(x => smartMismoNombre(opN, x.nN));
+            const unicos = Array.from(new Set(hallados.map(x => x.n)));
+            let r;
+            if (!unicos.length) r = { enDatos: false };
+            else if (unicos.length > 1) r = { enDatos: true, ambiguo: true, activo: true };
+            else {
+                const nombre = unicos[0];
+                const meta = (store.operadoresMeta && (store.operadoresMeta[fbKey(nombre)] || store.operadoresMeta[nombre])) || {};
+                const activo = isOperadorActivo(nombre);
+                r = { enDatos: true, nombre: nombre, activo: activo, motivo: activo ? "" : smartMotivoOp(nombre), unidadDatos: String(meta.u || "") };
+            }
+            cacheEstado[opN] = r;
+            return r;
+        }
+
+        function unidadHabitual(opN) {
+            const cuenta = {};
+            filas.forEach(f => {
+                if (f.veh && f.opN && smartMismoNombre(f.opN, opN)) cuenta[f.veh] = (cuenta[f.veh] || 0) + 1;
+            });
+            const ks = Object.keys(cuenta).sort((a, b) => cuenta[b] - cuenta[a]);
+            return ks[0] || "";
+        }
+
+        function ocupado(opN, fila) {
+            return filas.find(x => x !== fila && x.opN && smartMismoNombre(x.opN, opN) && smartSolapa(x, fila)) || null;
+        }
+
+        // ---- 1) Viajes de TU rol (app) parecidos a la ruta INICIAL ----
+        function candidatosRol(fila) {
+            const dia = store.days && store.days[store.currentDay];
+            const trips = dia && Array.isArray(dia.trips) ? dia.trips : [];
+            if (!trips.length) return [];
+            const ds = getDayState();
+            const baselineOp = {};
+            (store.globalFleet || []).forEach(g => {
+                if (g && g.u && g.n) baselineOp[String(g.u)] = g.n;
+            });
+            const sig = smartTokens(fila.ruta);
+            if (!sig.length) return [];
+            const minFila = smartMinDia(fila.ini);
+            const out = [];
+            trips.forEach(t => {
+                const tk = smartTokens(String(t.o || "") + " " + String(t.d || ""));
+                const inter = sig.filter(x => tk.includes(x)).length;
+                if (!inter) return;
+                // La ruta debe parecerse de verdad (mitad o más de las palabras en común),
+                // para no ligar rutas distintas que comparten una sola palabra (ej. "San Martín")
+                const union = new Set(sig.concat(tk)).size;
+                if (inter / union < 0.5) return;
+                const dt = Math.abs(hhmmToMins(t.h) - minFila);
+                if (dt > SMART_TOLERANCIA_ROL_MIN) return;
+                const asg = resolveTripAssignment(t, ds, baselineOp);
+                if (!asg.op) return;
+                out.push({ op: asg.op, unidad: asg.unit, dt: dt, inter: inter, h: t.h, ruta: formatRouteName(t.o, t.d) });
+            });
+            out.sort((a, b) => b.inter - a.inter || a.dt - b.dt);
+            return out;
+        }
+
+        // ---- INICIALES ----
+        const iniciales = [];
+        filas
+            .filter(f => f.est === "INICIAL")
+            .sort((a, b) => a.ini - b.ini)
+            .forEach(f => {
+                const cand = [];
+                if (f.op) {
+                    cand.push({ op: f.op, opN: f.opN, unidad: f.veh || unidadHabitual(f.opN), fuente: "smart", conf: "alta", motivo: "Smart ya trae operador" });
+                } else {
+                    candidatosRol(f).forEach(c => {
+                        cand.push({ op: c.op, opN: smartNorm(c.op), unidad: c.unidad, fuente: "rol", conf: c.dt <= 5 ? "alta" : "media", motivo: `En tu rol: ${c.ruta} a las ${c.h}` });
+                    });
+                    if (f.veh) {
+                        filas.filter(x => x !== f && x.veh === f.veh && x.op).forEach(x => {
+                            cand.push({ op: x.op, opN: x.opN, unidad: f.veh, fuente: "vehiculo", conf: "media", motivo: `Maneja la U-${f.veh} a las ${smartHHMM(x.ini)}` });
+                        });
+                    }
+                    filas.filter(x => x !== f && x.rutaN === f.rutaN && x.op).forEach(x => {
+                        cand.push({ op: x.op, opN: x.opN, unidad: x.veh || "", fuente: "ruta", conf: "baja", motivo: `Hace esta misma ruta a las ${smartHHMM(x.ini)}` });
+                    });
+                }
+
+                const vistos = [];
+                const libres = [];
+                const ocupados = [];
+                cand.forEach(c => {
+                    if (vistos.some(v => smartMismoNombre(v, c.opN))) return;
+                    vistos.push(c.opN);
+                    const otro = c.fuente === "smart" ? null : ocupado(c.opN, f);
+                    if (otro) ocupados.push({ op: c.op, motivo: `${c.op} está en otro viaje a esa hora (${smartHHMM(otro.ini)}–${smartHHMM(otro.fin)}, ${otro.ruta})` });
+                    else libres.push(c);
+                });
+
+                const sug = libres[0] || null;
+                const alertas = [];
+                let sev = "info";
+                if (sug) {
+                    const est = estadoOp(sug.opN);
+                    if (est.enDatos === false) {
+                        alertas.push({ s: "media", t: `${sug.op} no está en datos` });
+                        sev = "media";
+                    } else if (est.enDatos && est.activo === false) {
+                        alertas.push({ s: "alta", t: `${est.nombre} no disponible (${est.motivo})` });
+                        sev = "alta";
+                    }
+                    const uni = f.veh || sug.unidad;
+                    if (uni && isUnidadEnTallerOInhabil(uni)) {
+                        alertas.push({ s: "alta", t: `U-${uni} no disponible (${getMotivoUnidad(uni) || "taller"})` });
+                        sev = "alta";
+                    }
+                } else {
+                    sev = "media";
+                }
+                iniciales.push({ fila: f, sug: sug, alts: libres.slice(1, 3), ocupados: ocupados.slice(0, 2), alertas: alertas, sev: sev, zaca: AUDIT_ZACA_REGEX.test(f.ruta) });
+            });
+
+        // ---- FALLAS DEL ROL DE SMART ----
+        const mapa = {};
+        function agregar(tipo, entidad, sev, titulo, detalle, fila) {
+            const id = "smart|" + tipo + "|" + entidad;
+            if (!mapa[id]) mapa[id] = { id: id, tipo: tipo, sev: sev, titulo: titulo, detalle: detalle, filas: [], zaca: false };
+            if (fila) {
+                mapa[id].filas.push(fila);
+                if (AUDIT_ZACA_REGEX.test(fila.ruta)) mapa[id].zaca = true;
+            }
+            return mapa[id];
+        }
+
+        const porOp = {};
+        const porVeh = {};
+        filas.forEach(f => {
+            if (f.est !== "INICIAL") {
+                if (!f.op) agregar("sin_operador", "dia", "alta", "Viajes sin operador en Smart", "Hay viajes programados sin ningún operador.", f);
+                if (!f.veh) agregar("sin_unidad", "dia", "alta", "Viajes sin unidad en Smart", "Hay viajes programados sin ninguna unidad.", f);
+            }
+            if (f.op) {
+                const est = estadoOp(f.opN);
+                if (est.enDatos === false) agregar("op_fuera_datos", f.opN, "media", `${f.op} no está en datos`, "El nombre no coincide con ningún operador de los datos. Revisa si está escrito distinto o si no existe.", f);
+                else if (est.enDatos && est.activo === false) agregar("op_no_disp", f.opN, "alta", `${est.nombre} no disponible`, `Motivo: ${est.motivo}. No debería tener viajes.`, f);
+                if (!porOp[f.opN]) porOp[f.opN] = [];
+                porOp[f.opN].push(f);
+            }
+            if (f.veh) {
+                if (isUnidadEnTallerOInhabil(f.veh)) agregar("unidad_no_disp", f.veh, "alta", `U-${f.veh} no disponible`, `Motivo: ${getMotivoUnidad(f.veh) || "Taller"}. No debería tener viajes.`, f);
+                if (!porVeh[f.veh]) porVeh[f.veh] = [];
+                porVeh[f.veh].push(f);
+            }
+        });
+
+        // Todo el día: un operador = una unidad, una unidad = un operador. Y no puede estar en dos viajes a la vez.
+        Object.keys(porOp).forEach(k => {
+            const lista = porOp[k].slice().sort((a, b) => a.ini - b.ini);
+            const vehs = {};
+            lista.forEach(f => {
+                if (f.veh) vehs[f.veh] = (vehs[f.veh] || 0) + 1;
+            });
+            const vs = Object.keys(vehs);
+            if (vs.length > 1) {
+                const f0 = agregar("op_varias_unidades", k, "media", `${lista[0].op} usa ${vs.length} unidades`, "En el día aparece en: " + vs.map(v => `U-${v} (${vehs[v]})`).join(" y ") + ".", null);
+                lista.forEach(f => f0.filas.push(f));
+            }
+            for (let i = 0; i < lista.length - 1; i++) {
+                if (smartSolapa(lista[i], lista[i + 1])) {
+                    const f1 = agregar("op_traslape", k, "alta", `${lista[i].op} en dos viajes a la vez`, "Sus horarios se encimen: no puede estar en los dos.", null);
+                    if (!f1.filas.includes(lista[i])) f1.filas.push(lista[i]);
+                    f1.filas.push(lista[i + 1]);
+                }
+            }
+        });
+        Object.keys(porVeh).forEach(k => {
+            const lista = porVeh[k].slice().sort((a, b) => a.ini - b.ini);
+            const ops = {};
+            lista.forEach(f => {
+                if (f.op) ops[f.opN] = f.op;
+            });
+            const os = Object.keys(ops);
+            if (os.length > 1) {
+                const f0 = agregar("unidad_varios_ops", k, "media", `U-${k} la manejan ${os.length} operadores`, "En el día aparece con: " + os.map(o => ops[o]).join(" y ") + ".", null);
+                lista.forEach(f => f0.filas.push(f));
+            }
+            for (let i = 0; i < lista.length - 1; i++) {
+                if (smartSolapa(lista[i], lista[i + 1])) {
+                    const f1 = agregar("unidad_traslape", k, "alta", `U-${k} en dos viajes a la vez`, "Sus horarios se encimen: la unidad no puede estar en los dos.", null);
+                    if (!f1.filas.includes(lista[i])) f1.filas.push(lista[i]);
+                    f1.filas.push(lista[i + 1]);
+                }
+            }
+        });
+
+        // Smart contra datos: unidad que datos tiene para el operador
+        if (datosCargados) {
+            Object.keys(porOp).forEach(k => {
+                const est = estadoOp(k);
+                if (!est.enDatos || !est.unidadDatos) return;
+                const distintas = porOp[k].filter(f => f.veh && f.veh !== est.unidadDatos);
+                if (distintas.length) {
+                    const f0 = agregar("distinta_datos", k, "info", `${est.nombre} en otra unidad que datos`, `En datos tiene la U-${est.unidadDatos}; en Smart va en: ` + Array.from(new Set(distintas.map(f => "U-" + f.veh))).join(", ") + ".", null);
+                    distintas.forEach(f => f0.filas.push(f));
+                }
+            });
+        }
+
+        let fallas = Object.keys(mapa).map(k => mapa[k]);
+        fallas.forEach(f => f.filas.sort((a, b) => a.ini - b.ini));
+        const cantIgnoradas = fallas.filter(f => ignoradas.has(f.id)).length;
+        fallas = fallas.filter(f => !ignoradas.has(f.id));
+        fallas.sort((a, b) => (AUDIT_SEV_ORDEN[a.sev] - AUDIT_SEV_ORDEN[b.sev]) || ((b.zaca ? 1 : 0) - (a.zaca ? 1 : 0)) || (b.filas.length - a.filas.length));
+
+        return { iniciales: iniciales, fallas: fallas, ignoradas: cantIgnoradas, canceladas: canceladas, total: filas.length, datosCargados: datosCargados };
+    }
+    window.smartAnalizar = smartAnalizar;
+
+    function smartHorasTexto(filas) {
+        const hs = Array.from(new Set(filas.map(f => smartHHMM(f.ini))));
+        const l = hs.slice(0, 8).join(", ");
+        return hs.length > 8 ? `${l} y ${hs.length - 8} más` : l;
+    }
+
+    window.verInicialesSmart = function (mensaje) {
+        inyectarEstilosFallas();
+        let html = `<h2>🚌 Iniciales (Smart)</h2>
+          <input type="file" id="smartFileInput" accept=".xlsx,.xls" style="display:none" onchange="smartCargarArchivo(this)">
+          <button type="button" class="btn-outline" style="margin:0 0 8px 0;" onclick="document.getElementById('smartFileInput').click()">📂 ${smartDatos ? "Cambiar" : "Subir"} rol de Smart (Excel)</button>
+          <div id="smartMsg" style="font-size:12.5px;margin-bottom:8px;${mensaje ? "padding:9px 11px;border-radius:10px;background:#fde7ea;color:#B01229;font-weight:700;" : ""}">${mensaje ? escHtml(mensaje) : ""}</div>`;
+
+        if (!smartDatos) {
+            html += `<div style="padding:13px;background:var(--surface-2);border-radius:12px;font-size:13px;line-height:1.5;">
+                Sube el Excel <b>Monitor</b> de Smart. Aquí verás las rutas <b>INICIAL</b> (las que no muestran quién las hace) con el operador y la unidad sugeridos según tu rol, y las fallas del rol de Smart.</div>
+              <button type="button" class="btn-outline" style="margin-top:10px;" onclick="closeSheet()">Cerrar</button>`;
+            openSheet(html);
+            return;
+        }
+
+        const a = smartAnalizar();
+        window._smartUltimo = a;
+        const sinSug = a.iniciales.filter(x => !x.sug).length;
+        const nAlta = a.fallas.filter(f => f.sev === "alta").length + a.iniciales.filter(x => x.sev === "alta").length;
+        const nMedia = a.fallas.filter(f => f.sev === "media").length;
+        const dia = store.days && store.days[store.currentDay] ? store.currentDay : "(sin rol cargado)";
+        html += `<div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;line-height:1.5;">
+              Archivo: <b>${escHtml(smartDatos.nombre)}</b> · Fecha Smart: <b>${escHtml(smartDatos.fecha)}</b><br>
+              Rol de la app usado para comparar: <b>${escHtml(dia)}</b> · ${a.total} viajes${a.canceladas ? ` · ${a.canceladas} canceladas (no se revisan)` : ""}</div>
+            <div>
+              <span class="stu-chip-sev" style="background:#e3eefb;color:#00509d;">🚌 ${a.iniciales.length} iniciales</span>
+              <span class="stu-chip-sev" style="background:#fff0dc;color:#9a5a00;">❔ ${sinSug} sin operador sugerido</span>
+              <span class="stu-chip-sev" style="background:#fde7ea;color:#B01229;">🔴 ${nAlta} críticas</span>
+              <span class="stu-chip-sev" style="background:#fff0dc;color:#9a5a00;">🟠 ${nMedia} por revisar</span>
+            </div>`;
+        if (!a.datosCargados) {
+            html += `<div style="padding:10px 12px;background:#fff4d6;color:#7a5b00;border-radius:12px;font-size:12.5px;margin:6px 0;">Aún no hay datos de operadores cargados: no se puede revisar bajas ni nombres. Sube tu archivo de datos.</div>`;
+        }
+
+        html += `<h3 style="margin:12px 0 6px;">Rutas iniciales</h3>`;
+        a.iniciales.forEach(x => {
+            const f = x.fila;
+            const smartTrae = [f.op ? escHtml(f.op) : "sin operador", f.veh ? "U-" + escHtml(f.veh) : "sin unidad"].join(" · ");
+            let sugHtml;
+            if (x.sug) {
+                const uni = f.veh || x.sug.unidad;
+                const confTxt = x.sug.conf === "alta" ? "confianza alta" : x.sug.conf === "media" ? "confianza media" : "confianza baja";
+                sugHtml = `<div class="stu-falla-det"><b style="color:var(--ink);">Lo haría: ${escHtml(x.sug.op)}${uni ? " (U-" + escHtml(uni) + ")" : ""}</b><br>${escHtml(x.sug.motivo)} · ${confTxt}</div>`;
+                if (x.alts.length) sugHtml += `<div class="stu-falla-det">Otras opciones: ${x.alts.map(c => escHtml(c.op) + " (" + escHtml(c.motivo) + ")").join("; ")}</div>`;
+            } else {
+                sugHtml = `<div class="stu-falla-det"><b style="color:#9a5a00;">No encontré a nadie libre para esta ruta.</b></div>`;
+            }
+            if (x.ocupados.length) sugHtml += `<div class="stu-falla-det">${x.ocupados.map(o => "⛔ " + escHtml(o.motivo)).join("<br>")}</div>`;
+            const alertasHtml = x.alertas.map(al => `<div class="stu-falla-det" style="color:${al.s === "alta" ? "#B01229" : "#9a5a00"};font-weight:800;">${al.s === "alta" ? "🔴" : "🟠"} ${escHtml(al.t)}</div>`).join("");
+            html += `<div class="stu-falla ${x.sev}">
+                <div class="stu-falla-titulo">${smartHHMM(f.ini)}–${smartHHMM(f.fin)} · ${escHtml(f.ruta)}${x.zaca ? `<span class="stu-tag-zaca">ZACACHIMALPA</span>` : ""}</div>
+                <div class="stu-falla-det">${escHtml(f.cta)} · Smart trae: ${smartTrae}</div>
+                ${sugHtml}${alertasHtml}
+              </div>`;
+        });
+        if (!a.iniciales.length) html += `<div style="padding:12px;background:var(--surface-2);border-radius:12px;font-size:13px;">Este archivo no trae rutas INICIAL.</div>`;
+
+        html += `<h3 style="margin:14px 0 6px;">Fallas en el rol de Smart</h3>`;
+        if (!a.fallas.length) html += `<div style="padding:13px;background:var(--done-bg);color:var(--done);border-radius:12px;font-weight:800;font-size:14px;">✅ No se detectaron fallas en Smart.</div>`;
+        a.fallas.forEach((f, i) => {
+            const etiqueta = f.sev === "alta" ? "🔴" : f.sev === "media" ? "🟠" : "🔵";
+            const horas = smartHorasTexto(f.filas);
+            html += `<div class="stu-falla ${f.sev}">
+                <div class="stu-falla-titulo">${etiqueta} ${escHtml(f.titulo)}${f.zaca ? `<span class="stu-tag-zaca">ZACACHIMALPA</span>` : ""}</div>
+                <div class="stu-falla-det">${escHtml(f.detalle)}</div>
+                ${horas ? `<div class="stu-falla-horas">Horarios: ${escHtml(horas)}</div>` : ""}
+                <div class="stu-falla-acc"><button type="button" class="btn-outline" style="color:var(--ink-soft);border-color:var(--ink-faint);" onclick="smartIgnorar(${i})">Ignorar</button></div>
+              </div>`;
+        });
+
+        if (a.ignoradas) html += `<button type="button" class="btn-outline" style="margin:4px 0 8px;" onclick="smartRestaurar()">Mostrar de nuevo las ${a.ignoradas} ignoradas</button>`;
+        html += `<button type="button" class="btn-outline" style="margin-top:6px;color:var(--ink-soft);border-color:var(--ink-faint);" onclick="smartBorrar()">🗑 Quitar este rol de Smart</button>
+                 <button type="button" class="btn-outline" style="margin-top:8px;" onclick="closeSheet()">Cerrar</button>`;
+        openSheet(html);
+    };
+
+    window.smartCargarArchivo = async function (input) {
+        const archivo = input && input.files && input.files[0];
+        if (!archivo) return;
+        const msg = document.getElementById("smartMsg");
+        if (msg) msg.textContent = "Leyendo archivo...";
+        try {
+            const X = (await ensureXLSXLoaded()) || window.XLSX;
+            const buf = await archivo.arrayBuffer();
+            const wb = X.read(buf, { type: "array" });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const grid = X.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
+            window.smartCargarDesdeTabla(grid, archivo.name);
+            window.verInicialesSmart();
+        } catch (e) {
+            window.verInicialesSmart("No pude leer el archivo: " + (e && e.message ? e.message : e));
+        }
+    };
+
+    window.smartIgnorar = function (i) {
+        const a = window._smartUltimo;
+        const f = a && a.fallas[i];
+        if (!f || !smartDatos) return;
+        smartDatos.ignoradas = smartDatos.ignoradas || [];
+        if (!smartDatos.ignoradas.includes(f.id)) smartDatos.ignoradas.push(f.id);
+        smartGuardar();
+        window.verInicialesSmart();
+    };
+
+    window.smartRestaurar = function () {
+        if (!smartDatos) return;
+        smartDatos.ignoradas = [];
+        smartGuardar();
+        window.verInicialesSmart();
+    };
+
+    window.smartBorrar = function () {
+        smartDatos = null;
+        smartGuardar();
+        window.verInicialesSmart();
+    };
+
+    function injectInicialesSmartButton() {
+        const rightBar = document.querySelector(".appbar-right");
+        if (!rightBar || document.getElementById("btnInicialesSmart")) return;
+        inyectarEstilosFallas();
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.id = "btnInicialesSmart";
+        btn.className = "fullscreen-btn-top";
+        btn.title = "Iniciales (Smart)";
+        btn.setAttribute("aria-label", "Iniciales (Smart)");
+        btn.style.fontSize = "18px";
+        btn.innerHTML = "🚌";
+        btn.onclick = function () {
+            window.verInicialesSmart();
+        };
+        rightBar.insertBefore(btn, rightBar.firstChild);
+    }
+
+    smartCargarGuardado();
+
+    // =========================================================================
+    // 6E. TALLER Y UNIDADES SIN OPERADOR: SOLO HACE CASO A LA HOJA "TALLER" Y A "DATOS OP"
+    //     - TALLER: toma las unidades de la fecha de HOY; si hoy no hay, de la ÚLTIMA fecha agregada.
+    //       Se usa el último estatus del día. Sin estatus (o "LISTO") = la unidad ya está lista.
+    //       Ya no se leen las hojas Siniestros ni Parque Vehicular, ni fechas anteriores.
+    //     - SIN OPERADOR: la lista "Unidades Faltantes" (columna U de DATOS OP) manda.
+    //       En "Unidades Libres en Patio" solo salen las de esa lista que no estén en
+    //       taller y a las que hoy nadie les haya asignado operador.
+    //     Se aplica cada vez que subes el archivo de datos (Seguimiento).
+    // =========================================================================
+    const STU_ESTATUS_LISTO = /^(LISTO|LISTA|UNIDAD LISTA|LIBERAD[AO]|ENTREGAD[AO])\b/;
+
+    function stuSerialDia(v) {
+        if (v === null || v === undefined || v === "") return null;
+        if (v instanceof Date) return Math.floor(Date.UTC(v.getFullYear(), v.getMonth(), v.getDate()) / 86400000 + 25569);
+        if (typeof v === "number") return v > 30000 && v < 90000 ? Math.floor(v) : null;
+        const t = String(v).trim();
+        let m = t.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+        if (m) return Math.floor(Date.UTC(+m[1], +m[2] - 1, +m[3]) / 86400000 + 25569);
+        m = t.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+        if (m) return Math.floor(Date.UTC(+m[3], +m[2] - 1, +m[1]) / 86400000 + 25569);
+        return null;
+    }
+
+    function stuDiaTexto(serial) {
+        return new Date((serial - 25569) * 86400000).toISOString().slice(0, 10);
+    }
+
+    function stuDiaCorto(txt) {
+        const p = String(txt || "").split("-");
+        return p.length === 3 ? `${p[2]}/${p[1]}` : String(txt || "");
+    }
+
+    function stuHoySerial() {
+        const d = new Date();
+        return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000 + 25569);
+    }
+
+    function stuValorVacio(v) {
+        return v === null || v === undefined || (typeof v === "string" && v.trim() === "");
+    }
+
+    // Texto del estatus: puede ser una palabra (DIAGNÓSTICO) o una fecha de entrega estimada
+    function stuEstatusTexto(v) {
+        if (typeof v === "number" || v instanceof Date) {
+            const serial = v instanceof Date ? null : v;
+            if (serial !== null && serial > 30000 && serial < 90000) {
+                const dia = stuDiaTexto(Math.floor(serial));
+                const mins = Math.round((serial - Math.floor(serial)) * 1440);
+                const hh = String(Math.floor(mins / 60)).padStart(2, "0") + ":" + String(mins % 60).padStart(2, "0");
+                return `Entrega estimada ${stuDiaCorto(dia)} ${hh}`;
+            }
+            return String(v);
+        }
+        const t = String(v).trim();
+        const m = t.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/);
+        return m ? `Entrega estimada ${stuDiaCorto(m[1])} ${m[2]}` : t;
+    }
+
+    // Lee del archivo de datos: unidades en taller (hoja Taller) y unidades faltantes (DATOS OP, col. U)
+    window.stuExtraerTallerYFaltantes = function (wb, X, hoySerialPrueba) {
+        const out = { taller: {}, tallerEncontrado: false, tallerFecha: "", tallerFilasDia: 0, listas: [], faltantes: [], faltantesEncontradas: false, avisos: [] };
+        const leer = nombre => X.utils.sheet_to_json(wb.Sheets[nombre], { header: 1, raw: true, defval: null });
+
+        // ---------- TALLER ----------
+        const nomTaller = wb.SheetNames.find(n => /^TALLER$/i.test(String(n).trim())) || wb.SheetNames.find(n => /TALLER/i.test(String(n)));
+        if (nomTaller) {
+            const grid = leer(nomTaller);
+            let h = -1;
+            for (let r = 0; r < Math.min(grid.length, 10); r++) {
+                if ((grid[r] || []).some(c => smartNorm(c) === "UNIDAD")) {
+                    h = r;
+                    break;
+                }
+            }
+            if (h < 0) {
+                out.avisos.push(`En la hoja "${nomTaller}" no encontré la columna UNIDAD; no se cambió el taller.`);
+            } else {
+                const head = grid[h].map(smartNorm);
+                const cU = head.indexOf("UNIDAD");
+                let cFecha = head.findIndex(x => ["COLUMNA1", "FECHA", "DIA", "FECHA REPORTE", "FECHA DE REPORTE", "FECHA DE CORTE"].includes(x));
+                if (cFecha < 0) {
+                    const cand = cU + 1;
+                    const celdas = grid.slice(h + 1, h + 40).map(r => (r || [])[cand]).filter(v => !stuValorVacio(v));
+                    if (celdas.length && celdas.filter(v => stuSerialDia(v) !== null).length / celdas.length > 0.6) cFecha = cand;
+                }
+                const cEst = [];
+                head.forEach((x, i) => {
+                    if (x.includes("ESTATUS")) cEst.push(i);
+                });
+                const cFalla = head.findIndex(x => x.startsWith("FALLA"));
+                if (cFecha < 0) {
+                    out.avisos.push(`En la hoja "${nomTaller}" no encontré la columna de fecha; no se cambió el taller.`);
+                } else if (!cEst.length) {
+                    out.avisos.push(`En la hoja "${nomTaller}" no encontré la columna de estatus; no se cambió el taller.`);
+                } else {
+                    const filas = [];
+                    for (let r = h + 1; r < grid.length; r++) {
+                        const row = grid[r] || [];
+                        const u = String(row[cU] === null || row[cU] === undefined ? "" : row[cU]).replace(/\D/g, "");
+                        if (!u || !FLOTA_SET.has(u)) continue;
+                        const dia = stuSerialDia(row[cFecha]);
+                        if (dia === null) continue;
+                        let est = null;
+                        for (let i = cEst.length - 1; i >= 0; i--) {
+                            if (!stuValorVacio(row[cEst[i]])) {
+                                est = row[cEst[i]];
+                                break;
+                            }
+                        }
+                        filas.push({ u: u, dia: dia, est: est, falla: cFalla >= 0 && !stuValorVacio(row[cFalla]) ? String(row[cFalla]).replace(/\s+/g, " ").trim() : "" });
+                    }
+                    if (!filas.length) {
+                        out.avisos.push(`La hoja "${nomTaller}" no trae unidades con fecha; no se cambió el taller.`);
+                    } else {
+                        const hoy = hoySerialPrueba || stuHoySerial();
+                        const dias = Array.from(new Set(filas.map(f => f.dia)));
+                        const usar = dias.includes(hoy) ? hoy : Math.max.apply(null, dias);
+                        const delDia = {};
+                        filas.filter(f => f.dia === usar).forEach(f => {
+                            delDia[f.u] = f;
+                        });
+                        out.tallerEncontrado = true;
+                        out.tallerFecha = stuDiaTexto(usar);
+                        out.tallerFilasDia = Object.keys(delDia).length;
+                        Object.keys(delDia).forEach(u => {
+                            const f = delDia[u];
+                            if (stuValorVacio(f.est)) {
+                                out.listas.push(u);
+                                return;
+                            }
+                            const texto = stuEstatusTexto(f.est);
+                            if (STU_ESTATUS_LISTO.test(smartNorm(texto))) {
+                                out.listas.push(u);
+                                return;
+                            }
+                            out.taller[u] = texto + (f.falla ? " · " + f.falla.slice(0, 40) : "");
+                        });
+                        if (usar !== hoy) out.avisos.push(`No hay lista de taller de hoy; se usó la última fecha agregada (${stuDiaCorto(out.tallerFecha)}).`);
+                    }
+                }
+            }
+        } else {
+            out.avisos.push('No encontré la hoja "Taller"; no se cambió el taller.');
+        }
+
+        // ---------- UNIDADES FALTANTES (DATOS OP, columna "Unidades Faltantes") ----------
+        for (let s = 0; s < wb.SheetNames.length && !out.faltantesEncontradas; s++) {
+            const nombre = wb.SheetNames[s];
+            const grid = leer(nombre);
+            for (let r = 0; r < Math.min(grid.length, 10) && !out.faltantesEncontradas; r++) {
+                const row = grid[r] || [];
+                const c = row.findIndex(x => smartNorm(x) === "UNIDADES FALTANTES");
+                if (c < 0) continue;
+                out.faltantesEncontradas = true;
+                const vistos = new Set();
+                for (let i = r + 1; i < grid.length; i++) {
+                    const v = (grid[i] || [])[c];
+                    if (stuValorVacio(v)) continue;
+                    const u = typeof v === "number" ? String(Math.round(v)) : String(v).replace(/\D/g, "");
+                    if (u && FLOTA_SET.has(u) && !vistos.has(u)) {
+                        vistos.add(u);
+                        out.faltantes.push(u);
+                    }
+                }
+            }
+        }
+        if (!out.faltantesEncontradas) out.avisos.push('No encontré la columna "Unidades Faltantes"; las unidades libres se calculan como antes.');
+        return out;
+    };
+
+    function stuAplicarTallerYFaltantes(p) {
+        const previo = window._stuTallerPrevio;
+        window._stuTallerPrevio = null;
+        if (!p.tallerEncontrado && previo) {
+            // No se pudo leer la hoja Taller: se conserva la lista anterior (nunca la lectura vieja de varias hojas)
+            store.tallerDB = previo.tallerDB;
+            store.tallerFecha = previo.fecha;
+            Object.keys(store.unassignedReasons || {}).forEach(k => {
+                if (FLOTA_SET.has(k) && store.unassignedReasons[k] === "Taller") delete store.unassignedReasons[k];
+            });
+            Object.keys(previo.tallerDB || {}).forEach(u => {
+                if (FLOTA_SET.has(u)) setReasonForEntity(u, "Taller");
+            });
+        }
+        if (p.tallerEncontrado) {
+            store.tallerDB = p.taller;
+            store.tallerFecha = p.tallerFecha;
+            // Quitar la marca "Taller" que dejó el lector anterior en unidades de otras hojas o fechas
+            Object.keys(store.unassignedReasons || {}).forEach(k => {
+                if (FLOTA_SET.has(k) && store.unassignedReasons[k] === "Taller") delete store.unassignedReasons[k];
+            });
+            Object.keys(p.taller).forEach(u => setReasonForEntity(u, "Taller"));
+        }
+        if (p.faltantesEncontradas) {
+            store.unidadesFaltantes = p.faltantes;
+            store.datosRegla = "v2";
+        }
+        window.render();
+    }
+
+    function stuMostrarResumenDatos(p) {
+        const box = document.getElementById("uploadMsg");
+        if (!box) return;
+        const partes = [];
+        if (p.tallerEncontrado) {
+            const ut = Object.keys(p.taller).sort();
+            partes.push(`Taller (lista del ${stuDiaCorto(p.tallerFecha)}): <b>${ut.length}</b> en taller${ut.length ? " (" + ut.map(u => "U-" + u).join(", ") + ")" : ""}` + (p.listas.length ? `, ya listas: ${p.listas.map(u => "U-" + u).join(", ")}` : ""));
+        }
+        if (p.faltantesEncontradas) partes.push(`Sin operador según datos: <b>${p.faltantes.length}</b> unidades`);
+        const activos = Object.values(store.operadoresDB || {}).filter(op => isOperadorActivo(op)).length;
+        let html = `<span style="color:var(--done)">✅ ¡Sincronizado en la nube! ${partes.join(" · ")}${partes.length ? " · " : ""}${activos} operadores activos.</span>`;
+        if (p.avisos.length) html += `<br><span style="color:var(--bad);font-size:12.5px;font-weight:700;">⚠️ ${p.avisos.map(escHtml).join("<br>⚠️ ")}</span>`;
+        const raras = window._stuLetrasDesconocidas || [];
+        if (raras.length) {
+            html += `<br><span style="color:var(--pend);font-size:12.5px;font-weight:700;">🔤 Letra que no conozco en la columna UNIDAD: ${raras.map(r => escHtml(r.letra) + " (" + escHtml(r.nombre) + ")").join(", ")}. Se dejaron como operadores activos.</span>`;
+        }
+        box.innerHTML = html;
+    }
+
+    function stuResumenTallerHtml() {
+        if (store.datosRegla !== "v2") return "";
+        const nT = Object.keys(store.tallerDB || {}).length;
+        const nF = (store.unidadesFaltantes || []).length;
+        return `<div style="font-size:12px;color:var(--ink-soft);margin-bottom:8px;">🔧 Taller: lista del ${escHtml(stuDiaCorto(store.tallerFecha))} (${nT} en taller) · 🚌 Sin operador según datos: ${nF}</div>`;
+    }
+
+    // ----- Versión visible (para comprobar que el teléfono ya tiene el archivo nuevo) -----
+    const STU_VERSION = "Taller v2 · Estados y Vueltas v2";
+
+    // ----- Actualizar SOLO taller y unidades faltantes (sin tocar operadores ni los cambios del día) -----
+    window.stuActualizarSoloTaller = async function (input) {
+        const archivo = input && input.files && input.files[0];
+        if (!archivo) return;
+        const aviso = (html, color) => {
+            const box = document.getElementById("tallerMsg");
+            if (box) box.innerHTML = `<div style="margin:8px 0;padding:9px 11px;border-radius:10px;font-size:12.5px;font-weight:700;background:${color === "rojo" ? "#fde7ea" : "#e6f6ec"};color:${color === "rojo" ? "#B01229" : "#17703a"};">${html}</div>`;
+        };
+        aviso("Leyendo archivo...", "verde");
+        try {
+            const X = (await ensureXLSXLoaded()) || window.XLSX;
+            const wb = X.read(new Uint8Array(await archivo.arrayBuffer()), { type: "array" });
+            const p = window.stuExtraerTallerYFaltantes(wb, X);
+            if (!p.tallerEncontrado && !p.faltantesEncontradas) {
+                aviso("No encontré la hoja Taller ni la columna Unidades Faltantes en ese archivo. No se cambió nada.<br>" + p.avisos.map(escHtml).join("<br>"), "rojo");
+                return;
+            }
+            window._stuTallerPrevio = null;
+            stuAplicarTallerYFaltantes(p);
+            savePatch({
+                tallerDB: store.tallerDB || {},
+                tallerFecha: store.tallerFecha || "",
+                unidadesFaltantes: store.unidadesFaltantes || [],
+                datosRegla: store.datosRegla || "",
+                unassignedReasons: store.unassignedReasons || {}
+            });
+            window.verTallerLeido(`✅ Listo. Taller (lista del ${escHtml(stuDiaCorto(p.tallerFecha))}): <b>${Object.keys(p.taller).length}</b> en taller` + (p.listas.length ? `, ${p.listas.length} ya listas (${p.listas.map(u => "U-" + u).join(", ")})` : "") + `.` + (p.avisos.length ? "<br>" + p.avisos.map(escHtml).join("<br>") : ""));
+        } catch (e) {
+            aviso("No pude leer el archivo: " + escHtml(e && e.message ? e.message : e), "rojo");
+        }
+        input.value = "";
+    };
+
+    // ----- Pantalla: qué taller y qué unidades sin operador está usando la app -----
+    window.verTallerLeido = function (mensajeHtml) {
+        inyectarEstilosFallas();
+        const taller = store.tallerDB || {};
+        const unidades = Object.keys(taller).sort();
+        const falt = (store.unidadesFaltantes || []).map(String);
+        const reglaActiva = store.datosRegla === "v2";
+
+        // ¿El rol de hoy usa alguna unidad en taller?
+        const usoEnRol = {};
+        try {
+            const dia = store.days && store.days[store.currentDay];
+            const trips = dia && Array.isArray(dia.trips) ? dia.trips : [];
+            const ds = getDayState();
+            const baselineOp = {};
+            (store.globalFleet || []).forEach(g => {
+                if (g && g.u && g.n) baselineOp[String(g.u)] = g.n;
+            });
+            trips.forEach(t => {
+                const a = resolveTripAssignment(t, ds, baselineOp);
+                if (a.unit && taller[a.unit] !== undefined) usoEnRol[a.unit] = (usoEnRol[a.unit] || 0) + 1;
+            });
+        } catch (e) {}
+
+        let html = `<h2>🔧 Taller y unidades sin operador</h2>
+          <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:8px;">Versión de la app: <b>${escHtml(STU_VERSION)}</b></div>`;
+        if (mensajeHtml) html += `<div style="margin:0 0 8px;padding:9px 11px;border-radius:10px;font-size:12.5px;font-weight:700;background:#e6f6ec;color:#17703a;">${mensajeHtml}</div>`;
+        if (!reglaActiva) {
+            html += `<div style="padding:10px 12px;background:#fff4d6;color:#7a5b00;border-radius:12px;font-size:12.5px;margin-bottom:8px;">Todavía no se ha cargado el archivo de datos con la regla nueva (hoja Taller por fecha y Unidades Faltantes). Usa el botón de abajo.</div>`;
+        }
+        html += `<input type="file" id="tallerFileInput" accept=".xlsx,.xls" style="display:none" onchange="stuActualizarSoloTaller(this)">
+          <button type="button" class="btn-outline" style="margin:0 0 4px 0;" onclick="document.getElementById('tallerFileInput').click()">📂 Actualizar solo Taller y Faltantes</button>
+          <div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:6px;">Sube tu archivo de datos (Seguimiento). Solo cambia el taller y las unidades sin operador: <b>no borra</b> los cambios del día ni toca a los operadores.</div>
+          <div id="tallerMsg"></div>
+          <h3 style="margin:12px 0 6px;">En taller${store.tallerFecha ? " (lista del " + escHtml(stuDiaCorto(store.tallerFecha)) + ")" : ""}: ${unidades.length}</h3>`;
+        if (!unidades.length) html += `<div style="padding:11px;background:var(--surface-2);border-radius:12px;font-size:13px;">Ninguna unidad en taller.</div>`;
+        unidades.forEach(u => {
+            const usa = usoEnRol[u];
+            html += `<div class="stu-falla ${usa ? "alta" : "info"}"><div class="stu-falla-titulo">🔧 U-${escHtml(u)}</div>
+                <div class="stu-falla-det">${escHtml(String(taller[u]))}</div>
+                ${usa ? `<div class="stu-falla-det" style="color:#B01229;font-weight:800;">⚠️ El rol de hoy la usa en ${usa} viaje(s)</div>` : ""}</div>`;
+        });
+        html += `<h3 style="margin:12px 0 6px;">Sin operador según datos (Unidades Faltantes): ${falt.length}</h3>`;
+        html += falt.length
+            ? `<div>${falt.map(u => `<span style="display:inline-block;background:var(--surface-2);font-weight:800;font-size:12.5px;padding:5px 9px;border-radius:7px;margin:3px;">U-${escHtml(u)}${taller[u] !== undefined ? " 🔧" : ""}</span>`).join("")}</div>`
+            : `<div style="padding:11px;background:var(--surface-2);border-radius:12px;font-size:13px;">${reglaActiva ? "Ninguna." : "Aún sin leer."}</div>`;
+        html += `<button type="button" class="btn-outline" style="margin-top:12px;" onclick="closeSheet()">Cerrar</button>`;
+        openSheet(html);
+    };
+
+    // --- Enganches: se leen Taller y Faltantes al subir el archivo de datos, y se guardan en la nube ---
+    (function instalarReglasTallerYFaltantes() {
+        if (typeof window.handleExcel === "function" && !window.handleExcel._stu) {
+            const originalHandle = window.handleExcel;
+            const nuevoHandle = async function (file, type, inputEl) {
+                if (type === "seguimiento" && file) {
+                    window._stuDatosPendientes = null;
+                    window._stuTallerPrevio = { tallerDB: JSON.parse(JSON.stringify(store.tallerDB || {})), fecha: store.tallerFecha || "" };
+                    window._stuLetrasDesconocidas = [];
+                    try {
+                        const X = (await ensureXLSXLoaded()) || window.XLSX;
+                        const wb = X.read(new Uint8Array(await file.arrayBuffer()), { type: "array" });
+                        window._stuDatosPendientes = window.stuExtraerTallerYFaltantes(wb, X);
+                    } catch (e) {
+                        console.error("Lectura de Taller/Faltantes:", e);
+                        window._stuDatosPendientes = {
+                            taller: {}, tallerEncontrado: false, tallerFecha: "", listas: [], faltantes: [], faltantesEncontradas: false,
+                            avisos: ["No pude leer Taller / Unidades Faltantes (" + (e && e.message ? e.message : e) + "). Se conservó la lista de taller anterior."]
+                        };
+                    }
+                }
+                return originalHandle.apply(this, arguments);
+            };
+            nuevoHandle._stu = true;
+            window.handleExcel = nuevoHandle;
+        }
+
+        if (typeof window.saveStore === "function" && !window.saveStore._stu) {
+            const originalSave = window.saveStore;
+            const nuevoSave = function (onComplete) {
+                const p = window._stuDatosPendientes;
+                let cb = onComplete;
+                if (p) {
+                    window._stuDatosPendientes = null;
+                    try {
+                        stuAplicarTallerYFaltantes(p);
+                    } catch (e) {
+                        console.error("Aplicar Taller/Faltantes:", e);
+                    }
+                    cb = function (err) {
+                        if (typeof onComplete === "function") onComplete(err);
+                        if (!err) {
+                            try {
+                                stuMostrarResumenDatos(p);
+                            } catch (e) {}
+                        }
+                    };
+                }
+                return originalSave.call(this, cb);
+            };
+            nuevoSave._stu = true;
+            window.saveStore = nuevoSave;
+        }
+
+        // Para que el taller, la fecha y la lista de faltantes no se pierdan al recargar o al bajar de la nube
+        if (typeof window.normalizeStoreStructure === "function" && !window.normalizeStoreStructure._stu) {
+            const originalNorm = window.normalizeStoreStructure;
+            const nuevoNorm = function (raw) {
+                const r = originalNorm.apply(this, arguments);
+                if (raw && typeof raw === "object") {
+                    store.unidadesFaltantes = Array.isArray(raw.unidadesFaltantes) ? raw.unidadesFaltantes : Object.values(raw.unidadesFaltantes || {});
+                    store.tallerFecha = raw.tallerFecha || "";
+                    store.datosRegla = raw.datosRegla || "";
+                }
+                return r;
+            };
+            nuevoNorm._stu = true;
+            window.normalizeStoreStructure = nuevoNorm;
+        }
+
+        // "Unidades Libres en Patio": solo las de la lista Unidades Faltantes, sin taller y sin operador hoy
+        if (typeof window.calcularEstadoFlotaYVentanas === "function" && !window.calcularEstadoFlotaYVentanas._stu) {
+            const originalCalc = window.calcularEstadoFlotaYVentanas;
+            const nuevoCalc = function () {
+                const r = originalCalc.apply(this, arguments);
+                try {
+                    if (store.datosRegla === "v2") {
+                        const falt = new Set((store.unidadesFaltantes || []).map(String));
+                        r.freeUnits = FLOTA_FIJA.filter(f => {
+                            const u = String(f.u);
+                            return falt.has(u) && !isUnidadEnTallerOInhabil(u) && !(r.unitToOp && r.unitToOp[u]);
+                        });
+                    }
+                } catch (e) {
+                    console.error("Unidades libres:", e);
+                }
+                return r;
+            };
+            nuevoCalc._stu = true;
+            window.calcularEstadoFlotaYVentanas = nuevoCalc;
+        }
+    })();
+
+    // =========================================================================
+    // 6F. ESTADOS POR LETRA (B, I, C, P, Pr) Y VUELTAS REDONDAS (FLOTA)
+    //     ESTADOS: si en la columna UNIDAD de DATOS OP un operador trae una letra en lugar de
+    //       un número, es un estado: B = Baja · I = Incapacidad · C = Capacitación ·
+    //       P = Préstamo · Pr = Permiso · T = Turismo. Ya no cuentan como guardias.
+    //     VUELTAS: además de ida y vuelta por la misma ruta (A➜B y B➜A), cuentan como 1 vuelta
+    //       redonda, si el operador las hace una tras otra:
+    //         CU➜Camino Real + Tlaxcalancingo➜CU
+    //         CU➜Cuautlancingo + Bachillerato (5 de Mayo)➜CU
+    //         CU➜Bachillerato (5 de Mayo) + Cuautlancingo➜CU
+    // =========================================================================
+    const CODIGOS_ESTADO_OPERADOR = { B: "Baja", I: "Incapacidad", C: "Capacitación", P: "Préstamo", PR: "Permiso", T: "Apoyo Turismo" };
+    ["Capacitación", "Préstamo"].forEach(m => {
+        if (!ESTADOS_CRITICOS.includes(m)) ESTADOS_CRITICOS.push(m); // para que no cuenten como disponibles ni como guardias
+    });
+
+    function stuCodigoEstadoOperador(valor) {
+        const k = String(valor === null || valor === undefined ? "" : valor)
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[.\s]/g, "")
+            .toUpperCase();
+        if (!k || /^\d+$/.test(k)) return "";
+        if (CODIGOS_ESTADO_OPERADOR[k]) return CODIGOS_ESTADO_OPERADOR[k];
+        if (k === "BAJA") return "Baja";
+        if (k === "INCAPACIDAD") return "Incapacidad";
+        if (k === "CAPACITACION") return "Capacitación";
+        if (k === "PRESTAMO") return "Préstamo";
+        if (k === "PERMISO") return "Permiso";
+        if (k === "TURISMO") return "Apoyo Turismo";
+        return "";
+    }
+    window.stuCodigoEstadoOperador = stuCodigoEstadoOperador;
+
+    function stuGrupoVuelta(loc) {
+        const n = String(normLoc(loc)).normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        if (n === "CU") return "CU";
+        if (/CAMINO REAL/.test(n)) return "CAMINO_REAL";
+        if (/TLAXCALANCINGO/.test(n)) return "TLAXCALANCINGO";
+        if (/CUAU?TLANCINGO/.test(n)) return "CUAUTLANCINGO";
+        if (/BACHILLER/.test(n)) return "BACHILLER";
+        return n;
+    }
+
+    // [destino de la ida, origen del regreso]: la ida sale de CU y el regreso llega a CU
+    const STU_CIRCUITOS_REDONDOS = [
+        ["CAMINO_REAL", "TLAXCALANCINGO"],
+        ["CUAUTLANCINGO", "BACHILLER"],
+        ["BACHILLER", "CUAUTLANCINGO"]
+    ];
+
+    window.stuEsVueltaRedonda = function (cur, next) {
+        if (!cur || !next) return false;
+        if (normLoc(cur.o) === normLoc(next.d) && normLoc(cur.d) === normLoc(next.o)) return true; // ida y vuelta normal
+        if (stuGrupoVuelta(cur.o) !== "CU" || stuGrupoVuelta(next.d) !== "CU") return false;
+        const gIda = stuGrupoVuelta(cur.d);
+        const gRegreso = stuGrupoVuelta(next.o);
+        return STU_CIRCUITOS_REDONDOS.some(par => par[0] === gIda && par[1] === gRegreso);
+    };
+
+    window.stuContarVueltas = function (viajes) {
+        const v = (viajes || []).slice().sort((a, b) => String(a.h).localeCompare(String(b.h)));
+        let vueltas = 0;
+        let i = 0;
+        while (i < v.length) {
+            if (v[i + 1] && window.stuEsVueltaRedonda(v[i], v[i + 1])) {
+                vueltas++;
+                i += 2;
+                continue;
+            }
+            vueltas++;
+            i++;
+        }
+        return vueltas;
+    };
+
+    // Pestaña Flota (copia de la de index.html; lo único distinto es cómo cuenta las vueltas)
+    window.renderFlota = function renderFlota() {
+        let ds = getDayState();
+        let opsMap = {}; if(store.operadoresDB) Object.keys(store.operadoresDB).forEach(k => opsMap[store.operadoresDB[k]] = k);
+        let baselineOp = {}; if(store.globalFleet) { store.globalFleet.forEach(g => { if(g && g.u && g.n) baselineOp[String(g.u)] = g.n; }); }
+
+        let allTrips = (store.days[store.currentDay] && store.days[store.currentDay].trips) ? store.days[store.currentDay].trips : [];
+        let opsTrips = {};
+        (allTrips || []).forEach(t => {
+            let asg = resolveTripAssignment(t, ds, baselineOp);
+            if(asg.op) { 
+                if(!opsTrips[asg.op]) opsTrips[asg.op] = []; 
+                opsTrips[asg.op].push(t); 
+            }
+        });
+
+        // Vueltas redondas: ahora también cuentan los circuitos CU–Camino Real + Tlaxcalancingo–CU, etc.
+        function getVueltas(opName) {
+            if (!opName) return 0;
+            return window.stuContarVueltas(opsTrips[opName] || []);
+        }
+
+        let unitToOp = {}; let opToUnit = {};
+        FLOTA_FIJA.forEach(f => {
+            let u = String(f.u);
+            if (isUnidadEnTallerOInhabil(u)) return;
+            let defaultOp = baselineOp[u] || "";
+            let overVal = ds.opOverride[fbKey(u)] !== undefined ? ds.opOverride[fbKey(u)] : ds.opOverride[u];
+            let op = overVal !== undefined ? (overVal==="VACIO"?"":overVal) : defaultOp;
+            if(op && isOperadorActivo(op)) { unitToOp[u] = op; opToUnit[op] = u; }
+        });
+
+        if(ds.unitOverride) {
+            Object.keys(ds.unitOverride).forEach(opKey => {
+                let u = ds.unitOverride[opKey];
+                let actualOpName = store.operadoresDB[opKey] || opKey;
+                if (u === "VACIO") {
+                    if(opToUnit[actualOpName]) {
+                        let oldU = opToUnit[actualOpName];
+                        if(unitToOp[oldU] === actualOpName) delete unitToOp[oldU];
+                        delete opToUnit[actualOpName];
+                    }
+                } else if (u && !isUnidadEnTallerOInhabil(u) && isOperadorActivo(actualOpName)) {
+                    if(opToUnit[actualOpName]) {
+                        let oldU = opToUnit[actualOpName];
+                        if(unitToOp[oldU] === actualOpName) delete unitToOp[oldU];
+                    }
+                    unitToOp[u] = actualOpName; opToUnit[actualOpName] = u;
+                }
+            });
+        }
+
+        let rows = []; let processedUnits = new Set(); let processedOps = new Set();
+
+        FLOTA_FIJA.forEach(f => {
+            let u = String(f.u);
+            if(!processedUnits.has(u)) {
+                let op = unitToOp[u];
+                if(op) { rows.push({ u: u, k: opsMap[op]||f.k||"", n: op }); processedUnits.add(u); processedOps.add(op); }
+                else { rows.push({ u: u, k: "", n: "" }); processedUnits.add(u); }
+            }
+        });
+
+        Object.keys(store.operadoresDB || {}).forEach(clave => {
+            let opName = store.operadoresDB[clave];
+            if(opName && !processedOps.has(opName)) { rows.push({ u: "", k: clave, n: opName }); processedOps.add(opName); }
+        });
+
+        rows.forEach(r => {
+            let uReason = getMotivoUnidad(r.u);
+            let opMeta = getOpMeta(r.n);
+            let opReason = getReasonForEntity(r.n) || getReasonForEntity(r.k);
+            r.v = getVueltas(r.n);
+            r.p = opMeta.puntualidad !== null ? opMeta.puntualidad : -1;
+            r.sortWeight = 1; 
+            let opLow = (opReason || "").toLowerCase();
+            let nLow = (r.n || "").toLowerCase();
+            let isTurismo = opMeta.esTurismo;
+            let isBaja = opMeta.esBaja || (opMeta.puntualidad !== null && opMeta.puntualidad === 0);
+            let isApoyo = !isTurismo && (opLow.includes("apoyo") || nLow.includes("apoyo"));
+
+            if (isTurismo) {
+                r.st = "🚌 Apoyo Turismo (No activo)";
+                r.cat = "row-gray";
+                r.sortWeight = 3;
+            } else if (isBaja) {
+                r.st = opMeta.puntualidad === 0 ? "⛔ Puntualidad 0 (No contemplado)" : "⛔ Baja";
+                r.cat = "row-baja";
+                r.sortWeight = 3;
+            } else if(r.u && r.n) {
+                r.st = "Asignado"; r.cat = "row-ok";
+                if(isApoyo) { r.cat = "row-gray"; r.st = "Asignado (Apoyo)"; } 
+                if(uReason) { r.st = `🔧 Taller: ${uReason}`; r.cat = "row-bad"; }
+                else if(opReason && !isApoyo) { r.st = `⚠️ Operador: ${opReason}`; r.cat = "row-bad"; }
+            } else if(r.u && !r.n) {
+                if(uReason) { r.st = `🔧 En Taller (${uReason})`; r.cat = "row-bad"; }
+                else { r.st = "Disponible (Sin Op)"; r.cat = "row-disp"; }
+            } else if(!r.u && r.n) {
+                if (isApoyo) {
+                    r.st = opReason || "Apoyo"; r.cat = "row-gray"; r.sortWeight = 2; 
+                } else if(opReason && ESTADOS_CRITICOS.includes(opReason)) {
+                    r.st = `Inhábil (${opReason})`; r.cat = "row-bad";
+                } else {
+                    r.st = "Habilitado (Sin unidad)"; r.cat = "row-warn";
+                }
+            }
+        });
+
+        if(searchTerm) {
+            let st = searchTerm.toLowerCase();
+            rows = rows.filter(x => ((x.u||"")+" "+(x.n||"")+" "+(x.k||"")+" "+(x.st||"")).toLowerCase().includes(st));
+        }
+    
+        if(showRevisar) {
+            rows = rows.filter(r => r.cat === "row-bad" || r.cat === "row-warn" || r.cat === "row-disp");
+        }
+
+        rows.sort((a,b) => {
+            if (a.sortWeight !== b.sortWeight) return a.sortWeight - b.sortWeight;
+            let valA = a[flotaSortCol] ?? ""; let valB = b[flotaSortCol] ?? "";
+            if(flotaSortCol === 'u' || flotaSortCol === 'k' || flotaSortCol === 'v' || flotaSortCol === 'p') return (Number(valA) - Number(valB)) * flotaSortDir;
+            return String(valA).localeCompare(String(valB)) * flotaSortDir;
+        });
+
+        let trs = rows.map(r => {
+            let safeU = encodeURIComponent(r.u || '');
+            let safeK = encodeURIComponent(r.k || '');
+            let safeN = encodeURIComponent(r.n || '');
+            return `
+            <tr class="${r.cat}" onclick="abrirModalFlotaDedicado(decodeURIComponent('${safeU}'), decodeURIComponent('${safeK}'), decodeURIComponent('${safeN}'))">
+                <td class="mono" style="font-weight:800;">${r.u ? 'U-'+r.u : '---'}</td>
+                <td class="mono">${r.k || '---'}</td>
+                <td><b>${r.n || '---'}</b></td>
+                <td style="text-align:center;">${r.n ? (renderPuntualidadBadge(r.n) || '—') : '—'}</td>
+                <td style="text-align:center; font-weight:800; color:var(--accent); font-size:14px;">${r.v}</td>
+                <td>${r.st}</td>
+            </tr>`;
+        }).join('');
+
+        let html = `
+        <div style="padding: 0 12px 14px;">
+            <div class="table-container">
+                <table class="excel-table">
+                    <thead>
+                        <tr>
+                            <th class="${flotaSortCol==='u'?'th-active':''}" onclick="sortFlota('u')">Unidad <span class="sort-arrow">${flotaSortDir===1?'↑':'↓'}</span></th>
+                            <th class="${flotaSortCol==='k'?'th-active':''}" onclick="sortFlota('k')">Clave <span class="sort-arrow">${flotaSortDir===1?'↑':'↓'}</span></th>
+                            <th class="${flotaSortCol==='n'?'th-active':''}" onclick="sortFlota('n')">Operador <span class="sort-arrow">${flotaSortDir===1?'↑':'↓'}</span></th>
+                            <th class="${flotaSortCol==='p'?'th-active':''}" onclick="sortFlota('p')" style="text-align:center;">Punt. AS <span class="sort-arrow">${flotaSortDir===1?'↑':'↓'}</span></th>
+                            <th class="${flotaSortCol==='v'?'th-active':''}" onclick="sortFlota('v')" style="text-align:center;">Vueltas <span class="sort-arrow">${flotaSortDir===1?'↑':'↓'}</span></th>
+                            <th class="${flotaSortCol==='st'?'th-active':''}" onclick="sortFlota('st')">Disponibilidad <span class="sort-arrow">${flotaSortDir===1?'↑':'↓'}</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>${trs}</tbody>
+                </table>
+            </div>
+        </div>`;
+
+        document.getElementById("list").innerHTML = html || "<div style='text-align:center;padding:40px;color:gray;'>Flota vacía o sin coincidencias.</div>";
+    };
+
+    // =========================================================================
+    // 7. CONEXIÓN LIGERA A FIREBASE + DIAGNÓSTICO DE DATOS + AVISO DE VERSIÓN NUEVA
+    //    - Sustituye la conexión original: sin bucle cada 150 ms, junta ráfagas de
+    //      cambios en una sola actualización y no se rompe si falla una notificación.
+    //    - Se define aquí arriba (al cargar el archivo) para ganarle al reintento
+    //      que index.html programa antes de que existan las librerías de Firebase.
+    // =========================================================================
+    let fbIntentosSDK = 0;
+    let fbYaConectado = false;
+    let fbEsperandoRed = false;
+
+    function avisarCambioRecibido(ult) {
+        try {
+            const isCritical = ESTADOS_CRITICOS.some(est =>
+                String(ult.reason || "").toLowerCase().includes(est.toLowerCase())
+            );
+            playAlertSound(isCritical);
+            if (navigator.vibrate) navigator.vibrate(isCritical ? [400, 200, 400, 200, 600] : [200, 100, 200]);
+
+            if ("Notification" in window && Notification.permission === "granted") {
+                try {
+                    new Notification((isCritical ? "⚠️ CRÍTICO: " : "🔄 Cambio: ") + ult.route, {
+                        body: `Unidad: ${ult.newUnit === "VACIO" || ult.newUnit === "S/U" ? "S/U" : "U-" + ult.newUnit} | Op: ${
+                            ult.newOp === "VACIO" ? "Sin Asignar" : ult.newOp || ult.nombre
+                        }\nMotivo: ${ult.reason || "N/A"}`
+                    });
+                } catch (e) {}
+            }
+            if (isCritical && !document.hidden && typeof showAggressiveToast === "function") {
+                showAggressiveToast(`Cambio urgente en ruta ${ult.route}.`);
+            }
+        } catch (e) {}
+    }
+
+    function procesarDatosDeNube(snap, esPrimeraCarga) {
+        const cloudVal = snap.val();
+        if (cloudVal) {
+            const prevHistLen = Array.isArray(store.globalHistory) ? store.globalHistory.length : 0;
+            const localHistoryBackup = Array.isArray(store.globalHistory) ? [...store.globalHistory] : [];
+
+            normalizeStoreStructure(cloudVal);
+
+            if (localHistoryBackup.length > 0) {
+                const ids = new Set(store.globalHistory.map(h => h && h.id).filter(Boolean));
+                localHistoryBackup.forEach(item => {
+                    if (item && item.id && !ids.has(item.id)) {
+                        store.globalHistory.push(item);
+                        ids.add(item.id);
+                    }
+                });
+            }
+            getGlobalHistory();
+            saveLocalCacheDebounced();
+
+            if (!esPrimeraCarga && store.globalHistory.length > prevHistLen && prevHistLen > 0) {
+                const ult = store.globalHistory[store.globalHistory.length - 1];
+                if (ult) avisarCambioRecibido(ult);
+            }
+        }
+        setSyncStatus(false, "En línea", false);
+        window.render();
+    }
+
+    window.initFirebaseConnection = function () {
+        if (fbYaConectado) return;
+        if (typeof db !== "undefined" && db) {
+            fbYaConectado = true;
+            return;
+        }
+
+        // Esperar a que carguen las librerías de Firebase, con pausas cada vez más largas
+        if (typeof firebase === "undefined" || !firebase.database) {
+            fbIntentosSDK++;
+            if (fbIntentosSDK > 30) {
+                setSyncStatus(false, "Sin red (Caché)", true);
+                if (!fbEsperandoRed) {
+                    fbEsperandoRed = true;
+                    window.addEventListener("online", function () {
+                        fbEsperandoRed = false;
+                        fbIntentosSDK = 0;
+                        window.initFirebaseConnection();
+                    }, { once: true });
+                }
+                return;
+            }
+            setTimeout(window.initFirebaseConnection, Math.min(250 * fbIntentosSDK, 3000));
+            return;
+        }
+
+        fbYaConectado = true;
+        try {
+            const firebaseConfig = {
+                apiKey: "AIzaSyCgRzOFk8XaCHZZV3brW9AtuJCVBP0cJhA",
+                authDomain: "rutas-operaciones.firebaseapp.com",
+                databaseURL: "https://rutas-operaciones-default-rtdb.firebaseio.com",
+                projectId: "rutas-operaciones"
+            };
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+            db = firebase.database().ref("operaciones_v6");
+
+            firebase.database().ref(".info/connected").on("value", snap => {
+                isConnectedToFirebase = !!snap.val();
+                if (isConnectedToFirebase) setSyncStatus(false, "En línea", false);
+                else setSyncStatus(false, "Sin red (Caché)", true);
+            });
+
+            let primera = true;
+            let snapPendiente = null;
+            let temporizador = null;
+            db.on(
+                "value",
+                snap => {
+                    snapPendiente = snap;
+                    if (temporizador) return; // ya hay una actualización en camino: solo se usa la más reciente
+                    temporizador = setTimeout(function () {
+                        temporizador = null;
+                        const s = snapPendiente;
+                        snapPendiente = null;
+                        const esPrimera = primera;
+                        primera = false;
+                        try {
+                            procesarDatosDeNube(s, esPrimera);
+                        } catch (e) {
+                            console.error("Error procesando datos de la nube:", e);
+                            setSyncStatus(false, "En línea", false);
+                        }
+                    }, primera ? 0 : 400);
+                },
+                () => setSyncStatus(false, "Caché local", true)
+            );
+        } catch (e) {
+            fbYaConectado = false;
+            setSyncStatus(false, "Modo caché", true);
+        }
+    };
+
+    // Si la app vuelve a primer plano y aún no conectó, reintenta de inmediato
+    document.addEventListener("visibilitychange", function () {
+        if (!document.hidden && !fbYaConectado) {
+            fbIntentosSDK = 0;
+            window.initFirebaseConnection();
+        }
+    });
+
+    // ----- Diagnóstico: ¿qué parte de los datos pesa más? -----
+    function pesoKB(obj) {
+        try {
+            const txt = JSON.stringify(obj === undefined ? null : obj);
+            return new Blob([txt]).size / 1024;
+        } catch (e) {
+            return 0;
+        }
+    }
+
+    function formatoPeso(kb) {
+        return kb >= 1024 ? (kb / 1024).toFixed(2) + " MB" : Math.round(kb) + " KB";
+    }
+
+    window.verConsumoDatos = async function () {
+        const secciones = [
+            ["days", "Rol (todas las corridas)"],
+            ["state", "Cambios y estados por día"],
+            ["operadoresMeta", "Datos de operadores (teléfonos, etc.)"],
+            ["operadoresDB", "Lista de operadores"],
+            ["globalHistory", "Historial de cambios"],
+            ["globalFleet", "Flota"],
+            ["knownRoutes", "Rutas que conoce cada operador"],
+            ["unassignedReasons", "Motivos (taller, baja, etc.)"],
+            ["tallerDB", "Unidades en taller"]
+        ];
+        let total = 0;
+        const filas = secciones
+            .map(function (s) {
+                const kb = pesoKB(store[s[0]]);
+                total += kb;
+                return { nombre: s[1], kb: kb };
+            })
+            .sort((a, b) => b.kb - a.kb);
+
+        let cacheLocalKB = 0;
+        try {
+            cacheLocalKB = ((localStorage.getItem(CACHE_KEY) || "").length * 2) / 1024;
+        } catch (e) {}
+
+        let usoNavegador = "";
+        try {
+            if (navigator.storage && navigator.storage.estimate) {
+                const est = await navigator.storage.estimate();
+                if (est && est.usage) usoNavegador = formatoPeso(est.usage / 1024);
+            }
+        } catch (e) {}
+
+        const nHist = Array.isArray(store.globalHistory) ? store.globalHistory.length : 0;
+        const nDias = Object.keys(store.days || {}).length;
+        const nEstados = Object.keys(store.state || {}).length;
+
+        let barras = "";
+        filas.forEach(function (f) {
+            const pct = total > 0 ? Math.max(1, Math.round((f.kb / total) * 100)) : 0;
+            barras += `<div style="margin-bottom:9px;">
+                <div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;">
+                  <span>${f.nombre}</span><span>${formatoPeso(f.kb)} (${pct}%)</span>
+                </div>
+                <div style="height:7px;background:var(--line);border-radius:6px;overflow:hidden;margin-top:3px;">
+                  <div style="height:100%;width:${pct}%;background:var(--accent);"></div>
+                </div>
+              </div>`;
+        });
+
+        openSheet(`<h2>📊 ¿Qué gasta mis datos?</h2>
+          <div style="background:var(--surface-2);padding:12px;border-radius:12px;font-size:13px;line-height:1.7;margin-bottom:12px">
+            <b>Total que se baja de la nube al conectar:</b> hasta ${formatoPeso(total)}<br>
+            <b>Copia guardada en este teléfono:</b> ${formatoPeso(cacheLocalKB)}<br>
+            ${usoNavegador ? `<b>Espacio usado por la app en el teléfono:</b> ${usoNavegador}<br>` : ""}
+            <b>Días del rol:</b> ${nDias} · <b>Días con cambios guardados:</b> ${nEstados} · <b>Registros de historial:</b> ${nHist}
+          </div>
+          ${barras}
+          <div style="font-size:12px;color:var(--ink-soft);margin:10px 0;">
+            Mándame una captura de esta pantalla y te digo exactamente qué parte conviene aligerar, sin borrar nada importante.
+          </div>
+          <button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>`);
+    };
+
+    // ----- Aviso cuando hay una versión nueva de la app en GitHub -----
+    function mostrarBarraVersionNueva() {
+        if (document.getElementById("stuBarraVersion")) return;
+        const bar = document.createElement("div");
+        bar.id = "stuBarraVersion";
+        bar.style.cssText =
+            "position:fixed;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom, 0px) + 74px);z-index:10002;" +
+            "background:#00509d;color:#fff;border-radius:12px;padding:10px 12px;display:flex;align-items:center;" +
+            "gap:10px;font-weight:700;font-size:13px;box-shadow:0 6px 18px rgba(0,0,0,0.3);";
+        bar.innerHTML =
+            `<span style="flex:1;">Hay una versión nueva de la app.</span>` +
+            `<button type="button" id="stuBtnVersion" style="border:none;border-radius:9px;padding:8px 12px;background:#fff;color:#00509d;font-weight:800;cursor:pointer;">Actualizar</button>`;
+        document.body.appendChild(bar);
+        document.getElementById("stuBtnVersion").onclick = function () {
+            location.reload();
+        };
+    }
+
+    function registrarAvisoVersionNueva() {
+        if (!("serviceWorker" in navigator)) return;
+        navigator.serviceWorker.addEventListener("message", function (ev) {
+            if (ev.data && ev.data.type === "stu-version-nueva") mostrarBarraVersionNueva();
+        });
+    }
+
+    // =========================================================================
+    // 8. INICIALIZACIÓN AUTOMÁTICA AL CARGAR LA APP
+    // =========================================================================
+    function initExtras() {
+        enforceMobileViewportAndStyles();
+        injectFullscreenButton();
+        injectFallasButton();
+        injectInicialesSmartButton();
+        enlazarRegistroDeCambiosLocales();
+        enlazarRenderConAvisos();
+        registrarAvisoVersionNueva();
+        if (typeof window.render === "function") {
+            window.render();
+        }
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initExtras);
+    } else {
+        initExtras();
+    }
+})();
