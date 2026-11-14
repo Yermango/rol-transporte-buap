@@ -1,0 +1,13 @@
+{
+  "appId": "mx.estrellaroja.stubuap",
+  "appName": "STU BUAP",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#EEF2F6"
+  },
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
+  }
+}
