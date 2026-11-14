@@ -1,5 +1,5 @@
 # =============================================================================
-# GENERAR APK DE "STU BUAP" CON CAPACITOR
+# GENERAR APK DE "ROL OPERATIVO" (repositorio rol-transporte-buap) CON CAPACITOR
 # Se ejecuta solo cuando cambias index.html (o a mano desde la pestaña Actions).
 # Al terminar, la APK queda en la sección "Releases" del repositorio.
 # Secretos (Settings ➜ Secrets and variables ➜ Actions):
@@ -123,8 +123,8 @@ jobs:
             echo "🔑 Primera vez: se creó tu llave de firma. Descarga **llave-de-firma** (abajo) y guárdala como secreto ANDROID_KEYSTORE_BASE64 (guía, paso 8)." >> $GITHUB_STEP_SUMMARY
           fi
           "$BT"/zipalign -p -f 4 android/app/build/outputs/apk/release/app-release-unsigned.apk alineada.apk
-          "$BT"/apksigner sign --ks firma.jks --ks-key-alias stu --ks-pass env:LLAVE_CLAVE --key-pass env:LLAVE_CLAVE --out STU-BUAP.apk alineada.apk
-          "$BT"/apksigner verify STU-BUAP.apk
+          "$BT"/apksigner sign --ks firma.jks --ks-key-alias stu --ks-pass env:LLAVE_CLAVE --key-pass env:LLAVE_CLAVE --out Rol-Operativo.apk alineada.apk
+          "$BT"/apksigner verify Rol-Operativo.apk
           rm -f firma.jks alineada.apk
 
       - name: 14 · Guardar la llave nueva (solo la primera vez)
@@ -139,6 +139,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-${{ github.run_number }}
-          name: STU BUAP · versión 2.0.${{ github.run_number }}
+          name: Rol Operativo · versión 2.0.${{ github.run_number }}
           body: APK generada automáticamente desde index.html. Descárgala en el teléfono e instálala.
-          files: STU-BUAP.apk
+          files: Rol-Operativo.apk
