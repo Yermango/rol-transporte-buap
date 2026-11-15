@@ -1,0 +1,16 @@
+{
+  "name": "rol-operativo-stu-buap",
+  "private": true,
+  "version": "3.0.0",
+  "description": "APK de Rol Operativo (STU BUAP) generada con Capacitor en GitHub Actions",
+  "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/local-notifications": "^8.0.0",
+    "@capacitor/push-notifications": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0"
+  }
+}
