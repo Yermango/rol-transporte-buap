@@ -7,13 +7,14 @@
    - Si las fuentes de Google tardan, la app NO se queda en blanco esperándolas.
    - v11: diseño 3.0 (logo ger, íconos nuevos, campana).
    - v12: 4.0 (manda el rol, campana por día, vueltas redondas).
+   - v13: 4.1 (Flota con fichas, estados por día, barra sin huecos).
    - v10: al actualizarse ya NO borra lo guardado de tus otras apps de GitHub.
    - v9: la app ahora es un solo index.html (ya no existe extras.js) y muestra
      las notificaciones push del navegador (PC / iPhone agregado a inicio).
    ========================================================================== */
 
 const PREFIJO_CACHE = "stu-buap-pwa-";
-const CACHE_NAME = PREFIJO_CACHE + "v12";
+const CACHE_NAME = PREFIJO_CACHE + "v13";
 const ASSETS = [
   "./",
   "./index.html",
