@@ -853,7 +853,7 @@
   /* ----- Barra de abajo con curva animada ----- */
   .bottom-nav#seg { position: fixed !important; left: 0; right: 0; bottom: 0; top: auto !important; width: 100% !important; height: calc(var(--nav-h) + env(safe-area-inset-bottom)) !important; padding: 0 !important; background: transparent !important; border: 0 !important; box-shadow: none !important; display: block !important; z-index: 60; }
   .nav-curva { position: absolute; inset: 0; overflow: hidden; filter: drop-shadow(0 -2px 6px rgba(11,53,88,.10)); pointer-events: none; }
-  .nav-curva svg { position: absolute; top: 0; height: 100%; width: 2400px; left: calc(var(--nav-x, 50%) - 1200px); transition: left .46s var(--curva); }
+  .nav-curva svg { position: absolute; top: 0; height: 100%; width: 9600px; left: calc(var(--nav-x, 50%) - 4800px); transition: left .46s var(--curva); }
   .nav-curva path { fill: #fff; }
   .nav-circulo { position: absolute; top: -12px; left: calc(var(--nav-x, 50%) - 24px); width: 48px; height: 48px; border-radius: 50%; background: #fff; border: 5px solid var(--sec); color: var(--sec); box-sizing: border-box; display: flex; align-items: center; justify-content: center; transition: left .46s var(--curva), border-color .42s, color .42s; pointer-events: none; z-index: 2; }
   .nav-circulo svg { width: 20px; height: 20px; stroke-width: 2.1; }
@@ -885,7 +885,7 @@
   .camp { margin: -8px -10px 0; }
   .camp-tabs { position: relative; height: calc(84px + env(safe-area-inset-top)); }
   .camp-curva { position: absolute; left: 0; right: 0; top: 0; height: calc(60px + env(safe-area-inset-top)); overflow: hidden; filter: drop-shadow(0 2px 6px rgba(11,53,88,.12)); color: var(--camp-color); transition: color .42s; }
-  .camp-curva svg { position: absolute; bottom: 0; height: 60px; width: 2400px; left: calc((var(--i) + .5) * 100% / 2 - 1200px); transition: left .46s var(--curva); }
+  .camp-curva svg { position: absolute; bottom: 0; height: 60px; width: 9600px; left: calc((var(--i) + .5) * 100% / 2 - 4800px); transition: left .46s var(--curva); }
   .camp-curva::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: env(safe-area-inset-top); background: currentColor; }
   .camp-curva path { fill: currentColor; }
   .camp-botones { position: absolute; left: 0; right: 0; top: env(safe-area-inset-top); height: 60px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1137,6 +1137,23 @@
   .redonda-agregar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; color: var(--ink-soft); }
   .redonda-agregar select { flex: 1; min-width: 120px; padding: 7px; border: 1.5px solid var(--line); border-radius: 9px; font: inherit; font-size: 12.5px; }
   .redonda-agregar button { border: 0; background: var(--navy); color: #fff; border-radius: 9px; padding: 8px 12px; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+
+  /* ===== 4.1: ficha de unidad · Flota con fichas · ventanas centradas en computadora ===== */
+  .fl-uni { border: 0; background: transparent; padding: 0; font: inherit; font-weight: 800; color: var(--navy); cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+  .flota-pagina .excel-table tbody tr { cursor: pointer; }
+  .ficha-avatar.unidad { background: #2E7D4F; color: #fff; }
+  body.pc-view .overlay { align-items: center; justify-content: center; padding: 24px; background: rgba(11, 30, 50, .55); backdrop-filter: blur(3px); }
+  body.pc-view .sheet { width: min(620px, 92vw); max-width: 620px; max-height: 86vh; border-radius: 22px; padding: 26px 28px; box-shadow: 0 24px 60px rgba(11, 30, 50, .35); }
+  body.pc-view #sheet.stu-medio { max-width: 760px; width: min(760px, 94vw); }
+  body.pc-view #sheet.stu-ancho { max-width: 1120px; width: min(1120px, 96vw); }
+  body.pc-view .overlay.show .sheet { animation: apareceVentana .24s cubic-bezier(.2, .8, .3, 1) both; }
+  @keyframes apareceVentana { from { transform: scale(.96) translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+  body.pc-view .ficha .ficha-contacto button { min-height: 48px; }
+  @media (prefers-reduced-motion: reduce) { body.pc-view .overlay.show .sheet { animation: none; } }
+  /* 4.1: en la pantalla Avisos de computadora la barra de color llega de orilla a orilla (sin huecos blancos) */
+  body.pc-view #list > .camp { margin: -14px -24px 0; }
+  body.pc-view #list > .camp > .camp-cab { padding: 0 28px 6px; }
+  body.pc-view #list > .camp > .camp-lista { padding: 0 24px 24px; }
 </style>
 </head>
 <body data-vista="activas">
@@ -1177,7 +1194,7 @@
 <!-- BARRA DE NAVEGACIÓN: la sección elegida sube a un círculo dentro de una curva que se desliza -->
 <nav class="bottom-nav" id="seg" aria-label="Secciones">
   <div class="nav-logo"><img src="logo-ger.png" alt="Logo ger"><b>Rol Operativo</b></div>
-  <div class="nav-curva" aria-hidden="true"><svg viewBox="0 0 2400 80" preserveAspectRatio="none"><path d="M0 14 H1140 C1156 14 1160 16 1165 27 C1174 47 1186 53 1200 53 C1214 53 1226 47 1235 27 C1240 16 1244 14 1260 14 H2400 V80 H0 Z"/></svg></div>
+  <div class="nav-curva" aria-hidden="true"><svg viewBox="0 0 9600 80" preserveAspectRatio="none"><path d="M0 14 H4740 C4756 14 4760 16 4765 27 C4774 47 4786 53 4800 53 C4814 53 4826 47 4835 27 C4840 16 4844 14 4860 14 H9600 V80 H0 Z"/></svg></div>
   <div class="nav-circulo" id="navCirculo" aria-hidden="true"></div>
   <div class="nav-botones">
   <button type="button" class="bnav-btn" data-view="avisos" aria-label="Avisos" onclick="cambiarVista('avisos', this)"><span id="badgeAlerts" class="badge-alert">0</span>
@@ -1441,8 +1458,85 @@ function obtenerPrimerNombreSaludo(opName) {
 }
 
 function getReasonForEntity(nameOrKey) {
-    if (!nameOrKey || !store.unassignedReasons) return "";
+    if (!nameOrKey) return "";
+    // 4.1: primero el estado marcado para el día elegido (falta, permiso, préstamo… valen solo ese día)
+    const delDia = stuEstadoDelDia(nameOrKey);
+    if (delDia !== null) return delDia;
+    if (!store.unassignedReasons) return "";
     return store.unassignedReasons[fbKey(nameOrKey)] || store.unassignedReasons[nameOrKey] || "";
+}
+
+// =========================================================================
+// 4.1 ESTADOS POR DÍA
+//  - Operador: Falta, Permiso, Préstamo, Incapacidad, Vacaciones, Capacitación y Apoyo valen
+//    solo para el día elegido (store.estadosDia[día][operador]). "Disponible" también se guarda
+//    para ese día, así puede anular un estado general sin borrarlo de los demás días.
+//    Baja y Apoyo Turismo siguen siendo generales (como antes).
+//  - Unidad: un estado marcado en Flota (Taller, Siniestro…) vale desde el día elegido hasta que
+//    la regreses a Activa (store.unidadEstados[unidad].lista = [{desde, estado, motivo, ts}]).
+//  Sin marcas, todo se lee igual que antes (seguimiento, letras y taller del archivo).
+// =========================================================================
+const STU_ESTADOS_GENERALES = ["Baja", "Apoyo Turismo"];
+
+function stuEstadoDelDia(nameOrKey) {
+    const dias = store.estadosDia;
+    if (!dias || !store.currentDay) return null;
+    const mapa = dias[fbKey(store.currentDay)];
+    if (!mapa) return null;
+    const v = mapa[fbKey(nameOrKey)];
+    if (v === undefined || v === null) return null;
+    return v === "Disponible" ? "" : String(v);
+}
+
+function stuMarcarEstadoDelDia(claves, estado) {
+    store.estadosDia = store.estadosDia || {};
+    const dia = fbKey(store.currentDay || "");
+    if (!dia) return;
+    store.estadosDia[dia] = store.estadosDia[dia] || {};
+    claves.filter(Boolean).forEach(k => {
+        store.estadosDia[dia][fbKey(k)] = estado || "Disponible";
+    });
+}
+
+// Orden de los días cargados (para "desde este día en adelante")
+function stuOrdenDia(dia) {
+    const k = fbKey(dia || "");
+    const orden = Array.isArray(store.diasOrden) ? store.diasOrden : Object.values(store.diasOrden || {});
+    const i = orden.indexOf(k);
+    if (i >= 0) return i * 1000;
+    const d = store.days && store.days[k];
+    const m = String((d && d.label) || k).match(/(\d{1,2})(?!.*\d)/);
+    if (m) return 500 + Number(m[1]);
+    return Object.keys(store.days || {}).indexOf(k);
+}
+
+function stuEventosUnidad(u) {
+    const reg = store.unidadEstados && store.unidadEstados[fbKey(u)];
+    if (!reg || !reg.lista) return [];
+    return (Array.isArray(reg.lista) ? reg.lista : Object.values(reg.lista)).filter(ev => ev && ev.desde && ev.estado);
+}
+
+// Estado marcado a mano que aplica a la unidad en el día elegido (o null si no hay)
+function stuEventoUnidad(u) {
+    if (!u || u === "VACIO") return null;
+    const lista = stuEventosUnidad(u);
+    if (!lista.length || !store.currentDay) return null;
+    const hoy = stuOrdenDia(store.currentDay);
+    let mejor = null;
+    lista.forEach(ev => {
+        if (!store.days || !store.days[ev.desde]) return; // días que ya no están cargados no cuentan
+        const o = stuOrdenDia(ev.desde);
+        if (o > hoy) return;
+        if (!mejor || o > mejor.o || (o === mejor.o && (ev.ts || 0) >= (mejor.ev.ts || 0))) mejor = { o: o, ev: ev };
+    });
+    return mejor ? mejor.ev : null;
+}
+
+function stuContarEstadosManuales() {
+    let n = 0;
+    Object.values(store.estadosDia || {}).forEach(m => { n += Object.keys(m || {}).length; });
+    Object.keys(store.unidadEstados || {}).forEach(u => { n += stuEventosUnidad(u).length; });
+    return n;
 }
 
 function setReasonForEntity(nameOrKey, reason) {
@@ -1470,6 +1564,8 @@ function isOperadorActivo(opName) {
 
 function isUnidadEnTallerOInhabil(u) {
     if (!u || u === "VACIO") return false;
+    const ev = stuEventoUnidad(u);
+    if (ev) return ev.estado !== "Activa";
     let uStr = fbKey(u);
     if (store.tallerDB && (store.tallerDB[uStr] || store.tallerDB[u])) return true;
     let r = getReasonForEntity(uStr);
@@ -1479,6 +1575,12 @@ function isUnidadEnTallerOInhabil(u) {
 
 function getMotivoUnidad(u) {
     if (!u) return "";
+    const ev = stuEventoUnidad(u);
+    if (ev) {
+        if (ev.estado === "Activa") return "";
+        if (ev.estado === "Taller") return ev.motivo || "Taller";
+        return ev.motivo ? `${ev.estado}: ${ev.motivo}` : ev.estado;
+    }
     let uStr = fbKey(u);
     return (store.tallerDB && (store.tallerDB[uStr] || store.tallerDB[u])) || getReasonForEntity(uStr) || "";
 }
@@ -2523,15 +2625,10 @@ function guardarFlotaDedicadoNucleo() {
 
     let checkU = (finalU && finalU !== "VACIO") ? finalU : origU;
     if(checkU) {
-        let kU = fbKey(checkU);
-        if(stU === "Activa") {
-            setReasonForEntity(kU, null);
-            delete store.tallerDB[kU];
-        } else {
-            setReasonForEntity(kU, stU);
-            store.tallerDB[kU] = stU;
-            finalU = "VACIO";
-        }
+        // 4.1: el estatus de la unidad vale desde el día elegido hasta que la regreses a Activa
+        const antesU = isUnidadEnTallerOInhabil(checkU) ? (stuEventoUnidad(checkU) || {}).estado || "Taller" : "Activa";
+        if (stU !== antesU) stuAgregarEventoUnidad(checkU, stU, "");
+        if(stU !== "Activa") finalU = "VACIO";
     }
 
     let checkOp = (finalOp && finalOp !== "VACIO") ? finalOp : origOp;
@@ -2546,12 +2643,16 @@ function guardarFlotaDedicadoNucleo() {
         store.operadoresMeta[kOp].esBaja = (stOp === "Baja" || puntVal === 0);
 
         let opCode = Object.keys(store.operadoresDB).find(k => store.operadoresDB[k] === checkOp);
-        if(stOp === "Activo") {
-            setReasonForEntity(kOp, null);
-            if(opCode) setReasonForEntity(opCode, null);
-        } else {
+        if (STU_ESTADOS_GENERALES.includes(stOp) || stOp === "Baja") {
             setReasonForEntity(kOp, stOp);
             if(opCode) setReasonForEntity(opCode, stOp);
+        } else {
+            // 4.1: falta, permiso, apoyo, incapacidad… solo el día elegido
+            if (STU_ESTADOS_GENERALES.includes(getReasonForEntity(checkOp))) {
+                setReasonForEntity(kOp, null);
+                if(opCode) setReasonForEntity(opCode, null);
+            }
+            stuMarcarEstadoDelDia([checkOp], stOp === "Activo" ? "" : stOp);
         }
     }
 
@@ -2589,8 +2690,11 @@ function guardarFlotaDedicadoNucleo() {
         unassignedReasons: store.unassignedReasons,
         operadoresMeta: store.operadoresMeta,
         tallerDB: store.tallerDB,
+        estadosDia: store.estadosDia || {},
+        unidadEstados: store.unidadEstados || {},
         globalHistory: store.globalHistory
     });
+    refrescarCampanas(true);
 }
 
 
@@ -3401,7 +3505,7 @@ function stuContarCambiosManuales() {
             n += Object.keys(d[k] || {}).length;
         });
     });
-    return n;
+    return n + stuContarEstadosManuales();
 }
 
 // 4.0: al subir el seguimiento se pregunta si se conservan o se borran los cambios manuales
@@ -3410,7 +3514,7 @@ function stuPreguntarCambiosSeguimiento(file, inputEl, n) {
     const unidades = (store.globalFleet || []).length;
     openSheet(`<h2>Seguimiento listo para cargar</h2>
       <p style="font-size:14px;line-height:1.5;color:var(--ink-soft);margin-top:0;">Se actualizan teléfonos, estados, puntualidad y taller${unidades ? ` de las unidades del seguimiento` : ""}.
-      <br><br>Hay <b>${n} cambio${n === 1 ? "" : "s"} hecho${n === 1 ? "" : "s"} a mano</b> en el rol (unidades y operadores cambiados). ¿Qué hago con ellos?</p>
+      <br><br>Hay <b>${n} cambio${n === 1 ? "" : "s"} hecho${n === 1 ? "" : "s"} a mano</b> (unidades y operadores cambiados, y estatus marcados en Flota). ¿Qué hago con ellos?</p>
       <button type="button" class="btn-primary" style="background:var(--navy);" onclick="stuSeguimientoDecidir(false)">Conservar mis cambios</button>
       <button type="button" class="btn-outline" style="border-color:#A3122A;color:#A3122A;" onclick="stuSeguimientoDecidir(true)">Borrar los cambios manuales</button>
       <button type="button" class="btn-outline" onclick="stuSeguimientoDecidir(null)">Cancelar</button>`);
@@ -3488,6 +3592,11 @@ async function handleExcel(file, type, inputEl, borrarCambios) {
                 store.globalFleet = [];
                 store.unassignedReasons = {};
 
+                if (borrarCambios) {
+                    // 4.1: también se borran los estatus marcados a mano (por día y de unidades)
+                    store.estadosDia = {};
+                    store.unidadEstados = {};
+                }
                 if (borrarCambios && store.state) {
                     Object.keys(store.state).forEach(day => {
                         store.state[day].unitOverride = {};
@@ -3817,6 +3926,7 @@ async function handleExcel(file, type, inputEl, borrarCambios) {
                     };
                 });
                 store.currentDay = fbKey(result.days[0].key);
+                store.diasOrden = result.days.map(d => fbKey(d.key)); // 4.1: orden del archivo
                 store.globalHistory = backupHistory;
 
                 window.render();
@@ -4151,7 +4261,7 @@ function renderMenu() {
     if (!lista) return;
     const trips = store.days?.[store.currentDay]?.trips || [];
     const totalHist = typeof getGlobalHistory === "function" ? getGlobalHistory().length : 0;
-    const totalTaller = Object.keys(store.tallerDB || {}).length;
+    const totalTaller = FLOTA_FIJA.filter(f => isUnidadEnTallerOInhabil(String(f.u))).length;
     const totalOpsActivos = Object.values(store.operadoresDB || {}).filter(op => isOperadorActivo(op)).length;
     let opsConTel = 0;
     Object.values(store.operadoresDB || {}).forEach(opName => {
@@ -4490,7 +4600,7 @@ function renderCampana(destino) {
         <span>${p.nombre}</span><em>${n[k]}</em></button>`).join("");
     destino.innerHTML = `<div class="camp" style="--i:${i};--camp-color:${CAMPANA_PESTANAS[i].color};">
         <div class="camp-tabs">
-          <div class="camp-curva" aria-hidden="true"><svg viewBox="0 0 2400 60" preserveAspectRatio="none"><path d="M0 0 H2400 V60 H1260 C1244 60 1240 58 1235 47 C1226 27 1214 21 1200 21 C1186 21 1174 27 1165 47 C1160 58 1156 60 1140 60 H0 Z"/></svg></div>
+          <div class="camp-curva" aria-hidden="true"><svg viewBox="0 0 9600 60" preserveAspectRatio="none"><path d="M0 0 H9600 V60 H4860 C4844 60 4840 58 4835 47 C4826 27 4814 21 4800 21 C4786 21 4774 27 4765 47 C4760 58 4756 60 4740 60 H0 Z"/></svg></div>
           <div class="camp-botones">${botones}</div>
           <div class="camp-circulo" aria-hidden="true">${campanaHtmlCirculo(i, n)}</div>
         </div>
@@ -4603,8 +4713,129 @@ function stuAbrirFichaOperador(nombre, clave, unidad) {
         <div class="ficha-sec">Su rol de hoy (${corridas.length})</div>
         <div class="ficha-corridas">${filas}</div>
         <button type="button" class="btn-outline" onclick="stuCambiarEstadoOp(decodeURIComponent('${safe}'))">Cambiar estado (falta, préstamo, permiso…)</button>
+        <button type="button" class="btn-outline" onclick="abrirModalFlotaDedicado(decodeURIComponent('${tabAttr(unidadRol || titular || "")}'), decodeURIComponent('${tabAttr(m.clave || clave || "")}'), decodeURIComponent('${safe}'))">Editar asignación en Flota</button>
         <button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>
       </div>`);
+}
+
+// =========================================================================
+// 4.1 FICHA DE UNIDAD (se abre al tocar la unidad en Flota)
+//     Mismo estilo que la ficha del operador. El estatus vale desde el día elegido
+//     hasta que la regreses a Activa, y se refleja en Activas, Ocultas, Avisos y Tablero.
+// =========================================================================
+const STU_ESTADOS_UNIDAD = [
+    { e: "Activa", bg: "#DDF2E3", fg: "#1F6B3A" },
+    { e: "Taller", bg: "#FDF0DC", fg: "#8A4B08" },
+    { e: "Siniestro", bg: "#FBE5E8", fg: "#A3122A" },
+    { e: "Falla mecánica", bg: "#FDE7D6", fg: "#9A3412" },
+    { e: "Sin diésel", bg: "#E6EEF9", fg: "#1F4E8C" }
+];
+
+function stuEstadoUnidadActual(u) {
+    const ev = stuEventoUnidad(u);
+    if (ev) return { estado: ev.estado, motivo: ev.motivo || "", desde: ev.desde, manual: true };
+    if (!isUnidadEnTallerOInhabil(u)) return { estado: "Activa", motivo: "", desde: "", manual: false };
+    const mot = getMotivoUnidad(u) || "Taller";
+    const fijo = STU_ESTADOS_UNIDAD.find(x => x.e !== "Activa" && x.e.toLowerCase() === String(mot).toLowerCase());
+    return { estado: fijo ? fijo.e : "Taller", motivo: fijo ? "" : mot, desde: "", manual: false };
+}
+
+function stuAgregarEventoUnidad(u, estado, motivo) {
+    store.unidadEstados = store.unidadEstados || {};
+    const k = fbKey(u);
+    const lista = stuEventosUnidad(u).filter(ev => ev.desde !== fbKey(store.currentDay)); // uno por día
+    lista.push({ desde: fbKey(store.currentDay), estado: estado, motivo: motivo || "", ts: Date.now() });
+    store.unidadEstados[k] = { lista: lista };
+}
+
+function stuAbrirFichaUnidad(u, clave, nombre) {
+    if (!u) return;
+    const est = stuEstadoUnidadActual(u);
+    const col = STU_ESTADOS_UNIDAD.find(x => x.e === est.estado) || STU_ESTADOS_UNIDAD[1];
+    const f = FLOTA_FIJA.find(x => String(x.u) === String(u));
+    const ds = getDayState();
+    const base = tabBaseline();
+    const ahora = asgAhora();
+    const corridas = asgTrips()
+        .map(t => ({ t: t, a: resolveTripAssignment(t, ds, base) }))
+        .filter(x => String(x.a.unit) === String(u))
+        .sort((x, y) => x.t.h.localeCompare(y.t.h));
+    const sigIdx = corridas.findIndex(x => hhmmToMins(x.t.h) >= ahora);
+    const ops = Array.from(new Set(corridas.map(x => x.a.op).filter(Boolean)));
+    const filas = corridas.length
+        ? corridas.map((x, k) => {
+              const st = getTripState(x.t.id);
+              const hecha = st.status === "formado" || hhmmToMins(x.t.h) < ahora - OCULTAR_FORMADO_MIN;
+              const sig = k === sigIdx;
+              return `<div class="ficha-fila ${hecha ? "hecha" : ""} ${sig ? "sig" : ""}"><span class="mono">${escHtml(x.t.h)}</span><span>${escHtml(formatRouteName(x.t.o, x.t.d))}</span><small>${x.a.op ? escHtml(nombreBonito(x.a.op)) : "Sin operador"}</small></div>`;
+          }).join("")
+        : `<div class="ficha-vacio">Sin corridas en el rol de este día.</div>`;
+    const diaTxt = d => {
+        const dd = store.days && store.days[d];
+        return dd && dd.label ? dd.label : d;
+    };
+    let detalle = "";
+    if (est.estado !== "Activa") {
+        detalle = est.manual
+            ? `Desde ${escHtml(diaTxt(est.desde))}${est.motivo ? " · " + escHtml(est.motivo) : ""}. Sigue así hasta que la regreses a Activa.`
+            : `Según el archivo de datos${est.motivo ? " · " + escHtml(est.motivo) : ""}${stuDiasTaller(u) ? " · " + escHtml(stuDiasTaller(u)) : ""}.`;
+        if (corridas.length) detalle += ` Tiene ${corridas.length} corrida(s) que necesitan otra unidad.`;
+    } else if (est.manual) {
+        detalle = `Regresó a Activa desde ${escHtml(diaTxt(est.desde))}.`;
+    }
+    const safeU = tabAttr(u);
+    const botones = STU_ESTADOS_UNIDAD.map(x => `<button type="button" class="stu-est-btn ${x.e === est.estado ? "sel" : ""}" style="background:${x.bg};color:${x.fg};" onclick="stuGuardarEstadoUnidad(decodeURIComponent('${safeU}'), '${x.e}')">${escHtml(x.e)}</button>`).join("");
+
+    openSheet(`<div class="ficha">
+        <div class="ficha-cab">
+          <div class="ficha-avatar unidad"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${MENU_ICO.bus}</svg></div>
+          <div class="ficha-quien">
+            <h2>Unidad ${escHtml(u)}</h2>
+            <div class="ficha-datos">${f && f.p ? `<span>Placa <b class="mono">${escHtml(f.p)}</b></span>` : ""}<span class="ficha-chip" style="background:${col.bg};color:${col.fg}">${escHtml(est.estado)}</span></div>
+          </div>
+        </div>
+        ${detalle ? `<div class="ficha-estado" style="background:${col.bg};color:${col.fg}">${detalle}</div>` : ""}
+        <div class="ficha-sec">¿Cómo está la unidad? · desde ${escHtml(diaTxt(store.currentDay))}</div>
+        <div class="stu-est-grid">${botones}</div>
+        <input type="text" id="stuMotivoUnidad" class="input-field" placeholder="Motivo (opcional): frenos, llanta, choque…" value="${escHtml(est.estado !== "Activa" ? est.motivo : "")}" style="margin:8px 0 4px;">
+        <div class="ficha-linea"><span>La maneja hoy</span><b>${ops.length ? ops.map(o => escHtml(nombreBonito(o))).join(", ") : "—"}</b></div>
+        <div class="ficha-sec">Su rol de hoy (${corridas.length})</div>
+        <div class="ficha-corridas">${filas}</div>
+        <button type="button" class="btn-outline" onclick="abrirModalFlotaDedicado(decodeURIComponent('${safeU}'), decodeURIComponent('${tabAttr(clave || "")}'), decodeURIComponent('${tabAttr(nombre || "")}'))">Editar asignación en Flota</button>
+        <button type="button" class="btn-outline" onclick="closeSheet()">Cerrar</button>
+      </div>`);
+}
+
+function stuGuardarEstadoUnidad(u, estado) {
+    const antes = stuEstadoUnidadActual(u);
+    const motivo = ((document.getElementById("stuMotivoUnidad") || {}).value || "").trim();
+    const motivoFinal = estado === "Activa" ? "" : motivo;
+    if (antes.estado === estado && (antes.motivo || "") === motivoFinal) {
+        closeSheet();
+        return;
+    }
+    stuAgregarEventoUnidad(u, estado, motivoFinal);
+    registrarEnHistorial({
+        tripTime: "Todo el día",
+        route: "Estado de unidad",
+        scope: `Antes: ${antes.estado} · ahora: ${estado}${motivoFinal ? " (" + motivoFinal + ")" : ""} · desde ${(store.days[store.currentDay] || {}).label || store.currentDay}`,
+        oldUnit: u,
+        newUnit: u,
+        oldOp: "U-" + u,
+        newOp: "U-" + u + " (" + estado + ")",
+        reason: estado,
+        type: "Estado"
+    });
+    const ds = getDayState();
+    closeSheet();
+    window.render();
+    refrescarCampanas(true);
+    savePatch({
+        unidadEstados: store.unidadEstados || {},
+        [`state/${fbKey(store.currentDay)}/unitChanges`]: ds.unitChanges,
+        globalHistory: store.globalHistory
+    });
+    showAggressiveToast(estado === "Activa" ? `U-${u} regresó a Activa.` : `U-${u} marcada: ${estado}.`);
 }
 
 // =========================================================================
@@ -5922,7 +6153,7 @@ function stuResumenTallerHtml() {
 }
 
 // ----- Versión visible (para comprobar que el teléfono ya tiene el archivo nuevo) -----
-const STU_VERSION = "4.0 · Manda el rol · Campana por día · Vueltas redondas";
+const STU_VERSION = "4.1 · Flota con fichas · Estados por día · Barra sin huecos";
 
 // ----- Actualizar SOLO taller y unidades faltantes (sin tocar operadores ni los cambios del día) -----
 async function stuActualizarSoloTaller(input) {
@@ -6035,6 +6266,9 @@ function stuCamposExtra(raw, soloVacios) {
     poner("tiemposManual", raw.tiemposManual && typeof raw.tiemposManual === "object" ? raw.tiemposManual : {});
     poner("tiemposPreferencia", raw.tiemposPreferencia || "real");
     poner("lugaresRedondos", raw.lugaresRedondos && typeof raw.lugaresRedondos === "object" ? raw.lugaresRedondos : null);
+    poner("estadosDia", raw.estadosDia && typeof raw.estadosDia === "object" ? raw.estadosDia : {});
+    poner("unidadEstados", raw.unidadEstados && typeof raw.unidadEstados === "object" ? raw.unidadEstados : {});
+    poner("diasOrden", raw.diasOrden ? (Array.isArray(raw.diasOrden) ? raw.diasOrden : Object.values(raw.diasOrden)) : []);
     stuTiemposVer++;
     stuSincronizarEstadosCriticos();
 }
@@ -6452,8 +6686,8 @@ function renderFlota() {
         let safeK = encodeURIComponent(r.k || '');
         let safeN = encodeURIComponent(r.n || '');
         return `
-        <tr class="${r.cat}" onclick="abrirModalFlotaDedicado(decodeURIComponent('${safeU}'), decodeURIComponent('${safeK}'), decodeURIComponent('${safeN}'))">
-            <td class="mono" style="font-weight:800;">${r.u ? 'U-'+r.u : '---'}</td>
+        <tr class="${r.cat}" onclick="${r.n ? `stuAbrirFichaOperador(decodeURIComponent('${safeN}'), decodeURIComponent('${safeK}'), decodeURIComponent('${safeU}'))` : r.u ? `stuAbrirFichaUnidad(decodeURIComponent('${safeU}'), decodeURIComponent('${safeK}'), '')` : `abrirModalFlotaDedicado(decodeURIComponent('${safeU}'), decodeURIComponent('${safeK}'), decodeURIComponent('${safeN}'))`}">
+            <td class="mono" style="font-weight:800;">${r.u ? `<button type="button" class="fl-uni" onclick="event.stopPropagation(); stuAbrirFichaUnidad(decodeURIComponent('${safeU}'), decodeURIComponent('${safeK}'), decodeURIComponent('${safeN}'))">U-${escHtml(r.u)}</button>` : '---'}</td>
             <td class="mono">${r.k || '---'}</td>
             <td class="fl-nombre">${r.n ? `<button type="button" class="fl-op" onclick="event.stopPropagation(); stuAbrirFichaOperador(decodeURIComponent('${safeN}'), decodeURIComponent('${safeK}'), decodeURIComponent('${safeU}'))"><b>${escHtml(nombreBonito(r.n))}</b></button>` : '<b>---</b>'}</td>
             <td class="fl-estado">${r.st}</td>
@@ -6946,7 +7180,15 @@ function stuCambiarEstadoOp(nombre) {
 function stuGuardarEstadoOp(nombre, estado) {
     const anterior = getReasonForEntity(nombre) || "Disponible";
     const nuevo = estado === "Disponible" ? "" : estado;
-    setReasonForEntity(fbKey(nombre), nuevo || null);
+    if (STU_ESTADOS_GENERALES.includes(estado) || STU_ESTADOS_GENERALES.includes(anterior)) {
+        // Baja / Apoyo Turismo: general, como antes
+        setReasonForEntity(fbKey(nombre), nuevo || null);
+        stuMarcarEstadoDelDia([nombre], null);
+        if (store.estadosDia && store.estadosDia[fbKey(store.currentDay)]) delete store.estadosDia[fbKey(store.currentDay)][fbKey(nombre)];
+    } else {
+        // 4.1: falta, permiso, préstamo… valen solo el día elegido
+        stuMarcarEstadoDelDia([nombre], nuevo);
+    }
     stuSincronizarEstadosCriticos();
     const rec = registrarEnHistorial({
         tripTime: "Todo el día",
@@ -6960,8 +7202,10 @@ function stuGuardarEstadoOp(nombre, estado) {
     const ds = getDayState();
     closeSheet();
     window.render();
+    refrescarCampanas(true);
     savePatch({
         unassignedReasons: store.unassignedReasons || {},
+        estadosDia: store.estadosDia || {},
         [`state/${fbKey(store.currentDay)}/unitChanges`]: ds.unitChanges,
         globalHistory: store.globalHistory
     });
