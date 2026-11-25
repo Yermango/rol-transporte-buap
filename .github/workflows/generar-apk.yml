@@ -162,6 +162,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-${{ github.run_number }}
-          name: Rol Operativo · versión 4.8.${{ github.run_number }}
+          name: Rol Operativo · versión 5.0.${{ github.run_number }}
           body: APK generada automáticamente desde index.html. Descárgala en el teléfono e instálala.
           files: Rol-Operativo.apk
