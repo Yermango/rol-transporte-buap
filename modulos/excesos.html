@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Excesos de Velocidad STU</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans+Condensed:wght@500;600;700;800&family=Fira+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#1f3a8a; --navy-d:#172c6b; --red:#e30613; --sky:#29abe2;
+  --bg:#ffffff; --band:#eef2f8; --line:#d9e0ec; --ink:#1b2330; --ink2:#4a5568; --muted:#8a94a6;
+  --leve:#E3A008; --mod:#E0631A; --crit:#A3122A; --perif:#29A3DA;
+  --leve-bg:#fff3c4; --mod-bg:#ffe1cc; --crit-bg:#f9d0d6; --perif-bg:#d6eefa;
+  --ok:#2e7d32;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Fira Sans',system-ui,sans-serif;font-size:14px}
+.cond{font-family:'Fira Sans Condensed','Fira Sans',sans-serif}
+/* ===== Encabezado ===== */
+header{position:relative;padding:18px 24px 14px 210px;min-height:112px;display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.stripes{position:absolute;left:0;top:0;width:210px;height:112px;overflow:hidden;pointer-events:none}
+.stripes i{position:absolute;top:-40px;height:220px;transform:skewX(-38deg);transform-origin:top left}
+.stripes .s1{left:-60px;width:62px;background:var(--navy)}
+.stripes .s2{left:14px;width:20px;background:var(--sky)}
+.stripes .s3{left:46px;width:12px;background:var(--red)}
+.logo{position:absolute;left:205px;top:22px;height:58px}
+.brand{display:flex;align-items:center;gap:22px;margin-left:175px}
+.brand .sep{width:1px;height:58px;background:var(--line)}
+h1{margin:0;font:800 34px/1 'Fira Sans Condensed',sans-serif;color:var(--navy);letter-spacing:.2px}
+h1 b{color:var(--red)}
+.sub{margin-top:8px;font-weight:600;color:var(--ink2);font-size:14px}
+.values{position:absolute;right:24px;top:12px;font:600 12px 'Fira Sans Condensed',sans-serif;color:var(--muted);letter-spacing:.4px;text-align:right}
+.values .who{margin-top:10px;color:var(--navy);font-size:15px}
+/* ===== Pestañas ===== */
+nav{margin:6px 0 0 24px;display:inline-flex;gap:4px;padding:8px 26px 8px 26px;background:var(--navy);clip-path:polygon(18px 0,100% 0,calc(100% - 18px) 100%,0 100%);position:relative;flex-wrap:wrap;max-width:calc(100% - 48px)}
+nav::after{content:'';position:absolute;right:0;top:0;bottom:0;width:22px;background:var(--red);clip-path:polygon(70% 0,100% 0,30% 100%,0 100%)}
+nav button{border:0;background:transparent;color:#fff;font:700 15px 'Fira Sans Condensed',sans-serif;letter-spacing:.4px;padding:11px 16px;border-radius:3px;cursor:pointer;display:flex;align-items:center;gap:8px;text-transform:uppercase}
+nav button.on{background:#fff;color:var(--navy)}
+nav button:not(.on):hover{background:rgba(255,255,255,.12)}
+nav .cnt{background:#e6ebf5;color:var(--navy);border-radius:3px;padding:1px 7px;font-size:13px}
+nav button:not(.on) .cnt{background:rgba(255,255,255,.18);color:#fff}
+nav .cnt.r{background:var(--red)!important;color:#fff!important}
+/* ===== Barra de controles ===== */
+.ctrl{background:var(--band);border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:14px;padding:14px 24px;display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+.fld label{display:block;font-weight:600;font-size:13px;color:var(--ink2);margin-bottom:6px}
+.fld select,.fld input{height:42px;border:1px solid var(--line);border-radius:3px;background:#fff;padding:0 12px;font:600 14px 'Fira Sans',sans-serif;color:var(--ink);min-width:150px}
+.fld input{min-width:230px}
+.btns{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap}
+.btn{height:42px;border:1px solid var(--line);background:#fff;color:var(--navy);font:600 14px 'Fira Sans',sans-serif;padding:0 16px;border-radius:3px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.btn:hover{border-color:var(--navy)}
+.btn.pri{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn.dash{border-style:dashed;border-color:var(--navy)}
+.btn.wa{color:#1f8f4e}
+.chiprow{padding:10px 24px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--line)}
+.dchip{background:var(--navy);color:#fff;font:700 13px 'Fira Sans Condensed',sans-serif;padding:6px 12px;border-radius:3px}
+.src-note{font-size:12.5px;color:var(--muted)}
+main{padding:20px 24px 40px}
+.view{display:none}.view.on{display:block}
+/* ===== KPI ===== */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:22px}
+.kpi{border:1px solid var(--line);border-top:4px solid var(--navy);border-radius:3px;padding:16px 20px 18px;background:#fff}
+.kpi.r{border-top-color:var(--red)}.kpi.s{border-top-color:var(--sky)}.kpi.o{border-top-color:var(--mod)}
+.kpi h4{margin:0 0 10px;font:700 14px 'Fira Sans Condensed',sans-serif;color:var(--navy);letter-spacing:.4px;text-transform:uppercase}
+.kpi .v{font:800 38px/1 'Fira Sans Condensed',sans-serif;color:var(--navy)}
+.kpi .d{margin-top:8px;color:var(--ink2);font-size:13.5px}
+.kpi .d a{color:var(--navy);font-weight:600;cursor:pointer;text-decoration:none}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.tag{font:600 12.5px 'Fira Sans',sans-serif;padding:4px 9px;border-radius:2px;display:inline-flex;align-items:center;gap:6px}
+.tag i{width:9px;height:9px;border-radius:2px;display:inline-block}
+.t-Leve{background:var(--leve-bg);color:#6b4a00}.t-Leve i{background:var(--leve)}
+.t-Moderado{background:var(--mod-bg);color:#7a2e00}.t-Moderado i{background:var(--mod)}
+.t-Crítico{background:var(--crit);color:#fff}.t-Crítico i{background:#fff}
+.t-Periférico{background:var(--perif-bg);color:#0b4f73}.t-Periférico i{background:var(--perif)}
+.t-src{background:#e6ebf5;color:var(--navy)}
+/* ===== Secciones ===== */
+.sec{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:26px 0 10px}
+.sec h2{margin:0;background:var(--navy);color:#fff;font:700 19px 'Fira Sans Condensed',sans-serif;letter-spacing:.3px;padding:11px 44px 11px 20px;clip-path:polygon(0 0,100% 0,calc(100% - 14px) 100%,0 100%);text-transform:uppercase}
+.hint{color:var(--ink2);font-size:13.5px;margin:0 0 12px}
+.grid2{display:grid;grid-template-columns:1.25fr 1fr;gap:16px}
+.card{border:1px solid var(--line);border-radius:3px;padding:16px 18px;background:#fff;min-width:0}
+.card h3{margin:0 0 4px;font:700 15px 'Fira Sans Condensed',sans-serif;color:var(--navy);text-transform:uppercase;letter-spacing:.3px}
+.card .cap{color:var(--muted);font-size:12.5px;margin-bottom:12px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2);margin-bottom:10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+/* columnas por hora */
+.hbars{display:flex;align-items:flex-end;gap:4px;height:230px;border-bottom:1px solid var(--line);margin-top:22px;position:relative}
+.hcol{flex:1;display:flex;flex-direction:column-reverse;gap:2px;height:100%;justify-content:flex-start;position:relative;cursor:default;min-width:0}
+.hcol .seg{width:100%;}
+.hcol .seg:last-child{border-radius:4px 4px 0 0}
+.hcol .tot{position:absolute;left:0;right:0;text-align:center;font-size:11px;color:var(--ink2);font-weight:600}
+.hlab{display:flex;gap:4px;margin-top:6px}
+.hlab span{flex:1;text-align:center;font-size:11px;color:var(--muted);min-width:0}
+.gridl{position:absolute;left:0;right:0;border-top:1px dashed #e6eaf1;font-size:10px;color:var(--muted)}
+/* barras horizontales */
+.rbar{display:grid;grid-template-columns:minmax(120px,210px) 1fr 40px;gap:10px;align-items:center;padding:5px 0;cursor:pointer;border-radius:3px}
+.rbar:hover{background:#f5f7fb}
+.rbar .nm{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rbar .nm small{color:var(--muted);margin-left:4px}
+.rbar .tr{display:flex;gap:2px;height:16px}
+.rbar .tr div:last-child{border-radius:0 4px 4px 0}
+.rbar .n{font-weight:700;font-size:13px;text-align:right}
+/* tablas */
+.tw{overflow:auto;border:1px solid var(--line);border-radius:3px;max-height:640px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+thead th{position:sticky;top:0;background:var(--navy);color:#fff;font:600 14px 'Fira Sans Condensed',sans-serif;text-align:left;padding:10px 10px;white-space:nowrap;cursor:pointer;user-select:none;letter-spacing:.2px;z-index:1}
+thead th.num,td.num{text-align:right}
+thead th .ar{opacity:.55;font-size:11px;margin-left:4px}
+tbody td{padding:8px 10px;border-bottom:1px solid #e8ecf3;white-space:nowrap}
+tbody tr:hover td{background:#f7f9fc}
+td.sev{font-weight:700;padding:0}
+td.sev div{padding:8px 10px}
+td.loc{white-space:normal;min-width:260px;max-width:380px;color:var(--ink2);font-size:12.5px}
+td .muted{color:var(--muted)}
+.conf{font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:10px}
+.c-Alta{background:#dff1e1;color:#1d5e22}.c-Media{background:#fff3c4;color:#6b4a00}.c-Baja{background:#f1f3f7;color:#4a5568}.c-Sin{background:#f9d0d6;color:#7a0c1c}
+a.map{color:var(--navy);font-weight:600;text-decoration:none}
+.clk{cursor:pointer}.clk:hover td{background:#eef3ff!important}
+.vbig{font-weight:800;font-family:'Fira Sans Condensed',sans-serif;font-size:15px}
+.sc{display:inline-block;min-width:38px;text-align:center;padding:3px 6px;border-radius:3px;font-weight:700;color:#fff;background:var(--navy)}
+.empty{padding:30px;text-align:center;color:var(--muted)}
+.foot{color:var(--muted);font-size:12.5px;margin-top:10px;line-height:1.5}
+#tip{position:fixed;pointer-events:none;background:#172c6b;color:#fff;padding:8px 10px;border-radius:4px;font-size:12.5px;line-height:1.45;z-index:50;display:none;box-shadow:0 4px 14px rgba(0,0,0,.2);max-width:260px}
+/* modal carga */
+.modal{position:fixed;inset:0;background:rgba(15,25,50,.45);display:none;align-items:flex-start;justify-content:center;z-index:60;padding:16px;overflow-y:auto}
+.modal.on{display:flex}
+.mbox{background:#fff;border-radius:4px;max-width:620px;width:100%;padding:20px 22px;border-top:4px solid var(--navy);margin:auto 0}
+.mbox h3{margin:0 0 6px;font:800 22px 'Fira Sans Condensed',sans-serif;color:var(--navy)}
+.slot{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,auto);gap:4px 12px;align-items:center;border:1px solid var(--line);border-radius:3px;padding:9px 12px;margin-top:8px}
+.slot>div{min-width:0}
+.slot .st{text-align:right;overflow-wrap:anywhere;max-width:260px}
+.mgrupo{margin:14px 0 0;font:700 12px 'Fira Sans Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+@media (max-width:560px){.slot{grid-template-columns:minmax(0,1fr)}.slot .st{text-align:left;max-width:none}.mbox{padding:16px}.mact{flex-wrap:wrap}.mact .btn{flex:1}}
+.slot b{font-size:13.5px;color:var(--navy)}
+.slot .st{font-size:12.5px;color:var(--muted)}
+.slot .st.ok{color:var(--ok);font-weight:600}
+.drop{display:block;margin-top:14px;border:2px dashed var(--navy);border-radius:4px;padding:22px;text-align:center;color:var(--navy);font-weight:600;cursor:pointer;background:#f5f8ff}
+.mact{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 18px;border-radius:4px;font-weight:600;display:none;z-index:70}
+/* ===== 4.8 · INFOGRAFÍA (estilo cartel de seguridad vial) ===== */
+:root{--ig-tan:#E8D7AE;--ig-tan2:#DCC793;--ig-char:#26272B;--ig-slate:#44474F;--ig-yel:#F7C600;--ig-red:#E1251B;--ig-cream:#FFF8E6}
+.ig-hero{position:relative;background:var(--ig-tan);border-radius:14px;padding:22px 22px 0;overflow:hidden;color:var(--ig-char)}
+.ig-hero::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(38,39,43,.10) 1.2px,transparent 1.4px);background-size:9px 9px;pointer-events:none}
+.ig-hero>*{position:relative}
+.ig-kick{font:700 13px 'Fira Sans Condensed',sans-serif;letter-spacing:1.4px;text-transform:uppercase;color:var(--ig-slate)}
+.ig-burbuja{position:relative;display:inline-block;margin:12px 0 18px;background:var(--ig-cream);border:3px solid var(--ig-char);border-radius:26px;padding:16px 22px 18px;max-width:560px}
+.ig-burbuja::after{content:"";position:absolute;left:38px;bottom:-21px;width:26px;height:22px;background:var(--ig-cream);border:3px solid var(--ig-char);border-top:0;border-right:0;transform:skewX(-35deg);clip-path:polygon(0 0,100% 0,0 100%)}
+.ig-burbuja b{display:block;font:800 40px/0.95 'Fira Sans Condensed',sans-serif;letter-spacing:-.5px;text-transform:uppercase}
+.ig-burbuja span{display:block;margin-top:6px;font-size:15px;font-weight:600;line-height:1.35}
+.ig-burbuja strong{font:800 22px 'Fira Sans Condensed',sans-serif;color:var(--ig-red)}
+.ig-embudo{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;align-items:end;margin:22px auto 0;max-width:640px;height:300px}
+.ig-col{position:relative;color:#fff;text-align:center;padding:14px 8px 0;display:flex;flex-direction:column;align-items:center;clip-path:polygon(0 0,100% 0,100% 82%,64% 100%,36% 100%,0 82%)}
+.ig-col .num{font:800 46px/1 'Fira Sans Condensed',sans-serif}
+.ig-col .num small{font-size:22px;margin-left:2px}
+.ig-col .lbl{margin-top:6px;font:600 14px/1.25 'Fira Sans',sans-serif;opacity:.95}
+.ig-col .rng{margin-top:4px;font:700 12px 'Fira Sans Condensed',sans-serif;letter-spacing:.6px;opacity:.85}
+.ig-col.l{background:var(--ig-slate)}.ig-col.m{background:#2F3A57}.ig-col.c{background:var(--ig-red)}
+.ig-col .num-top{position:absolute;top:-44px;left:0;right:0;font:800 34px 'Fira Sans Condensed',sans-serif;color:var(--ig-char)}
+.ig-letrero{position:relative;margin:10px auto 0;max-width:520px;background:var(--ig-yel);border:6px solid var(--ig-char);border-radius:10px;padding:14px 16px 12px;text-align:center;box-shadow:0 0 0 4px var(--ig-yel)}
+.ig-letrero::before{content:"";position:absolute;left:-10px;right:-10px;top:-22px;height:12px;background:repeating-linear-gradient(-45deg,var(--ig-char) 0 12px,var(--ig-yel) 12px 24px)}
+.ig-letrero b{display:block;font:800 30px/1 'Fira Sans Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;color:var(--ig-char)}
+.ig-letrero span{display:block;margin-top:4px;font-weight:600;font-size:13.5px}
+.ig-cinta{height:18px;margin:22px -22px 0;background:repeating-linear-gradient(-45deg,var(--ig-char) 0 16px,var(--ig-yel) 16px 32px)}
+.ig-blk{margin-top:22px}
+.ig-h{display:flex;align-items:center;gap:10px;font:800 21px 'Fira Sans Condensed',sans-serif;text-transform:uppercase;color:var(--ig-char);letter-spacing:.3px}
+.ig-n{width:32px;height:32px;border-radius:50%;background:var(--ig-red);color:#fff;display:grid;place-items:center;font-size:17px;flex:none}
+.ig-p{margin:6px 0 12px 42px;color:var(--ink2);font-size:13.5px;max-width:70ch}
+.ig-datos{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px}
+.ig-dato{background:var(--ig-char);color:#fff;border-radius:12px;padding:16px 18px;min-width:0}
+.ig-dato h4{margin:0 0 8px;font:700 13px 'Fira Sans Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase;color:var(--ig-yel)}
+.ig-dato .v{font:800 40px/1 'Fira Sans Condensed',sans-serif}
+.ig-dato .v small{font-size:17px;font-weight:700;margin-left:3px}
+.ig-dato .d{margin-top:8px;font-size:13px;line-height:1.45;color:#D9DBE0}
+.ig-dato .d b{color:#fff}
+.ig-velo{display:flex;gap:14px;align-items:center}
+.ig-velo svg{width:128px;height:84px;flex:none}
+.ig-senales{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px}
+.ig-senal{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 8px 10px;text-align:center;min-width:0}
+.ig-senal svg{width:62px;height:62px}
+.ig-senal .c{font:800 26px/1 'Fira Sans Condensed',sans-serif;color:var(--ig-char);margin-top:6px}
+.ig-senal .t{font-size:11.5px;color:var(--ink2);margin-top:2px}
+.ig-senal .bar{height:6px;background:#EEF0F4;border-radius:3px;margin:8px 6px 0;overflow:hidden}
+.ig-senal .bar i{display:block;height:100%;background:var(--ig-red)}
+.ig-senal.perif{background:#FFF7D1;border-color:#EAD58A}
+.ig-tw{max-height:560px}
+.ig-piv thead th{background:var(--ig-char)!important;text-align:center}
+.ig-piv thead th{text-align:center}
+.ig-piv td{text-align:center}
+.ig-piv td.nm{text-align:left;white-space:normal;min-width:170px;font-size:13px}
+.ig-piv td.u{font-weight:700}
+.ig-piv td.tot{font:800 15px 'Fira Sans Condensed',sans-serif}
+.ig-piv td.z{color:#C4C9D2}
+.ig-piv tbody tr:nth-child(even) td:not(.tot){background:#F6F8FB}
+#pivMas{margin-top:8px}
+.ig-2{display:grid;grid-template-columns:1.25fr 1fr;gap:16px}
+.ig-camino{background:var(--ig-char);border-radius:14px;padding:18px 18px 8px;color:#fff;position:relative;overflow:hidden}
+.ig-camino::before{content:"";position:absolute;left:34px;top:0;bottom:0;width:6px;background:repeating-linear-gradient(to bottom,var(--ig-yel) 0 18px,transparent 18px 34px)}
+.ig-punto{position:relative;display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0}
+.ig-pin{width:44px;height:44px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--ig-red);display:grid;place-items:center;box-shadow:0 0 0 3px var(--ig-char)}
+.ig-pin span{transform:rotate(45deg);font:800 17px 'Fira Sans Condensed',sans-serif}
+.ig-punto .q b{display:block;font-size:14px;line-height:1.3}
+.ig-punto .q small{color:#C9CCD3;font-size:12px}
+.ig-punto .n{font:800 26px 'Fira Sans Condensed',sans-serif;color:var(--ig-yel);text-align:right;line-height:1}
+.ig-punto .n small{display:block;font-size:11px;color:#C9CCD3;font-weight:600}
+.ig-punto a{color:var(--ig-yel);font-size:12px;font-weight:600;text-decoration:none}
+.ig-brusco{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.ig-bt{background:var(--ig-tan);border-radius:12px;padding:14px;text-align:center;color:var(--ig-char);min-width:0}
+.ig-bt svg{width:54px;height:54px}
+.ig-bt .c{font:800 34px/1 'Fira Sans Condensed',sans-serif;margin-top:4px}
+.ig-bt .t{font:700 13px 'Fira Sans Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+.ig-mini{margin-top:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.ig-mini div{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dashed #E3E7EE;font-size:13px}
+.ig-mini div:last-child{border-bottom:0}
+.ig-vacio{background:#F4F6FA;border:1px dashed #C7CFDB;border-radius:12px;padding:16px;color:var(--ink2);font-size:13.5px;text-align:center}
+.ig-recuerda{margin-top:22px;background:var(--ig-char);border-radius:14px;padding:20px;color:#fff;display:grid;grid-template-columns:auto 1fr;gap:16px 20px;align-items:start}
+.ig-recuerda .tit{grid-column:1/-1;display:flex;align-items:center;gap:12px}
+.ig-recuerda .tit b{font:800 30px/1 'Fira Sans Condensed',sans-serif;color:var(--ig-yel);text-transform:uppercase}
+.ig-semaf{display:flex;gap:6px;background:var(--ig-yel);padding:6px 10px;border-radius:20px}
+.ig-semaf i{width:16px;height:16px;border-radius:50%;border:2px solid var(--ig-char)}
+.ig-tips{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.ig-tip{display:grid;grid-template-columns:52px 1fr;gap:12px;align-items:center}
+.ig-tip .ic{width:52px;height:52px;border-radius:50%;background:var(--ig-yel);display:grid;place-items:center}
+.ig-tip .ic svg{width:30px;height:30px}
+.ig-tip b{display:block;font:700 15px 'Fira Sans Condensed',sans-serif;color:var(--ig-yel);text-transform:uppercase;letter-spacing:.3px}
+.ig-tip span{font-size:13px;color:#D9DBE0;line-height:1.4}
+.ig-lema{grid-column:1/-1;text-align:center;font:800 24px 'Fira Sans Condensed',sans-serif;letter-spacing:.3px;padding-top:6px;border-top:1px solid #3B3D44}
+.ig-lema em{font-style:normal;color:var(--ig-red)}
+.ig-nota{margin-top:10px;color:var(--muted);font-size:12.5px;line-height:1.5}
+@media (max-width:760px){
+  .ig-hero{padding:16px 14px 0}
+  .ig-burbuja{padding:12px 16px 14px;border-radius:20px}
+  .ig-burbuja b{font-size:31px}
+  .ig-embudo{height:250px;gap:6px}
+  .ig-col .num{font-size:34px}.ig-col .num small{font-size:17px}
+  .ig-col .lbl{font-size:12px}.ig-col .rng{font-size:10.5px}
+  .ig-letrero b{font-size:23px}
+  .ig-cinta{margin:18px -14px 0}
+  .ig-datos{grid-template-columns:1fr}
+  .ig-2{grid-template-columns:1fr}
+  .ig-p{margin-left:0}
+  .ig-brusco{gap:6px}.ig-bt{padding:10px 6px}.ig-bt .c{font-size:28px}.ig-bt .t{font-size:11px}
+  .ig-tips{grid-template-columns:1fr}
+  .ig-recuerda .tit b{font-size:24px}
+  .ig-lema{font-size:19px}
+}
+/* 4.8 · acomodo compacto (pensado para tomar captura en computadora) */
+.ig-blk{margin-top:14px}
+.ig-h{font-size:18px;margin-bottom:8px}
+.ig-n{width:28px;height:28px;font-size:15px}
+.ig-p{margin:-2px 0 8px 38px;font-size:12.5px}
+.ig-card{padding:12px 14px}
+.ig-card .legend{margin-bottom:6px}
+.ig-hero{padding:18px 20px 0}
+.ig-hero-in{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:end}
+.ig-hero-txt{padding-bottom:16px}
+.ig-burbuja{margin:10px 0 26px}
+.ig-letrero{margin:0;max-width:none}
+.ig-embudo{margin:0;height:240px;max-width:none}
+.ig-cinta{margin:14px -20px 0}
+.ig-datos{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.ig-dato{padding:12px 14px}
+.ig-dato .v{font-size:32px}
+.ig-dato .d{font-size:12.5px;margin-top:6px}
+.ig-velo{gap:8px}.ig-velo svg{width:84px;height:56px}
+.ig-izq,.ig-der,.ig-fila3>*{min-width:0}
+.ig-lay{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start}
+.ig-senales{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px}
+.ig-velo .v{font-size:28px}
+.ig-senal{padding:8px 4px 8px;border-radius:10px}
+.ig-senal svg{width:44px;height:44px}
+.ig-senal .c{font-size:20px;margin-top:4px}
+.ig-senal .t{font-size:11px}
+.ig-senal .bar{margin:6px 4px 0;height:5px}
+.ig-tw{max-height:none}
+.ig-piv td{padding:5px 8px}
+.ig-piv thead th{padding:7px 8px}
+.ig-camino{padding:8px 14px 6px}
+.ig-camino::before{left:30px}
+.ig-punto{grid-template-columns:36px minmax(0,1fr) auto;padding:10px 0;column-gap:12px}
+.ig-punto+.ig-punto{border-top:1px solid #3B3D44}
+.ig-punto .q small{display:block;margin-top:3px;line-height:1.4}
+.ig-pin{width:36px;height:36px}.ig-pin span{font-size:15px}
+.ig-punto .q b{font-size:13px}
+.ig-punto .n{font-size:22px}
+.ig-fila3{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:18px;align-items:stretch}
+.ig-fila3>div,.ig-fila3>div>.ig-blk{display:flex;flex-direction:column}
+.ig-fila3>div>.ig-blk{flex:1}
+.ig-fila3 .ig-card,.ig-fila3 .ig-recuerda{flex:1}
+/* Recuerda: tarjeta cuadrada, separada, con los 4 consejos en 2 x 2 */
+#igRec .ig-recuerda{margin-top:0;display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:14px;border:4px solid var(--ig-yel);box-shadow:0 0 0 3px var(--ig-char)}
+#igRec .ig-recuerda .tit{display:none}
+#igRec .ig-tips{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 10px;flex:1;align-content:center}
+#igRec .ig-tip{grid-template-columns:1fr;justify-items:center;text-align:center;gap:6px;align-items:start}
+#igRec .ig-tip b{font-size:13px}
+#igRec .ig-tip-sal{grid-column:1/-1;grid-template-columns:42px 1fr;justify-items:start;text-align:left;background:rgba(247,198,0,.12);border-radius:10px;padding:8px 10px;align-items:center}
+#igRec .ig-tip span{font-size:11.5px}
+#igRec .ig-lema{font-size:16px;padding-top:10px}
+.ig-fila3 .hbars{height:170px;margin-top:14px}
+.ig-brusco{gap:8px}.ig-bt{padding:10px 8px}.ig-bt svg{width:40px;height:40px}.ig-bt .c{font-size:28px}
+.ig-mini{margin-top:8px;padding:6px 12px}
+.ig-recuerda{margin-top:16px;padding:14px 18px;gap:10px 16px}
+.ig-recuerda .tit b{font-size:24px}
+.ig-tips{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.ig-tip{grid-template-columns:42px 1fr;gap:10px}
+.ig-tip .ic{width:42px;height:42px}.ig-tip .ic svg{width:24px;height:24px}
+.ig-tip b{font-size:14px}.ig-tip span{font-size:12px}
+.ig-lema{font-size:19px;padding-top:8px}
+/* Vista para captura: solo la infografía, sin menús ni filtros */
+body.captura header,body.captura nav,body.captura .ctrl,body.captura .chiprow,body.captura .puente-app,body.captura #pivMas,body.captura .ig-nota{display:none!important}
+body.captura main{padding-top:12px;max-width:1240px;margin:0 auto}
+#bSalCap{display:none;position:fixed;right:14px;top:14px;z-index:80}
+body.captura #bSalCap{display:inline-flex}
+body.captura #bSalCap.tenue{opacity:.12}body.captura #bSalCap.tenue:hover{opacity:1}
+@media (max-width:1050px){
+  .ig-lay{grid-template-columns:minmax(0,1fr)}
+  .ig-fila3{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .ig-tips{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:760px){
+  .ig-hero-in{grid-template-columns:1fr;gap:6px}
+  .ig-hero-txt{padding-bottom:0}
+  .ig-embudo{height:220px}
+  .ig-datos{grid-template-columns:1fr}
+  .ig-senales{grid-auto-flow:row;grid-template-columns:repeat(4,minmax(0,1fr))}
+  .ig-tips{grid-template-columns:1fr}
+  .ig-fila3{grid-template-columns:minmax(0,1fr)}
+  #igRec .ig-tips{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ig-p{margin-left:0}
+}
+[hidden]{display:none!important}
+/* ===== 4.8 · banda de manejo brusco ===== */
+.br-band{margin-top:22px;background:#F3EEE2;border-radius:16px;padding:0 0 16px;overflow:hidden;border:1px solid #E2D7BC}
+.br-band>.ig-blk,.br-band>.br-grid3,.br-band>.br-grid2,.br-band>.br-consejos{margin-left:18px;margin-right:18px}
+.br-band>.ig-vacio{margin:0 18px}
+.br-tit{display:flex;align-items:center;gap:10px;padding:16px 18px 10px;font:800 21px 'Fira Sans Condensed',sans-serif;text-transform:uppercase}
+.br-cartel{background:var(--ig-char);color:#fff;padding:20px 22px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:22px;align-items:center}
+.br-kick{font:700 13px 'Fira Sans Condensed',sans-serif;letter-spacing:1.4px;text-transform:uppercase;color:var(--ig-yel)}
+.br-titular{margin-top:6px;font:800 42px/0.95 'Fira Sans Condensed',sans-serif;text-transform:uppercase}
+.br-titular em{font-style:normal;color:var(--ig-yel)}
+.br-lead{margin:12px 0 0;font-size:14px;line-height:1.5;color:#D9DBE0;max-width:52ch}
+.br-lead b{color:#fff;font-size:16px}
+.br-tipos{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));grid-auto-flow:column;gap:10px}
+.br-tipo{background:var(--ig-tan);color:var(--ig-char);border-radius:12px;padding:12px 8px 10px;text-align:center;min-width:0}
+.br-tipo .ic svg{width:44px;height:44px}
+.br-tipo .c{font:800 36px/1 'Fira Sans Condensed',sans-serif;margin-top:2px}
+.br-tipo .p{display:inline-block;margin-top:4px;color:#fff;font:700 12px 'Fira Sans Condensed',sans-serif;border-radius:10px;padding:1px 8px}
+.br-tipo .t{margin-top:6px;font:700 12px/1.2 'Fira Sans Condensed',sans-serif;text-transform:uppercase;letter-spacing:.3px}
+.br-cinta{height:12px;background:repeating-linear-gradient(-45deg,var(--ig-char) 0 14px,var(--ig-yel) 14px 28px)}
+.br-grid3{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:stretch}
+.br-grid3>.ig-blk,.br-grid2>.ig-blk{display:flex;flex-direction:column;min-width:0}
+.br-grid3 .ig-card,.br-grid3 .br-dato{flex:1}
+.br-grid2{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start}
+.br-dato .br-g{margin-top:10px;padding-top:8px;border-top:1px solid #3B3D44;display:flex;flex-direction:column;gap:3px;font-size:12px;color:#C9CCD3}
+.br-dato .br-g b{color:var(--ig-yel)}
+.br-horas{display:flex;align-items:flex-end;gap:3px;height:150px;margin-top:10px;padding-bottom:18px;position:relative}
+.br-hc{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative;min-width:0}
+.br-hc b{font:700 10.5px 'Fira Sans Condensed',sans-serif;color:var(--ink2);margin-bottom:2px}
+.br-hb{width:100%;display:flex;flex-direction:column-reverse;border-radius:3px 3px 0 0;overflow:hidden;min-height:0}
+.br-hb i{display:block}
+.br-hc span{position:absolute;bottom:-17px;font-size:10.5px;color:var(--muted)}
+.br-nota{margin-top:8px;font-size:12.5px;color:var(--ink2);line-height:1.45}
+.br-sev{display:flex;flex-direction:column;gap:10px;justify-content:center}
+.br-sv{display:grid;grid-template-columns:78px minmax(0,1fr) 40px;gap:10px;align-items:center}
+.br-sv .l b{display:block;font:800 15px 'Fira Sans Condensed',sans-serif}
+.br-sv .l small{font-size:11px;color:var(--muted)}
+.br-sv .bar{height:14px;background:#EEF0F4;border-radius:7px;overflow:hidden}
+.br-sv .bar i{display:block;height:100%;border-radius:7px}
+.br-sv .n{font:800 20px 'Fira Sans Condensed',sans-serif;text-align:right}
+.br-q{display:grid;grid-template-columns:minmax(0,190px) minmax(0,1fr) 34px;gap:10px;align-items:center;padding:5px 0;border-bottom:1px dashed #E3E7EE}
+.br-q:last-child{border-bottom:0}
+.br-q .nm b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.br-q .nm small{font-size:11.5px;color:var(--muted)}
+.br-q .bar{display:flex;height:14px;border-radius:3px;overflow:hidden;min-width:6px}
+.br-q .bar i{display:block}
+.br-q .n{font:800 18px 'Fira Sans Condensed',sans-serif;text-align:right}
+.br-ambos{margin-top:12px;background:#FFF4D6;border:1.5px solid #F2C14E;border-radius:12px;padding:10px 14px}
+.br-ambos h4{margin:0;font:800 15px 'Fira Sans Condensed',sans-serif;text-transform:uppercase;color:#7A4B00}
+.br-ambos p{margin:2px 0 6px;font-size:12px;color:#7A4B00}
+.br-ambos div{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:3px 0;border-top:1px dashed #EBCB7C}
+.br-consejos{margin-top:16px;background:var(--ig-char);border-radius:14px;padding:14px 18px;color:#fff;border:4px solid var(--ig-yel)}
+.br-consejos .tit span{font:800 24px 'Fira Sans Condensed',sans-serif;color:var(--ig-yel);text-transform:uppercase}
+.br-cs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:10px}
+.br-cs>div{display:grid;grid-template-columns:44px 1fr;grid-template-rows:auto 1fr;gap:2px 10px;align-items:start}
+.br-cs .ic{grid-row:1/3;width:44px;height:44px;border-radius:50%;background:var(--ig-yel);display:grid;place-items:center}
+.br-cs .ic svg{width:26px;height:26px}
+.br-cs b{font:700 14px 'Fira Sans Condensed',sans-serif;color:var(--ig-yel);text-transform:uppercase}
+.br-cs span{font-size:12px;color:#D9DBE0;line-height:1.4}
+@media (max-width:1050px){
+  .br-cartel{grid-template-columns:1fr}
+  .br-grid3{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .br-grid3>.ig-blk:nth-child(2){grid-column:1/-1;order:3}
+  .br-grid2{grid-template-columns:minmax(0,1fr)}
+  .br-cs{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:760px){
+  .br-band>.ig-blk,.br-band>.br-grid3,.br-band>.br-grid2,.br-band>.br-consejos{margin-left:10px;margin-right:10px}
+  .br-cartel{padding:16px 14px}
+  .br-titular{font-size:32px}
+  .br-tipos{grid-auto-flow:row;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .br-tipo .c{font-size:28px}.br-tipo .t{font-size:10.5px}
+  .br-grid3{grid-template-columns:minmax(0,1fr)}
+  .br-grid3>.ig-blk:nth-child(2){order:0}
+  .br-q{grid-template-columns:minmax(0,130px) minmax(0,1fr) 30px}
+  .br-cs{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:980px){
+  .grid2{grid-template-columns:1fr}
+  header{padding:96px 16px 10px 16px;min-height:0}
+  .stripes{width:150px;height:84px}
+  .logo{left:165px;top:22px;height:40px}
+  .brand{margin-left:0}.brand .sep{display:none}
+  h1{font-size:27px}
+  .values{display:none}
+  nav{margin-left:16px;max-width:calc(100% - 32px);padding:6px 24px 6px 14px;clip-path:none}
+  nav button{padding:9px 10px;font-size:13.5px}
+  .ctrl,.chiprow{padding-left:16px;padding-right:16px}
+  main{padding:16px}
+  .btns{margin-left:0}
+  .fld,.fld select,.fld input{width:100%;min-width:0}
+  .fld{flex:1 1 140px}
+}
+</style>
+</head>
+<body>
+<header>
+  <svg class="stripes" viewBox="0 0 210 112" preserveAspectRatio="xMinYMin slice" aria-hidden="true"><polygon points="0,0 92,0 14,112 0,112" fill="#1f3a8a"/><polygon points="108,0 146,0 68,112 30,112" fill="#29abe2"/><polygon points="160,0 196,0 118,112 82,112" fill="#e30613"/></svg>
+  <img class="logo" alt="Estrella Roja" src="data:image/png;base64,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">
+  <div class="brand">
+    <div class="sep"></div>
+    <div>
+      <h1>EXCESOS DE VELOCIDAD <b>STU</b></h1>
+      <div class="sub">Webfleet (8002–8104) + Samsara · Periférico Ecológico a 90 km/h · sin Libramiento Elevado · Servicio BUAP</div>
+    </div>
+  </div>
+  <div class="values">DISCIPLINA • EFICIENCIA • SEGURIDAD • SERVICIO AL CLIENTE • TECNOLOGÍA = RENTABILIDAD<div class="who" id="quienSoy">👤 —</div></div>
+</header>
+
+<nav id="tabs">
+  <button data-v="resumen" class="on">📰 Infografía</button>
+  <button data-v="operadores">👥 Operadores <span class="cnt" id="nOps">0</span></button>
+  <button data-v="unidades">🚌 Unidades <span class="cnt" id="nUni">0</span></button>
+  <button data-v="conduccion">🛑 Manejo brusco <span class="cnt" id="nCond">0</span></button>
+  <button data-v="detalle">⚠️ Detalle <span class="cnt r" id="nExc">0</span></button>
+</nav>
+
+<div class="ctrl">
+  <div class="fld"><label>Fecha</label><select id="fDate"></select></div>
+  <div class="fld"><label>Fuente GPS</label><select id="fSrc"><option value="">Todas</option><option>Webfleet</option><option>Samsara</option></select></div>
+  <div class="fld"><label>Severidad</label><select id="fSev"><option value="">Todas (excesos)</option><option>Crítico</option><option>Moderado</option><option>Leve</option></select></div>
+  <div class="fld"><label>Turno</label><select id="fTurno"><option value="">Todo el día</option><option value="A">Mañana (04:00–13:59)</option><option value="B">Tarde (14:00–23:59)</option></select></div>
+  <div class="fld"><label>Buscar</label><input id="fQ" placeholder="Clave, operador, unidad o calle…"></div>
+  <div class="btns">
+    <button class="btn pri" id="bLoad">⬆️ Cargar reportes del día</button>
+    <button class="btn wa" id="bWa">💬 Copia para WhatsApp</button>
+    <button class="btn" id="bCsv">⬇️ Exportar CSV</button>
+    <button class="btn" id="bCap">📸 Vista para captura</button>
+  </div>
+</div>
+<div class="chiprow"><span class="dchip" id="dChip">—</span><span class="src-note" id="srcNote"></span></div>
+
+<main>
+  <!-- INFOGRAFÍA (4.8) · en computadora se acomoda en dos columnas para que quepa en una captura -->
+  <section class="view on" id="v-resumen">
+    <div id="igHero"></div>
+    <div class="ig-lay" id="igLay">
+      <div class="ig-izq">
+        <div id="igDatos"></div>
+        <div class="ig-blk">
+          <div class="ig-h"><span class="ig-n">2</span>Excesos por unidad y límite</div>
+          <p class="ig-p">Como el reporte diario. El total va de rojo (más) a amarillo (menos). Toca una unidad para ver sus excesos.</p>
+          <div class="tw ig-tw"><table id="tPiv" class="ig-piv"></table></div>
+          <div id="pivMas"></div>
+        </div>
+      </div>
+      <div class="ig-der">
+        <div id="igSen"></div>
+        <div class="ig-blk">
+          <div class="ig-h"><span class="ig-n">4</span>Top 10 operadores</div>
+          <div class="card ig-card">
+            <div class="legend"><span><i style="background:var(--leve)"></i>Leve</span><span><i style="background:var(--mod)"></i>Moderado</span><span><i style="background:var(--crit)"></i>Crítico</span></div>
+            <div id="chOps"></div>
+          </div>
+        </div>
+        <div id="igPuntos"></div>
+      </div>
+    </div>
+    <div class="ig-fila3" id="igFila3">
+      <div class="ig-blk">
+        <div class="ig-h"><span class="ig-n">6</span>¿A qué hora pasan?</div>
+        <div class="card ig-card">
+          <div class="legend"><span><i style="background:var(--leve)"></i>Leve +1 a +10</span><span><i style="background:var(--mod)"></i>Moderado +11 a +20</span><span><i style="background:var(--crit)"></i>Crítico +20</span></div>
+          <div id="chHour"></div>
+        </div>
+      </div>
+      <div id="igRec"></div>
+    </div>
+    <div id="igBand"></div>
+    <div id="igFin"></div>
+  </section>
+
+  <!-- MANEJO BRUSCO (4.8) -->
+  <section class="view" id="v-conduccion">
+    <div class="sec"><h2>Manejo brusco · frenados y giros</h2></div>
+    <p class="hint">Del reporte «Eventos de conducción» del GPS. Severidad del GPS: Alta 3 o más · Media 2 a 2.9 · Baja menos de 2.</p>
+    <div class="tw" style="max-height:720px"><table id="tCond"></table></div>
+  </section>
+
+  <!-- OPERADORES -->
+  <section class="view" id="v-operadores">
+    <div class="sec"><h2>1. Ranking de operadores</h2></div>
+    <p class="hint">Puntaje = Leve ×1 + Moderado ×3 + Crítico ×5. La clave se toma de DATOS OP cruzando el nombre que trae SMart. Clic en un renglón para ver sus eventos.</p>
+    <div class="tw"><table id="tOps"></table></div>
+  </section>
+
+  <!-- UNIDADES -->
+  <section class="view" id="v-unidades">
+    <div class="sec"><h2>2. Excesos por unidad</h2></div>
+    <p class="hint">Operadores que manejaron la unidad durante los eventos (según viajes SMart).</p>
+    <div class="tw"><table id="tUni"></table></div>
+  </section>
+
+  <!-- DETALLE -->
+  <section class="view" id="v-detalle">
+    <div class="sec"><h2>4. Detalle de eventos</h2><span id="detFilt"></span></div>
+    <p class="hint" id="detHint"></p>
+    <div class="tw" style="max-height:720px"><table id="tDet"></table></div>
+    <div class="foot">
+      <b>Vinculación operador:</b> Alta = el evento cae dentro de un viaje SMart de esa unidad (±10 min) o entre dos viajes del mismo operador · Media = viaje SMart más cercano (hasta 90 min) · Baja = sin viaje SMart cercano, se usa el titular de la unidad en DATOS OP.<br>
+      <b>Severidad:</b> exceso = velocidad máxima − límite de la vialidad. Leve +1 a +10 · Moderado +11 a +20 · Crítico más de +20. En Periférico Ecológico el límite es 90 km/h. Se quita todo lo del Libramiento Elevado. Webfleet solo unidades 8002–8104.
+    </div>
+  </section>
+</main>
+
+<div class="modal" id="mLoad"><div class="mbox">
+  <h3>Cargar reportes del día</h3>
+  <div class="hint" style="margin:0">Selecciona uno o varios Excel; se reconocen solos. Lo que no subas se queda con lo cargado antes.</div>
+  <div class="mgrupo">Excesos de velocidad</div>
+  <div class="slot"><div><b>Webfleet</b> · STU Velocidad Excesiva</div><div class="st" id="s-webfleet"></div></div>
+  <div class="slot"><div><b>Samsara</b> · reporte_velocidad</div><div class="st" id="s-samsara"></div></div>
+  <div class="mgrupo">Eventos de conducción (frenados y giros bruscos)</div>
+  <div class="slot"><div><b>Webfleet</b> · STU Eventos de Conducción</div><div class="st" id="s-conduccion"></div></div>
+  <div class="slot"><div><b>Samsara</b> · eventos de conducción</div><div class="st" id="s-conduccionSS"></div></div>
+  <div class="mgrupo">Para saber quién manejaba</div>
+  <div class="slot"><div><b>SMart</b> · Monitor de servicio</div><div class="st" id="s-smart"></div></div>
+  <div class="slot"><div><b>STU Germán</b> · DATOS OP</div><div class="st" id="s-stu"></div></div>
+  <label class="drop" id="drop">📂 Toca para elegir archivos o arrástralos aquí<input type="file" id="fileIn" accept=".xlsx,.xls,.xlsm" multiple hidden></label>
+  <div class="mact"><button class="btn" id="bReset">Restaurar datos de ejemplo</button><button class="btn pri" id="bClose">Listo</button></div>
+</div></div>
+<div id="tip"></div><div id="toast"></div><button class="btn pri" id="bSalCap">✕ Salir de la vista para captura</button>
+
+<script>
+/* ===== Motor de cruce: excesos de velocidad (Webfleet + Samsara) x SMart x STU Germán ===== */
+const ENG = (() => {
+  const norm = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/[^a-z0-9ñ ]/g, ' ').replace(/\s+/g, ' ').trim();
+  const num = v => { if (v === null || v === undefined || v === '') return null; const n = Number(String(v).replace(',', '.')); return isFinite(n) ? n : null; };
+  const LIBRAMIENTO = /libramiento elevado/;
+  const unitOf = v => { const m = String(v ?? '').match(/\d{4}/); return m ? +m[0] : null; };
+
+  function findHeader(aoa, must) {
+    for (let i = 0; i < Math.min(aoa.length, 15); i++) {
+      const r = (aoa[i] || []).map(norm);
+      if (must.every(k => r.some(c => c.includes(k)))) return i;
+    }
+    return -1;
+  }
+  function colIdx(hdr, ...keys) {
+    const h = hdr.map(norm);
+    for (const k of keys) { const i = h.findIndex(c => c === k); if (i >= 0) return i; }
+    for (const k of keys) { const i = h.findIndex(c => c.includes(k)); if (i >= 0) return i; }
+    return -1;
+  }
+  // segundos desde medianoche
+  function toSec(v) {
+    if (v === null || v === undefined || v === '') return null;
+    if (v instanceof Date) return v.getHours() * 3600 + v.getMinutes() * 60 + v.getSeconds();
+    if (typeof v === 'number') return Math.round((v % 1) * 86400);
+    const s = String(v); const m = s.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if (!m) return null; let h = +m[1];
+    if (/p\.?\s?m/i.test(s) && h < 12) h += 12; if (/a\.?\s?m/i.test(s) && h === 12) h = 0;
+    return h * 3600 + (+m[2]) * 60 + (+(m[3] || 0));
+  }
+  function toDateKey(v) {
+    if (v instanceof Date) return v.getFullYear() + '-' + String(v.getMonth() + 1).padStart(2, '0') + '-' + String(v.getDate()).padStart(2, '0');
+    if (typeof v === 'number' && v > 30000) { const d = new Date(Math.round((v - 25569) * 864e5)); return d.toISOString().slice(0, 10); }
+    const s = String(v ?? ''); let m = s.match(/(\d{4})-(\d{2})-(\d{2})/); if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+    m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/); if (m) { const y = m[3].length === 2 ? '20' + m[3] : m[3]; return `${y}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`; }
+    return null;
+  }
+  const dayNum = k => k ? Date.UTC(+k.slice(0, 4), +k.slice(5, 7) - 1, +k.slice(8, 10)) / 1000 : 0;
+  const coord = v => { const n = num(v); if (n === null) return null; return Math.abs(n) > 1000 ? n / 1e6 : n; };
+  const fmtT = s => s === null ? '—' : String(Math.floor(s / 3600)).padStart(2, '0') + ':' + String(Math.floor(s % 3600 / 60)).padStart(2, '0');
+  const durSec = v => { if (v === null || v === undefined || v === '') return null; if (typeof v === 'number') return v < 1 ? Math.round(v * 86400) : Math.round(v * 3600); return toSec(v); };
+
+  /* --- Reporte de velocidad (mismo formato Webfleet / Samsara) --- */
+  function parseSpeed(aoa, src, uMin, uMax) {
+    const hi = findHeader(aoa, ['vehiculo', 'velocidad maxima']); if (hi < 0) return [];
+    const h = aoa[hi];
+    const c = {
+      veh: colIdx(h, 'vehiculo'), fecha: colIdx(h, 'fecha'), hora: colIdx(h, 'hora de inicio', 'hora'),
+      dist: colIdx(h, 'distancia km', 'distancia'), dur: colIdx(h, 'duracion h', 'duracion'),
+      vmax: colIdx(h, 'velocidad maxima km h', 'velocidad maxima'), lim: colIdx(h, 'limite de velocidad km h', 'limite'),
+      loc: colIdx(h, 'ubicacion de inicio', 'ubicacion'), lon: colIdx(h, 'longitud'), lat: colIdx(h, 'latitud')
+    };
+    const out = []; out.perifBajo = {}; out.libr = 0;
+    for (let i = hi + 1; i < aoa.length; i++) {
+      const r = aoa[i]; if (!r) continue;
+      const unit = unitOf(r[c.veh]); if (!unit) continue;
+      if (uMin && (unit < uMin || unit > uMax)) continue;
+      const loc = String(r[c.loc] ?? '').trim();
+      // 4.8: todo lo del Libramiento Elevado se quita del reporte
+      if (LIBRAMIENTO.test(norm(loc))) { out.libr++; continue; }
+      // 4.8: en Periférico Ecológico el límite es 90 km/h (aunque el GPS diga otro)
+      const perif = /perif[eé]rico/i.test(loc);
+      const vmax = num(r[c.vmax]); let lim = perif ? 90 : num(r[c.lim]);
+      if (vmax === null || lim === null || lim <= 0) continue;
+      const exceso = vmax - lim;
+      if (exceso <= 0) { if (perif) { const dk = toDateKey(r[c.fecha]) || '?'; out.perifBajo[dk] = (out.perifBajo[dk] || 0) + 1; } continue; }
+      const cat = exceso > 20 ? 'Crítico' : exceso > 10 ? 'Moderado' : 'Leve';
+      const date = toDateKey(r[c.fecha]); const t = toSec(r[c.hora]);
+      out.push({
+        src, unit, date, t, ts: dayNum(date) + (t ?? 0), hora: fmtT(t),
+        dist: num(r[c.dist]), dur: durSec(r[c.dur]), vmax, lim, exceso, loc, perif, cat,
+        esExceso: true,
+        lat: coord(r[c.lat]), lon: coord(r[c.lon])
+      });
+    }
+    return out;
+  }
+
+  /* --- Eventos de conducción (frenados y giros bruscos) --- */
+  function tipoEvento(t) {
+    const n = norm(t);
+    if (n.includes('fren')) return 'Frenado brusco';
+    if (n.includes('giro') && n.includes('izq')) return 'Giro brusco izquierda';
+    if (n.includes('giro') && n.includes('der')) return 'Giro brusco derecha';
+    if (n.includes('giro')) return 'Giro brusco';
+    if (n.includes('acel') || n.includes('arran')) return 'Arrancón';
+    return String(t || 'Otro').trim();
+  }
+  function parseConduccion(aoa, src, uMin, uMax) {
+    const hi = findHeader(aoa, ['vehiculo', 'evento']); if (hi < 0) return [];
+    const h = aoa[hi];
+    const c = {
+      veh: colIdx(h, 'vehiculo'), fecha: colIdx(h, 'fecha de inicio', 'fecha'), hora: colIdx(h, 'hora de inicio', 'hora'),
+      acel: colIdx(h, 'aceleracion maxima g', 'aceleracion'), ev: colIdx(h, 'tipo de evento', 'evento', 'comportamiento'), sev: colIdx(h, 'severidad', 'gravedad', 'nivel'),
+      loc: colIdx(h, 'ubicacion'), lon: colIdx(h, 'longitud'), lat: colIdx(h, 'latitud')
+    };
+    const out = []; out.libr = 0;
+    for (let i = hi + 1; i < aoa.length; i++) {
+      const r = aoa[i]; if (!r) continue;
+      const unit = unitOf(r[c.veh]); if (!unit) continue;
+      if (uMin && (unit < uMin || unit > uMax)) continue;
+      const loc = String(r[c.loc] ?? '').trim();
+      if (LIBRAMIENTO.test(norm(loc))) { out.libr++; continue; }
+      const date = toDateKey(r[c.fecha]); const t = c.hora >= 0 && c.hora !== c.fecha ? toSec(r[c.hora]) : toSec(r[c.fecha]);
+      // Severidad: número del GPS (Webfleet) o texto (Samsara: leve / moderado / grave…)
+      let sev = num(r[c.sev]);
+      if (sev === null && r[c.sev] != null) { const sv = norm(r[c.sev]); sev = /grave|alta|sever|critic/.test(sv) ? 3 : /moder|media/.test(sv) ? 2 : /leve|baja|menor/.test(sv) ? 1 : null; }
+      out.push({
+        src, unit, date, t, ts: dayNum(date) + (t ?? 0), hora: fmtT(t), tipo: tipoEvento(r[c.ev]),
+        acel: num(r[c.acel]), sev, nivel: sev === null ? '—' : sev >= 3 ? 'Alta' : sev >= 2 ? 'Media' : 'Baja',
+        loc, lat: coord(r[c.lat]), lon: coord(r[c.lon])
+      });
+    }
+    return out;
+  }
+
+  /* --- SMart / Monitor de servicio --- */
+  function parseSmart(aoa) {
+    const hi = findHeader(aoa, ['operador', 'vehiculo', 'fecha inicial']); if (hi < 0) return [];
+    const h = aoa[hi];
+    const c = { st: 0, ruta: colIdx(h, 'ruta'), ini: colIdx(h, 'fecha inicial'), fin: colIdx(h, 'fecha final'), op: colIdx(h, 'operador'), veh: colIdx(h, 'vehiculo') };
+    const out = [];
+    for (let i = hi + 1; i < aoa.length; i++) {
+      const r = aoa[i]; if (!r) continue;
+      const st = String(r[c.st] ?? '').trim().toUpperCase(); if (st.startsWith('CANCEL')) continue;
+      const unit = unitOf(r[c.veh]); const op = String(r[c.op] ?? '').replace(/\s+/g, ' ').trim();
+      if (!unit || !op) continue;
+      const d = toDateKey(r[c.ini]); const a = toSec(r[c.ini]), b = toSec(r[c.fin]);
+      if (a === null) continue;
+      const s = dayNum(d) + a; let e = dayNum(toDateKey(r[c.fin]) || d) + (b ?? a); if (e < s) e += 86400;
+      out.push({ unit, op, ruta: String(r[c.ruta] ?? '').trim(), s, e, ini: fmtT(a), fin: fmtT(b) });
+    }
+    return out.sort((x, y) => x.s - y.s);
+  }
+
+  /* --- STU Germán: DATOS OP (+ Bajas) --- */
+  function parseRoster(aoa, origen) {
+    const hi = findHeader(aoa, ['clave', 'nombre operador']); if (hi < 0) return [];
+    const h = aoa[hi];
+    const c = { u: colIdx(h, 'unidad'), cl: colIdx(h, 'clave'), n: colIdx(h, 'nombre operador'), st: colIdx(h, 'estatus'), ru: colIdx(h, 'ruta asignada') };
+    const out = [];
+    for (let i = hi + 1; i < aoa.length; i++) {
+      const r = aoa[i]; if (!r) continue;
+      const nombre = String(r[c.n] ?? '').replace(/\s+/g, ' ').trim(); if (!nombre) continue;
+      out.push({ unit: unitOf(r[c.u]), clave: r[c.cl] ?? '', nombre, estatus: String(r[c.st] ?? origen).trim(), ruta: String(r[c.ru] ?? '').trim(), origen, tk: norm(nombre).split(' ').filter(w => w.length > 1 && !['de', 'del', 'la', 'las', 'los', 'y'].includes(w)) });
+    }
+    return out;
+  }
+
+  function lev(a, b) {
+    if (Math.abs(a.length - b.length) > 2) return 9;
+    const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+    for (let j = 1; j <= b.length; j++) d[0][j] = j;
+    for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    return d[a.length][b.length];
+  }
+  const tokEq = (a, b) => a === b || (a.length >= 5 && b.length >= 5 && lev(a, b) <= 1);
+  function matchName(name, roster, cache) {
+    if (cache.has(name)) return cache.get(name);
+    const tk = norm(name).split(' ').filter(w => w.length > 1 && !['de', 'del', 'la', 'las', 'los', 'y'].includes(w));
+    let best = null, bs = 0;
+    for (const p of roster) {
+      let hit = 0; const used = new Set();
+      for (const a of tk) { const j = p.tk.findIndex((b, k) => !used.has(k) && tokEq(a, b)); if (j >= 0) { hit++; used.add(j); } }
+      if (hit < 2) continue;
+      const sc = hit / Math.min(tk.length, p.tk.length) + hit * 0.01 + (p.origen === 'DATOS OP' ? 0.001 : 0);
+      if (sc > bs) { bs = sc; best = p; }
+    }
+    const res = bs >= 0.66 ? best : null; cache.set(name, res); return res;
+  }
+
+  /* --- Cruce principal --- */
+  function build(raw) {
+    const wf = parseSpeed(raw.webfleet, 'Webfleet', 8002, 8104);
+    const ss = parseSpeed(raw.samsara, 'Samsara');
+    const trips = parseSmart(raw.smart);
+    const roster = [...parseRoster(raw.datosop, 'DATOS OP'), ...parseRoster(raw.bajas || [], 'Bajas')];
+    const titular = new Map(); roster.forEach(p => { if (p.unit && p.origen === 'DATOS OP' && !titular.has(p.unit)) titular.set(p.unit, p); });
+    const byUnit = new Map(); trips.forEach(t => { if (!byUnit.has(t.unit)) byUnit.set(t.unit, []); byUnit.get(t.unit).push(t); });
+    // 4.8: eventos de conducción de los dos GPS (Webfleet 8002–8104, Samsara el resto, igual que en velocidad)
+    const condWf = parseConduccion(raw.conduccion || [], 'Webfleet', 8002, 8104), condSs = parseConduccion(raw.conduccionSS || [], 'Samsara');
+    const cond = condWf.concat(condSs); cond.libr = (condWf.libr || 0) + (condSs.libr || 0);
+    const cache = new Map(); const TOL = 600, NEAR = 5400;
+    const ligar = ev => {
+      const L = byUnit.get(ev.unit) || []; let trip = null, conf = 'Sin dato', metodo = '';
+      const inside = L.filter(t => ev.ts >= t.s - TOL && ev.ts <= t.e + TOL);
+      if (inside.length) { trip = inside.reduce((a, b) => Math.abs(ev.ts - (a.s + a.e) / 2) <= Math.abs(ev.ts - (b.s + b.e) / 2) ? a : b); conf = 'Alta'; metodo = 'Durante viaje SMart'; }
+      else if (L.length) {
+        const prev = [...L].reverse().find(t => t.e < ev.ts), next = L.find(t => t.s > ev.ts);
+        if (prev && next && norm(prev.op) === norm(next.op)) { trip = (ev.ts - prev.e) <= (next.s - ev.ts) ? prev : next; conf = 'Alta'; metodo = 'Entre viajes del mismo operador'; }
+        else {
+          const cand = [prev, next].filter(Boolean).map(t => ({ t, d: Math.min(Math.abs(ev.ts - t.s), Math.abs(ev.ts - t.e)) })).sort((a, b) => a.d - b.d)[0];
+          if (cand && cand.d <= NEAR) { trip = cand.t; conf = 'Media'; metodo = `Viaje SMart más cercano (${Math.round(cand.d / 60)} min)`; }
+        }
+      }
+      let opName = '', clave = '', p = null, ruta = '';
+      if (trip) { opName = trip.op; ruta = trip.ruta; p = matchName(trip.op, roster, cache); }
+      else if (titular.has(ev.unit)) { p = titular.get(ev.unit); opName = p.nombre; conf = 'Baja'; metodo = 'Titular de la unidad (DATOS OP)'; }
+      if (p) { clave = p.clave; opName = p.nombre; }
+      return { ...ev, op: opName || 'Sin operador', clave: clave === null ? '' : String(clave), opEstatus: p ? p.estatus : '', ruta, viaje: trip ? `${trip.ini}–${trip.fin}` : '', conf, metodo, smartNombre: trip ? trip.op : '', sinClave: !!trip && !p };
+    };
+    const orden = (a, b) => a.ts - b.ts || a.unit - b.unit;
+    const events = [...wf, ...ss].map(ligar).sort(orden);
+    const conduccion = cond.map(ligar).sort(orden);
+    const dates = [...new Set(events.concat(conduccion).map(e => e.date).filter(Boolean))].sort();
+    return { events, conduccion, stats: { wf: wf.length, ss: ss.length, cond: cond.length, trips: trips.length, roster: roster.length, dates,
+      perifBajo: [wf.perifBajo || {}, ss.perifBajo || {}].reduce((m, o) => { Object.keys(o).forEach(k => m[k] = (m[k] || 0) + o[k]); return m; }, {}), libr: (wf.libr || 0) + (ss.libr || 0) + (cond.libr || 0) } };
+  }
+  return { build, norm, fmtT };
+})();
+if (typeof module !== 'undefined') module.exports = ENG;
+
+</script>
+<script>
+const DEFAULT_RAW = { /* 4.7: sin datos de ejemplo; la plantilla y el Monitor llegan de la app */
+  webfleet: { name: 'Sin cargar', sheets: { Hoja: [] } },
+  samsara: { name: 'Sin cargar', sheets: { Hoja: [] } },
+  conduccion: { name: 'Sin cargar', sheets: { Hoja: [] } },
+  conduccionSS: { name: 'Sin cargar', sheets: { Hoja: [] } },
+  smart: { name: 'Sin cargar', sheets: { Hoja: [] } },
+  stu: { name: 'Sin cargar', sheets: { 'DATOS OP': [], 'Bajas': [] } }
+};
+const SEVS = ['Leve', 'Moderado', 'Crítico'];
+const COL = { 'Leve': 'var(--leve)', 'Moderado': 'var(--mod)', 'Crítico': 'var(--crit)' };
+const W = { 'Leve': 1, 'Moderado': 3, 'Crítico': 5 };
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const shortLoc = s => String(s || '').replace(/,?\s*\d{5}\s*Puebla.*$/i, '').replace(/,\s*\d{5}\b.*$/, '').replace(/,\s*MX$/i, '').replace(/, PUE.*$/i, '').trim() || '—';
+const fmtDate = k => k ? k.slice(8, 10) + '/' + k.slice(5, 7) + '/' + k.slice(0, 4) : '—';
+const dayName = k => k ? ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'][new Date(k + 'T12:00').getDay()] : '';
+const durTxt = s => s == null ? '—' : s < 60 ? s + ' s' : Math.floor(s / 60) + ' min ' + (s % 60 ? s % 60 + ' s' : '');
+const sevTag = c => `<span class="tag t-${c.split(' ')[0]}"><i></i>${c}</span>`;
+
+let RAW, DATA, curView = 'resumen', opFilter = null, unitFilter = null;
+const sortState = {};
+
+function loadRaw() {
+  let r = JSON.parse(JSON.stringify(DEFAULT_RAW));
+  try { const s = localStorage.getItem('stu_vel_raw'); if (s) { const o = JSON.parse(s); Object.keys(o).forEach(k => r[k] = o[k]); } } catch (e) { }
+  return r;
+}
+function saveRaw(part) {
+  try { const s = JSON.parse(localStorage.getItem('stu_vel_raw') || '{}'); Object.assign(s, part); localStorage.setItem('stu_vel_raw', JSON.stringify(s)); } catch (e) { }
+}
+function rebuild() {
+  DATA = ENG.build({
+    webfleet: RAW.webfleet.sheets[Object.keys(RAW.webfleet.sheets)[0]],
+    samsara: RAW.samsara.sheets[Object.keys(RAW.samsara.sheets)[0]],
+    conduccion: RAW.conduccion ? RAW.conduccion.sheets[Object.keys(RAW.conduccion.sheets)[0]] : [],
+    conduccionSS: RAW.conduccionSS ? RAW.conduccionSS.sheets[Object.keys(RAW.conduccionSS.sheets)[0]] : [],
+    smart: RAW.smart.sheets[Object.keys(RAW.smart.sheets)[0]],
+    datosop: RAW.stu.sheets['DATOS OP'] || [], bajas: RAW.stu.sheets['Bajas'] || []
+  });
+  const sel = $('#fDate'); const prev = sel.value;
+  sel.innerHTML = (DATA.stats.dates.length > 1 ? '<option value="">Todas</option>' : '') + DATA.stats.dates.map(d => `<option value="${d}">${dayName(d)} ${fmtDate(d)}</option>`).join('');
+  if (DATA.stats.dates.includes(prev)) sel.value = prev;
+  else if (DATA.stats.dates.length > 1) { // 4.8: abre en el día más reciente con excesos
+    const conExc = [...new Set(DATA.events.map(e => e.date))].sort();
+    sel.value = conExc.length ? conExc[conExc.length - 1] : DATA.stats.dates[DATA.stats.dates.length - 1];
+  }
+  $('#srcNote').textContent = `Webfleet: ${RAW.webfleet.name} · Samsara: ${RAW.samsara.name} · Conducción Webfleet: ${(RAW.conduccion || {}).name || 'Sin cargar'} · Conducción Samsara: ${(RAW.conduccionSS || {}).name || 'Sin cargar'} · SMart: ${RAW.smart.name} (${DATA.stats.trips} viajes) · STU: ${RAW.stu.name} (${DATA.stats.roster} operadores)`;
+  render();
+  try { publicarResumenes(); } catch (e) { } // 4.8: para Indicadores
+}
+
+/* ---------- 4.8 · RESUMEN COMPACTO POR DÍA (para Indicadores de la app) ----------
+   Se calcula con todo lo cargado de ese día (sin filtros de pantalla) y se pasa a la app.
+   La app lo guarda en el teléfono y en la nube (operaciones_v6_base/velocidad/{día}). */
+function resumenDia(d) {
+  const X = DATA.events.filter(e => e.date === d && e.esExceso), C = (DATA.conduccion || []).filter(e => e.date === d);
+  if (!X.length && !C.length) return null;
+  const nom = e => e.op && e.op !== 'Sin operador' ? e.op : '';
+  const llave = e => e.clave ? 'k' + e.clave : 'n' + ENG.norm(e.op);
+  const hh = (A, f) => Array.from({ length: 24 }, (_, h) => { const a = A.filter(e => e.t !== null && Math.floor(e.t / 3600) === h); return f(a); });
+  const r = { v: 2, fecha: d, ts: Date.now(), fuentes: ['webfleet', 'samsara', 'conduccion', 'conduccionSS'].map(k => RAW[k] && RAW[k].name !== 'Sin cargar' ? RAW[k].name : '').filter(Boolean) };
+  if (X.length) {
+    const c = sevCount(X), top = X.reduce((a, e) => !a || e.vmax > a.vmax ? e : a, null);
+    const ops = groupBy(X.filter(nom), llave);
+    r.exc = {
+      tot: X.length, unis: new Set(X.map(e => e.unit)).size, leve: c['Leve'], mod: c['Moderado'], crit: c['Crítico'],
+      prom: +(X.reduce((s, e) => s + e.exceso, 0) / X.length).toFixed(1),
+      ops: ops.size, opsCrit: [...ops.values()].filter(a => a.some(e => e.cat === 'Crítico')).length,
+      vmax: { v: top.vmax, u: top.unit, h: top.hora, lim: top.lim, op: nom(top), loc: shortLoc(top.loc), perif: !!top.perif },
+      perif: X.filter(e => e.perif).length, perifBajo: (DATA.stats.perifBajo || {})[d] || 0,
+      lims: ordenLim([...new Set(X.map(e => e.lim))]).map(l => [l, X.filter(e => e.lim === l).length]),
+      top: [...ops.values()].map(a => ({ op: a[0].op, u: [...new Set(a.map(e => e.unit))].join(', '), l: a.filter(e => e.cat === 'Leve').length, m: a.filter(e => e.cat === 'Moderado').length, c: a.filter(e => e.cat === 'Crítico').length, n: a.length }))
+        .sort((a, b) => b.n - a.n || b.c - a.c).slice(0, 5),
+      locs: [...groupBy(X, e => shortLoc(e.loc)).entries()].map(([loc, a]) => ({ loc, n: a.length, vmax: Math.max(...a.map(e => e.vmax)), crit: a.filter(e => e.cat === 'Crítico').length }))
+        .filter(o => o.loc).sort((a, b) => b.n - a.n).slice(0, 6),
+      horas: hh(X, a => [a.length, a.filter(e => e.cat === 'Leve').length, a.filter(e => e.cat === 'Moderado').length, a.filter(e => e.cat === 'Crítico').length]),
+      // Por operador (para el semáforo): nombre, clave, unidades y conteo por severidad
+      porOp: [...ops.values()].map(a => [a[0].op, a[0].clave || '', [...new Set(a.map(e => e.unit))].join(','), a.filter(e => e.cat === 'Leve').length, a.filter(e => e.cat === 'Moderado').length, a.filter(e => e.cat === 'Crítico').length])
+    };
+  }
+  if (C.length) {
+    const g = C.filter(e => e.acel !== null).reduce((a, e) => !a || e.acel > a.acel ? e : a, null);
+    const conG = C.filter(e => e.acel !== null);
+    const tipo = e => e.tipo === 'Frenado brusco' ? 0 : (e.tipo === 'Giro brusco izquierda' || e.tipo === 'Giro brusco') ? 1 : e.tipo === 'Giro brusco derecha' ? 2 : 3;
+    const grupos = groupBy(C, e => nom(e) ? llave(e) : 'U' + e.unit);
+    r.br = {
+      tot: C.length, unis: new Set(C.map(e => e.unit)).size,
+      fren: C.filter(e => tipo(e) === 0).length, izq: C.filter(e => tipo(e) === 1).length, der: C.filter(e => tipo(e) === 2).length, otro: C.filter(e => tipo(e) === 3).length,
+      alta: C.filter(e => e.nivel === 'Alta').length, media: C.filter(e => e.nivel === 'Media').length, baja: C.filter(e => e.nivel === 'Baja').length,
+      gprom: conG.length ? +(conG.reduce((s, e) => s + e.acel, 0) / conG.length).toFixed(2) : null,
+      gmax: g ? { g: g.acel, u: g.unit, h: g.hora, op: nom(g), tipo: g.tipo, loc: shortLoc(g.loc) } : null,
+      ops: [...grupos.keys()].filter(k => k[0] !== 'U').length,
+      top: [...grupos.values()].map(a => ({ op: nom(a[0]) || 'Unidad ' + a[0].unit, u: [...new Set(a.map(e => e.unit))].join(', '), f: a.filter(e => tipo(e) === 0).length, i: a.filter(e => tipo(e) === 1).length, de: a.filter(e => tipo(e) === 2).length, alta: a.filter(e => e.nivel === 'Alta').length, n: a.length }))
+        .sort((a, b) => b.n - a.n || b.alta - a.alta).slice(0, 5),
+      locs: [...groupBy(C, e => shortLoc(e.loc)).entries()].map(([loc, a]) => ({ loc, n: a.length, f: a.filter(e => tipo(e) === 0).length, alta: a.filter(e => e.nivel === 'Alta').length }))
+        .filter(o => o.loc).sort((a, b) => b.n - a.n).slice(0, 6),
+      horas: hh(C, a => [a.length, a.filter(e => tipo(e) === 0).length, a.filter(e => tipo(e) === 1).length, a.filter(e => tipo(e) === 2).length]),
+      porOp: [...grupos.values()].filter(a => nom(a[0])).map(a => [a[0].op, a[0].clave || '', [...new Set(a.map(e => e.unit))].join(','), a.filter(e => e.nivel === 'Baja').length, a.filter(e => e.nivel === 'Media').length, a.filter(e => e.nivel === 'Alta').length]),
+      porUni: [...groupBy(C.filter(e => !nom(e)), e => e.unit).entries()].map(([u, a]) => [String(u), a.filter(e => e.nivel === 'Baja').length, a.filter(e => e.nivel === 'Media').length, a.filter(e => e.nivel === 'Alta').length])
+    };
+  }
+  if (X.length && C.length) {
+    const ox = groupBy(X.filter(nom), llave), oc = groupBy(C.filter(nom), llave);
+    r.ambos = [...oc.entries()].filter(([k]) => ox.has(k)).map(([k, a]) => ({ op: a[0].op, x: ox.get(k).length, b: a.length })).sort((a, b) => (b.x + b.b) - (a.x + a.b)).slice(0, 3);
+  }
+  return r;
+}
+function publicarResumenes() {
+  const dias = DATA.stats.dates || [];
+  let guardado = {};
+  try { guardado = JSON.parse(localStorage.getItem('stu_vel_resumen') || '{}') || {}; } catch (e) { }
+  let P = null;
+  try { if (window.parent && window.parent !== window && window.parent.STU_PUENTE) P = window.parent.STU_PUENTE; } catch (e) { }
+  dias.forEach(d => {
+    const r = resumenDia(d); if (!r) return;
+    const prev = guardado[d]; const firma = JSON.stringify({ ...r, ts: 0 });
+    if (prev && JSON.stringify({ ...prev, ts: 0 }) === firma) return; // sin cambios: no se vuelve a subir
+    guardado[d] = r;
+    if (P && P.guardarResumenVelocidad) { try { P.guardarResumenVelocidad(d, r); } catch (e) { } }
+  });
+  const k = Object.keys(guardado).sort(); k.slice(0, Math.max(0, k.length - 30)).forEach(x => delete guardado[x]);
+  try { localStorage.setItem('stu_vel_resumen', JSON.stringify(guardado)); } catch (e) { }
+}
+
+/* ---------- filtros ---------- */
+function base() {
+  const d = $('#fDate').value, s = $('#fSrc').value, t = $('#fTurno').value, q = ENG.norm($('#fQ').value);
+  return DATA.events.filter(e => (!d || e.date === d) && (!s || e.src === s) &&
+    (!t || (t === 'A' ? e.t < 14 * 3600 : e.t >= 14 * 3600)) &&
+    (!q || ENG.norm(`${e.clave} ${e.op} ${e.unit} ${e.loc} ${e.ruta}`).includes(q)));
+}
+function baseCond() {
+  const d = $('#fDate').value, s = $('#fSrc').value, t = $('#fTurno').value, q = ENG.norm($('#fQ').value);
+  return (DATA.conduccion || []).filter(e => (!d || e.date === d) && (!s || e.src === s) &&
+    (!t || (t === 'A' ? e.t < 14 * 3600 : e.t >= 14 * 3600)) &&
+    (!q || ENG.norm(`${e.clave} ${e.op} ${e.unit} ${e.loc} ${e.ruta} ${e.tipo}`).includes(q)));
+}
+const excesos = arr => { const v = $('#fSev').value; return arr.filter(e => e.esExceso && (!v || e.cat === v)); };
+
+function groupBy(arr, key) { const m = new Map(); arr.forEach(e => { const k = key(e); if (!m.has(k)) m.set(k, []); m.get(k).push(e); }); return m; }
+function sevCount(arr) { const c = { 'Leve': 0, 'Moderado': 0, 'Crítico': 0 }; arr.forEach(e => { if (c[e.cat] !== undefined) c[e.cat]++; }); return c; }
+
+/* ---------- render ---------- */
+function render() {
+  const B = base(), X = excesos(B), C = baseCond();
+  const d = $('#fDate').value;
+  $('#dChip').textContent = d ? `${dayName(d)} ${fmtDate(d)}` : 'Todas las fechas';
+  const opsMap = groupBy(X, e => e.clave || e.op), uniMap = groupBy(X, e => e.unit);
+  $('#nOps').textContent = opsMap.size; $('#nUni').textContent = uniMap.size; $('#nCond').textContent = C.length; $('#nExc').textContent = X.length;
+  renderIG(X, C, opsMap, uniMap);
+  renderHour(X); renderTopOps(opsMap); renderPiv(X);
+  renderOps(opsMap); renderUni(uniMap); renderCond(C); renderDet(X);
+}
+
+/* ---------- 4.8 · INFOGRAFÍA ---------- */
+const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+const nombreCorto = op => !op || op === 'Sin operador' ? 'Sin operador' : op;
+// Orden de los límites como el reporte diario: 70, 60, 50, 40, 30, 20… y al final 90 (Periférico)
+const ordenLim = lims => lims.slice().sort((a, b) => (a === 90) - (b === 90) || b - a);
+function svgSenal(n) {
+  return `<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="#fff" stroke="#C9CDD4" stroke-width="1"/><circle cx="32" cy="32" r="26" fill="#fff" stroke="#E1251B" stroke-width="7"/><text x="32" y="40" text-anchor="middle" font-family="Fira Sans Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="${n >= 100 ? 18 : 22}" fill="#26272B">${n}</text></svg>`;
+}
+function svgVelocimetro(v) {
+  const max = 120, a0 = Math.PI, ang = a0 - Math.min(v, max) / max * Math.PI;
+  const cx = 64, cy = 74, r = 54;
+  const p = t => `${(cx + r * Math.cos(t)).toFixed(1)} ${(cy - r * Math.sin(t)).toFixed(1)}`;
+  const t90 = a0 - 90 / max * Math.PI;
+  const nx = cx + (r - 12) * Math.cos(ang), ny = cy - (r - 12) * Math.sin(ang);
+  let ticks = ''; for (let k = 0; k <= max; k += 20) { const t = a0 - k / max * Math.PI; ticks += `<line x1="${(cx + (r - 9) * Math.cos(t)).toFixed(1)}" y1="${(cy - (r - 9) * Math.sin(t)).toFixed(1)}" x2="${(cx + (r + 1) * Math.cos(t)).toFixed(1)}" y2="${(cy - (r + 1) * Math.sin(t)).toFixed(1)}" stroke="#fff" stroke-width="2"/>`; }
+  return `<svg viewBox="0 0 128 84" aria-hidden="true">
+    <path d="M ${p(a0)} A ${r} ${r} 0 0 1 ${p(t90)}" fill="none" stroke="#5A5D66" stroke-width="10"/>
+    <path d="M ${p(t90)} A ${r} ${r} 0 0 1 ${p(0)}" fill="none" stroke="#E1251B" stroke-width="10"/>
+    ${ticks}<line x1="${cx}" y1="${cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="#F7C600" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="7" fill="#F7C600"/></svg>`;
+}
+const ICO_IG = {
+  freno: '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="21" fill="none" stroke="#26272B" stroke-width="4"/><circle cx="24" cy="24" r="11" fill="none" stroke="#26272B" stroke-width="4"/><path d="M8 10a24 24 0 0 0 0 28M40 10a24 24 0 0 1 0 28" fill="none" stroke="#E1251B" stroke-width="4" stroke-linecap="round"/><text x="24" y="29" text-anchor="middle" font-size="13" font-weight="800" fill="#E1251B" font-family="Fira Sans Condensed,sans-serif">!</text></svg>',
+  izq: '<svg viewBox="0 0 48 48"><path d="M34 40V22a8 8 0 0 0-8-8H12" fill="none" stroke="#26272B" stroke-width="5" stroke-linecap="round"/><path d="M19 6 10 14l9 8" fill="none" stroke="#E1251B" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  der: '<svg viewBox="0 0 48 48"><path d="M14 40V22a8 8 0 0 1 8-8h14" fill="none" stroke="#26272B" stroke-width="5" stroke-linecap="round"/><path d="M29 6l9 8-9 8" fill="none" stroke="#E1251B" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  vel: '<svg viewBox="0 0 32 32"><path d="M4 22a12 12 0 1 1 24 0" fill="none" stroke="#26272B" stroke-width="3.4" stroke-linecap="round"/><path d="M16 22l6-8" stroke="#26272B" stroke-width="3.4" stroke-linecap="round"/><circle cx="16" cy="22" r="2.6" fill="#26272B"/></svg>',
+  dist: '<svg viewBox="0 0 32 32"><rect x="3" y="12" width="15" height="9" rx="3" fill="#26272B"/><circle cx="8" cy="23" r="2.6" fill="#26272B"/><circle cx="14" cy="23" r="2.6" fill="#26272B"/><path d="M21 16h8M25 12l4 4-4 4" fill="none" stroke="#26272B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  cel: '<svg viewBox="0 0 32 32"><rect x="10" y="4" width="12" height="22" rx="2.5" fill="none" stroke="#26272B" stroke-width="3"/><path d="M5 27 27 5" stroke="#E1251B" stroke-width="3.4" stroke-linecap="round"/></svg>',
+  reloj: '<svg viewBox="0 0 32 32"><circle cx="16" cy="17" r="11" fill="none" stroke="#26272B" stroke-width="3.2"/><path d="M16 11v6l4 3" fill="none" stroke="#26272B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 3h8" stroke="#26272B" stroke-width="3" stroke-linecap="round"/></svg>',
+  cint: '<svg viewBox="0 0 32 32"><circle cx="16" cy="7" r="4" fill="#26272B"/><path d="M9 29v-9a7 7 0 0 1 14 0v9" fill="#26272B"/><path d="M8 13l17 15" stroke="#F7C600" stroke-width="3.2"/><path d="M8 13l17 15" stroke="#26272B" stroke-width="1.2" stroke-dasharray="2 2"/></svg>'
+};
+
+function renderIG(X, C, opsMap, uniMap) {
+  const d = $('#fDate').value;
+  const c = sevCount(X), tot = X.length;
+  const fecha = d ? `${['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][new Date(d + 'T12:00').getDay()]} ${fmtDate(d)}` : 'Todas las fechas';
+  const top = X.reduce((a, e) => !a || e.vmax > a.vmax ? e : a, null);
+  const prom = tot ? X.reduce((s, e) => s + e.exceso, 0) / tot : 0;
+  const conCrit = [...opsMap.values()].filter(a => a.some(e => e.cat === 'Crítico')).length;
+  const per = X.filter(e => e.perif);
+  const perBajo = d ? (DATA.stats.perifBajo[d] || 0) : Object.values(DATA.stats.perifBajo).reduce((a, b) => a + b, 0);
+  const sinDatos = !DATA.events.length;
+  const sinVel = !sinDatos && !tot; // ese día solo hay eventos de conducción
+  $('#igLay').hidden = $('#igFila3').hidden = sinDatos || sinVel;
+
+  // Cartel principal: a la izquierda el globo y el letrero, a la derecha el embudo
+  const alt = [62, 80, 100];
+  const col = (k, cls, i, rng) => `<div class="ig-col ${cls}" style="height:${alt[i]}%"><div class="num">${pct(c[k], tot)}<small>%</small></div><div class="lbl">${k} · ${c[k]}</div><div class="rng">${rng}</div></div>`;
+  $('#igHero').innerHTML = sinDatos ? `<div class="ig-vacio" style="padding:34px">Todavía no hay reportes cargados. Toca <b>⬆️ Cargar reportes del día</b> y elige el Excel de velocidad excesiva del GPS (Webfleet o Samsara).</div>` : `
+  <div class="ig-hero">
+    <div class="ig-hero-in">
+      <div class="ig-hero-txt">
+        <div class="ig-kick">Reporte de excesos de velocidad · ${esc(fecha)}</div>
+        <div class="ig-burbuja"><b>¿Sabías que…?</b><span>${d ? 'El ' + esc(fecha.toLowerCase()) + ' hubo' : 'Hubo'} <strong>${tot}</strong> excesos de velocidad en <strong>${uniMap.size}</strong> unidades. Así se reparten según cuánto se pasaron del límite:</span></div>
+        <div class="ig-letrero"><b>Baja la velocidad</b><span>A más velocidad, menos tiempo para reaccionar y más metros para frenar.</span></div>
+      </div>
+      <div class="ig-embudo">
+        ${col('Leve', 'l', 0, '+1 a +10 km/h')}
+        ${col('Moderado', 'm', 1, '+11 a +20 km/h')}
+        ${col('Crítico', 'c', 2, 'más de +20 km/h')}
+      </div>
+    </div>
+    <div class="ig-cinta"></div>
+  </div>`;
+  if (sinVel) { $('#igHero').innerHTML = `<div class="ig-vacio">Sin excesos de velocidad para ${d ? 'el ' + esc(fecha.toLowerCase()) : 'estos filtros'}. Abajo está el manejo brusco de ese día.</div>`; renderBrusco(X, C, fecha, d); $('#igRec').innerHTML = ''; $('#igFin').innerHTML = ''; return; }
+  if (sinDatos) { $('#igFin').innerHTML = $('#igRec').innerHTML = $('#igBand').innerHTML = ''; return; }
+
+  $('#igDatos').innerHTML = `
+  <div class="ig-blk">
+    <div class="ig-h"><span class="ig-n">1</span>Datos del día</div>
+    <div class="ig-datos">
+      <div class="ig-dato"><h4>Velocidad más alta</h4>
+        <div class="ig-velo">${svgVelocimetro(top ? top.vmax : 0)}<div class="v">${top ? top.vmax : '—'}<small>km/h</small></div></div>
+        <div class="d">${top ? `Unidad <b>${top.unit}</b> · ${top.hora} · límite ${top.lim}<br>${esc(nombreCorto(top.op))}<br>${esc(shortLoc(top.loc))}` : ''}</div></div>
+      <div class="ig-dato"><h4>Se pasaron en promedio</h4><div class="v">+${prom.toFixed(1)}<small>km/h</small></div>
+        <div class="d"><b>${opsMap.size}</b> operadores con exceso<br><b style="color:var(--ig-yel)">${conCrit}</b> con al menos un crítico</div></div>
+      <div class="ig-dato"><h4>Periférico Ecológico · 90</h4><div class="v">${per.length}<small>excesos</small></div>
+        <div class="d">Solo cuenta lo que pasa de <b>90 km/h</b>.${perBajo ? `<br>${perBajo} avisos abajo de 90 no cuentan.` : ''}</div></div>
+    </div>
+  </div>`;
+
+  const byL = groupBy(X, e => e.lim); const mxL = Math.max(1, ...[...byL.values()].map(a => a.length));
+  $('#igSen').innerHTML = `
+  <div class="ig-blk">
+    <div class="ig-h"><span class="ig-n">3</span>¿En qué límite se pasan más?</div>
+    <div class="ig-senales">${ordenLim([...byL.keys()]).map(l => { const n = byL.get(l).length; return `<div class="ig-senal${l === 90 ? ' perif' : ''}">${svgSenal(l)}<div class="c">${n}</div><div class="t">${l === 90 ? 'Periférico' : pct(n, tot) + '%'}</div><div class="bar"><i style="width:${n / mxL * 100}%"></i></div></div>`; }).join('')}</div>
+  </div>`;
+
+  const locs = [...groupBy(X, e => shortLoc(e.loc)).entries()].map(([loc, a]) => ({ loc, n: a.length, crit: a.filter(e => e.cat === 'Crítico').length, vmax: Math.max(...a.map(e => e.vmax)), lims: [...new Set(a.map(e => e.lim))].sort((x, y) => x - y).join('/'), e: a[0] }))
+    .sort((a, b) => b.n - a.n).slice(0, 5);
+  $('#igPuntos').innerHTML = `
+  <div class="ig-blk">
+    <div class="ig-h"><span class="ig-n">5</span>Donde más se pasan</div>
+    <div class="ig-camino">${locs.length ? locs.map((r, i) => `<div class="ig-punto"><div class="ig-pin"><span>${i + 1}</span></div>
+      <div class="q"><b>${esc(r.loc)}</b><small>Límite ${r.lims} · máx ${r.vmax} km/h${r.crit ? ` · <span style="color:#FF8A80">${r.crit} críticos</span>` : ''}${r.e.lat ? ` · <a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${r.e.lat},${r.e.lon}">mapa</a>` : ''}</small></div>
+      <div class="n">${r.n}</div></div>`).join('') : '<div style="padding:10px 0 14px 60px;color:#C9CCD3">Sin excesos con estos filtros</div>'}</div>
+  </div>`;
+
+  renderBrusco(X, C, fecha, d);
+
+  $('#igRec').innerHTML = `
+  <div class="ig-blk">
+  <div class="ig-h"><span class="ig-n">7</span>Recuerda</div>
+  <div class="ig-recuerda">
+    <div class="tit"><div class="ig-semaf"><i style="background:#E1251B"></i><i style="background:#F7C600"></i><i style="background:#22A447"></i></div><b>Recuerda</b></div>
+    <div class="ig-tips">
+      <div class="ig-tip ig-tip-sal"><div class="ic">${ICO_IG.reloj}</div><div><b>Sal a tiempo</b><span>Si sales a tu hora no tienes que correr para llegar. El tiempo no se recupera con el acelerador.</span></div></div>
+      <div class="ig-tip"><div class="ic">${ICO_IG.vel}</div><div><b>Respeta el límite</b><span>Periférico Ecológico: 90 km/h. En colonias y zona escolar, mucho menos.</span></div></div>
+      <div class="ig-tip"><div class="ic">${ICO_IG.dist}</div><div><b>Guarda tu distancia</b><span>Una unidad cargada necesita más metros para frenar.</span></div></div>
+      <div class="ig-tip"><div class="ic">${ICO_IG.cel}</div><div><b>Sin celular</b><span>Unos segundos en la pantalla son muchos metros a ciegas.</span></div></div>
+      <div class="ig-tip"><div class="ic">${ICO_IG.cint}</div><div><b>Cinturón puesto</b><span>Desde que arrancas hasta que apagas la unidad.</span></div></div>
+    </div>
+    <div class="ig-lema">Llegar a tiempo también es <em>llegar bien</em>.</div>
+  </div>
+  </div>`;
+  $('#igFin').innerHTML = `
+  <div class="ig-nota">Fuentes: ${esc(RAW.webfleet.name)} · ${esc(RAW.samsara.name)}${['conduccion', 'conduccionSS'].map(k => RAW[k] && RAW[k].name !== 'Sin cargar' ? ' · ' + esc(RAW[k].name) : '').join('')}. Se quitaron ${DATA.stats.libr} registros del Libramiento Elevado. Exceso = velocidad máxima − límite de la calle (Periférico Ecológico: 90 km/h).</div>`;
+}
+
+/* ---------- 4.8 · MANEJO BRUSCO (banda completa al final de la infografía) ---------- */
+const TIPOS_BR = [
+  { k: 'fren', t: 'Frenados bruscos', c: '#E1251B', ico: 'freno', m: e => e.tipo === 'Frenado brusco' },
+  { k: 'izq', t: 'Giros bruscos a la izquierda', c: '#2F3A57', ico: 'izq', m: e => e.tipo === 'Giro brusco izquierda' || e.tipo === 'Giro brusco' },
+  { k: 'der', t: 'Giros bruscos a la derecha', c: '#8A8F99', ico: 'der', m: e => e.tipo === 'Giro brusco derecha' },
+  { k: 'otro', t: 'Otros (arrancones…)', c: '#F7C600', ico: 'freno', m: e => !/^(Frenado brusco|Giro brusco)/.test(e.tipo) }
+];
+const tipoBr = e => TIPOS_BR.find(t => t.m(e)) || TIPOS_BR[3];
+function renderBrusco(X, C, fecha, d) {
+  const el = $('#igBand');
+  if (!C.length) {
+    el.innerHTML = `<div class="br-band"><div class="br-tit"><span class="ig-n">8</span>Manejo brusco</div>
+      <div class="ig-vacio" style="background:#fff">Sin eventos de conducción para ${d ? 'este día' : 'estos filtros'}. Súbelos en <b>⬆️ Cargar reportes del día</b> (Eventos de Conducción de Webfleet y de Samsara).</div></div>`;
+    return;
+  }
+  const n = C.length, unis = new Set(C.map(e => e.unit)).size;
+  const cnt = TIPOS_BR.map(t => ({ ...t, n: C.filter(t.m).length })).filter(t => t.n || t.k !== 'otro');
+  const fuerte = C.filter(e => e.acel !== null).reduce((a, e) => !a || e.acel > a.acel ? e : a, null);
+  const conG = C.filter(e => e.acel !== null), promG = conG.length ? conG.reduce((s, e) => s + e.acel, 0) / conG.length : 0;
+  const sev = { Alta: 0, Media: 0, Baja: 0 }; C.forEach(e => { if (sev[e.nivel] !== undefined) sev[e.nivel]++; });
+  const conSev = sev.Alta + sev.Media + sev.Baja;
+  const opsC = groupBy(C.filter(e => e.op !== 'Sin operador'), e => e.clave || e.op);
+  // Por hora, apilado por tipo
+  const horas = Array.from({ length: 24 }, (_, h) => ({ h, by: TIPOS_BR.map(t => C.filter(e => e.t !== null && Math.floor(e.t / 3600) === h && t.m(e)).length) }))
+    .map(o => ({ ...o, n: o.by.reduce((a, b) => a + b, 0) }));
+  const hIni = horas.findIndex(o => o.n), hFin = 23 - [...horas].reverse().findIndex(o => o.n);
+  const hv = horas.slice(Math.max(0, hIni), hFin + 1), hMx = Math.max(1, ...hv.map(o => o.n));
+  const pico = hv.reduce((a, o) => o.n > a.n ? o : a, hv[0]);
+  // Quiénes (operador o, si no hay, unidad)
+  const quien = [...groupBy(C, e => e.op !== 'Sin operador' ? (e.clave || e.op) : 'U' + e.unit).entries()].map(([k, a]) => ({
+    nom: a[0].op !== 'Sin operador' ? a[0].op : `Unidad ${a[0].unit}`, sub: [...new Set(a.map(e => e.unit))].join(', '),
+    by: TIPOS_BR.map(t => a.filter(t.m).length), n: a.length, alta: a.filter(e => e.nivel === 'Alta').length
+  })).sort((a, b) => b.n - a.n || b.alta - a.alta).slice(0, 8);
+  const qMx = Math.max(1, ...quien.map(q => q.n));
+  // Dónde
+  const locs = [...groupBy(C, e => shortLoc(e.loc)).entries()].map(([loc, a]) => ({ loc, n: a.length, fr: a.filter(TIPOS_BR[0].m).length, e: a[0] }))
+    .filter(r => r.loc).sort((a, b) => b.n - a.n).slice(0, 5);
+  // Repiten en los dos reportes (excesos de velocidad + manejo brusco)
+  const opsX = groupBy(X.filter(e => e.op !== 'Sin operador'), e => e.clave || e.op);
+  const ambos = [...opsC.entries()].filter(([k]) => opsX.has(k)).map(([k, a]) => ({ nom: a[0].op, b: a.length, x: opsX.get(k).length, crit: opsX.get(k).filter(e => e.cat === 'Crítico').length }))
+    .sort((a, b) => (b.b + b.x) - (a.b + a.x)).slice(0, 6);
+
+  el.innerHTML = `
+  <div class="br-band">
+    <div class="br-cartel">
+      <div class="br-izq">
+        <div class="br-kick">Manejo brusco · ${esc(fecha)}</div>
+        <div class="br-titular">Cada frenón<br>lo siente <em>el pasaje</em></div>
+        <p class="br-lead">${d ? 'El ' + esc(fecha.toLowerCase()) : 'En total'} el GPS registró <b>${n}</b> frenados y giros bruscos en <b>${unis}</b> unidades. Un pasajero de pie no sabe que vas a frenar: el que debe anticiparse eres tú.</p>
+      </div>
+      <div class="br-tipos">${cnt.map(t => `<div class="br-tipo"><div class="ic">${ICO_IG[t.ico]}</div><div class="c">${t.n}</div><div class="p" style="background:${t.c}">${pct(t.n, n)}%</div><div class="t">${t.t}</div></div>`).join('')}</div>
+    </div>
+    <div class="br-cinta"></div>
+
+    <div class="br-grid3">
+      <div class="ig-blk">
+        <div class="ig-h"><span class="ig-n">8</span>¿Qué tan fuertes?</div>
+        <div class="ig-dato br-dato"><h4>El jalón más fuerte</h4>
+          <div class="v">${fuerte ? fuerte.acel.toFixed(2) : '—'}<small>g</small></div>
+          <div class="d">${fuerte ? `${esc(fuerte.tipo)} · Unidad <b>${fuerte.unit}</b> · ${fuerte.hora}<br>${esc(nombreCorto(fuerte.op))}<br>${esc(shortLoc(fuerte.loc))}` : ''}</div>
+          <div class="br-g"><span>Fuerza promedio <b>${promG.toFixed(2)} g</b></span><span>1 g = la fuerza de la gravedad. Entre más g, más fuerte el golpe para quien va de pie.</span></div>
+        </div>
+      </div>
+      <div class="ig-blk">
+        <div class="ig-h"><span class="ig-n">9</span>¿A qué hora?</div>
+        <div class="card ig-card">
+          <div class="legend">${cnt.map(t => `<span><i style="background:${t.c}"></i>${t.t.replace('Giros bruscos a la ', 'Giro ').replace('Frenados bruscos', 'Frenado')}</span>`).join('')}</div>
+          <div class="br-horas">${hv.map(o => `<div class="br-hc" title="${String(o.h).padStart(2, '0')}:00 · ${o.n} eventos"><b>${o.n || ''}</b><div class="br-hb" style="height:${o.n / hMx * 100}%">${o.by.map((v, i) => v ? `<i style="flex:${v};background:${TIPOS_BR[i].c}"></i>` : '').join('')}</div><span>${o.h}</span></div>`).join('')}</div>
+          ${pico && pico.n ? `<div class="br-nota">La hora más pesada fue de <b>${String(pico.h).padStart(2, '0')}:00 a ${String(pico.h).padStart(2, '0')}:59</b> con ${pico.n} eventos.</div>` : ''}
+        </div>
+      </div>
+      <div class="ig-blk">
+        <div class="ig-h"><span class="ig-n">10</span>Severidad del GPS</div>
+        <div class="card ig-card br-sev">
+          ${[['Alta', 'var(--crit)', '3 o más'], ['Media', 'var(--mod)', '2 a 2.9'], ['Baja', 'var(--navy)', 'menos de 2']].map(([k, col, r]) => `<div class="br-sv"><div class="l"><b>${k}</b><small>${r}</small></div><div class="bar"><i style="width:${pct(sev[k], conSev)}%;background:${col}"></i></div><div class="n">${sev[k]}</div></div>`).join('')}
+          <div class="br-nota">${sev.Alta ? `<b>${sev.Alta}</b> eventos de severidad alta: esos son los que hay que platicar primero con el operador.` : 'Sin eventos de severidad alta. ¡Bien!'}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="br-grid2">
+      <div class="ig-blk">
+        <div class="ig-h"><span class="ig-n">11</span>Quiénes tienen más</div>
+        <div class="card ig-card">
+          ${quien.map(q => `<div class="br-q"><div class="nm"><b>${esc(q.nom)}</b><small>Unidad ${q.sub}${q.alta ? ` · <span style="color:var(--crit);font-weight:700">${q.alta} alta</span>` : ''}</small></div>
+            <div class="bar" style="width:${q.n / qMx * 100}%">${q.by.map((v, i) => v ? `<i style="flex:${v};background:${TIPOS_BR[i].c}" title="${TIPOS_BR[i].t}: ${v}"></i>` : '').join('')}</div><div class="n">${q.n}</div></div>`).join('')}
+        </div>
+      </div>
+      <div class="ig-blk">
+        <div class="ig-h"><span class="ig-n">12</span>Dónde frenan y giran más</div>
+        <div class="ig-camino">${locs.map((r, i) => `<div class="ig-punto"><div class="ig-pin"><span>${i + 1}</span></div>
+          <div class="q"><b>${esc(r.loc)}</b><small>${r.fr} frenados · ${r.n - r.fr} giros${r.e.lat ? ` · <a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${r.e.lat},${r.e.lon}">mapa</a>` : ''}</small></div>
+          <div class="n">${r.n}</div></div>`).join('')}</div>
+        ${ambos.length ? `<div class="br-ambos"><h4>⚠️ Repiten en los dos reportes</h4><p>Tienen excesos de velocidad y también manejo brusco este día.</p>
+          ${ambos.map(a => `<div><span>${esc(a.nom)}</span><span><b>${a.x}</b> excesos${a.crit ? ` (${a.crit} crít.)` : ''} · <b>${a.b}</b> bruscos</span></div>`).join('')}</div>` : ''}
+      </div>
+    </div>
+
+    <div class="br-consejos">
+      <div class="tit"><span>Manejo suave = pasaje seguro</span></div>
+      <div class="br-cs">
+        <div><div class="ic">${ICO_IG.dist}</div><b>Mira lejos</b><span>Ve dos o tres autos adelante. Si ves venir el alto, frenas con tiempo y sin jalón.</span></div>
+        <div><div class="ic">${ICO_IG.izq}</div><b>Curvas despacio</b><span>Baja la velocidad antes de la vuelta, no a la mitad. El pasaje de pie se va de lado.</span></div>
+        <div><div class="ic">${ICO_IG.freno}</div><b>Frena en dos tiempos</b><span>Primero suave para avisar, luego firme. Nunca de golpe si no es emergencia.</span></div>
+        <div><div class="ic">${ICO_IG.reloj}</div><b>Arranca cuando suban todos</b><span>Espera a que el pasaje se sujete antes de avanzar.</span></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// 3. Tabla como el reporte diario: unidad × límite
+let pivTodas = false;
+function renderPiv(X) {
+  const lims = ordenLim([...new Set(X.map(e => e.lim))]);
+  const rows = [...groupBy(X, e => e.unit).entries()].map(([u, a]) => {
+    const ops = [...groupBy(a, e => e.op).entries()].sort((p, q) => q[1].length - p[1].length).map(p => p[0]);
+    const r = { u, op: ops.filter(o => o !== 'Sin operador').join(' / ') || 'Sin operador', n: a.length };
+    lims.forEach(l => r[l] = a.filter(e => e.lim === l).length);
+    return r;
+  }).sort((a, b) => b.n - a.n || a.u - b.u);
+  const mx = Math.max(1, ...rows.map(r => r.n)), mn = Math.min(...rows.map(r => r.n));
+  // Rojo (más) → naranja → amarillo (menos), como el formato condicional de Excel
+  const heat = n => { const t = mx === mn ? 1 : (n - mn) / (mx - mn); const h = 48 - 48 * t; return `hsl(${h.toFixed(0)},92%,${(76 - 8 * t).toFixed(0)}%)`; };
+  const ver = pivTodas ? rows : rows.slice(0, 20);
+  const cel = window.innerWidth < 700; // en celular el total va junto a la unidad para verlo sin deslizar
+  const tdTot = r => `<td class="tot" style="background:${heat(r.n)}">${r.n}</td>`;
+  $('#tPiv').innerHTML = `<thead><tr><th>Vehículo</th>${cel ? '<th>Total</th>' : ''}<th>Nombre</th>${lims.map(l => `<th>${l}</th>`).join('')}${cel ? '' : '<th>Total</th>'}</tr></thead>
+  <tbody>${ver.length ? ver.map(r => `<tr class="clk" data-u="${r.u}"><td class="u">${r.u}</td>${cel ? tdTot(r) : ''}<td class="nm">${esc(r.op)}</td>${lims.map(l => `<td class="${r[l] ? '' : 'z'}">${r[l] || '·'}</td>`).join('')}${cel ? '' : tdTot(r)}</tr>`).join('')
+    : `<tr><td colspan="${lims.length + 3}" class="empty">Sin excesos con estos filtros</td></tr>`}</tbody>`;
+  $('#tPiv').querySelectorAll('tr.clk').forEach(tr => tr.onclick = () => { unitFilter = +tr.dataset.u; opFilter = null; go('detalle'); });
+  $('#pivMas').innerHTML = rows.length > 20 ? `<button class="btn dash" id="bPiv">${pivTodas ? 'Ver solo las 20 con más excesos' : `Ver las ${rows.length} unidades`}</button>` : '';
+  if (rows.length > 20) $('#bPiv').onclick = () => { pivTodas = !pivTodas; renderPiv(X); };
+}
+
+
+function renderHour(X) {
+  const hrs = []; for (let h = 4; h <= 23; h++) hrs.push(h);
+  X.forEach(e => { const h = Math.floor(e.t / 3600); if (h < 4 && !hrs.includes(h)) hrs.unshift(h); });
+  hrs.sort((a, b) => a - b);
+  const by = hrs.map(h => { const a = X.filter(e => Math.floor(e.t / 3600) === h); return { h, c: sevCount(a), n: a.length }; });
+  const max = Math.max(1, ...by.map(b => b.n)); const step = max > 60 ? 20 : max > 30 ? 10 : 5; const top = Math.ceil(max / step) * step;
+  let grid = ''; for (let v = step; v <= top; v += step) grid += `<div class="gridl" style="bottom:${v / top * 100}%"><span style="position:absolute;top:-13px;left:0;background:#fff;padding-right:3px">${v}</span></div>`;
+  $('#chHour').innerHTML = `<div class="hbars">${grid}${by.map(b => `<div class="hcol" data-tip="<b>${String(b.h).padStart(2, '0')}:00 – ${String(b.h).padStart(2, '0')}:59</b><br>Total: ${b.n}<br>Crítico: ${b.c['Crítico']} · Moderado: ${b.c['Moderado']} · Leve: ${b.c['Leve']}">
+    ${SEVS.map(s => b.c[s] ? `<div class="seg" style="height:calc(${b.c[s] / top * 100}% - 2px);background:${COL[s]}"></div>` : '').join('')}
+    ${b.n ? `<div class="tot" style="bottom:calc(${b.n / top * 100}% + 2px)">${b.n}</div>` : ''}</div>`).join('')}</div>
+    <div class="hlab">${by.map(b => `<span>${b.h}</span>`).join('')}</div>`;
+}
+
+function opRows(opsMap) {
+  return [...opsMap.values()].map(a => {
+    const c = sevCount(a), f = a[0];
+    return { key: f.clave || f.op, clave: f.clave, op: f.op, n: a.length, ...c, score: c['Leve'] * W['Leve'] + c['Moderado'] * W['Moderado'] + c['Crítico'] * W['Crítico'],
+      vmax: Math.max(...a.map(e => e.vmax)), exmax: Math.max(...a.map(e => e.exceso)), units: [...new Set(a.map(e => e.unit))].sort().join(', '),
+      src: [...new Set(a.map(e => e.src))].join(' + '), conf: a.some(e => e.conf === 'Alta') ? 'Alta' : a.some(e => e.conf === 'Media') ? 'Media' : 'Baja', estatus: f.opEstatus };
+  });
+}
+
+function renderTopOps(opsMap) {
+  const rows = opRows(opsMap).filter(r => r.op !== 'Sin operador').sort((a, b) => b.score - a.score || b.n - a.n).slice(0, 10);
+  const max = Math.max(1, ...rows.map(r => r.n));
+  $('#chOps').innerHTML = rows.length ? rows.map(r => `<div class="rbar" data-op="${esc(r.key)}" data-tip="<b>${esc(r.op)}</b>${r.clave ? ' · ' + r.clave : ''}<br>Unidad(es): ${r.units}<br>Crítico ${r['Crítico']} · Moderado ${r['Moderado']} · Leve ${r['Leve']}<br>Vel. máx ${r.vmax} km/h · Puntaje ${r.score}">
+    <div class="nm">${esc(r.op)}<small>${r.clave || ''}</small></div>
+    <div class="tr">${['Crítico', 'Moderado', 'Leve'].map(s => r[s] ? `<div style="width:${r[s] / max * 100}%;background:${COL[s]}"></div>` : '').join('')}</div>
+    <div class="n">${r.n}</div></div>`).join('') : '<div class="empty">Sin excesos con estos filtros</div>';
+  document.querySelectorAll('#chOps .rbar').forEach(el => el.onclick = () => { opFilter = el.dataset.op; unitFilter = null; go('detalle'); });
+}
+
+/* tabla genérica ordenable */
+function table(id, cols, rows, opts = {}) {
+  const st = sortState[id] || opts.sort || null;
+  if (st) { const c = cols.find(c => c.k === st.k); if (c) rows.sort((a, b) => { const va = c.sv ? c.sv(a) : a[c.k], vb = c.sv ? c.sv(b) : b[c.k]; return (va > vb ? 1 : va < vb ? -1 : 0) * st.d; }); }
+  const el = $('#' + id);
+  el.innerHTML = `<thead><tr>${cols.map(c => `<th class="${c.num ? 'num' : ''}" data-k="${c.k}">${c.t}<span class="ar">${st && st.k === c.k ? (st.d > 0 ? '▲' : '▼') : '⇅'}</span></th>`).join('')}</tr></thead>
+  <tbody>${rows.length ? rows.map((r, i) => `<tr class="${opts.click ? 'clk' : ''}" data-i="${i}">${cols.map(c => `<td class="${c.cls || ''}${c.num ? ' num' : ''}">${c.f ? c.f(r) : esc(r[c.k])}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${cols.length}" class="empty">Sin registros con estos filtros</td></tr>`}</tbody>`;
+  el.querySelectorAll('th').forEach(th => th.onclick = () => { const k = th.dataset.k; const cur = sortState[id] || opts.sort; sortState[id] = { k, d: cur && cur.k === k ? -cur.d : -1 }; render(); });
+  if (opts.click) el.querySelectorAll('tbody tr.clk').forEach(tr => tr.onclick = () => opts.click(rows[+tr.dataset.i]));
+}
+const sevCell = e => `<div style="background:${e.cat === 'Crítico' ? 'var(--crit)' : e.cat === 'Moderado' ? 'var(--mod-bg)' : e.cat === 'Leve' ? 'var(--leve-bg)' : 'var(--perif-bg)'};color:${e.cat === 'Crítico' ? '#fff' : e.cat === 'Moderado' ? '#7a2e00' : e.cat === 'Leve' ? '#6b4a00' : '#0b4f73'}">${e.cat === 'Crítico' ? '⛔' : e.cat === 'Moderado' ? '⚠️' : e.cat === 'Leve' ? '🟡' : '🛣️'} ${e.cat}</div>`;
+const mapLink = e => e.lat && e.lon ? `<a class="map" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${e.lat},${e.lon}">📍 Ver</a>` : '—';
+const confCell = e => `<span class="conf c-${e.conf.split(' ')[0]}" title="${esc(e.metodo)}">${e.conf}</span>`;
+const evCols = [
+  { k: 'hora', t: 'Hora', sv: e => e.ts, f: e => `<b>${e.hora}</b>` },
+  { k: 'src', t: 'GPS', f: e => `<span class="tag t-src">${e.src}</span>` },
+  { k: 'unit', t: 'Unidad', f: e => `<b>${e.unit}</b>` },
+  { k: 'clave', t: 'Clave', f: e => e.clave || '<span class="muted">—</span>' },
+  { k: 'op', t: 'Operador', f: e => `${esc(e.op)}${e.opEstatus && e.opEstatus !== 'Activo' ? ` <span class="muted">(${esc(e.opEstatus)})</span>` : ''}` },
+  { k: 'conf', t: 'Vínculo', f: confCell },
+  { k: 'cat', t: 'Severidad', cls: 'sev', sv: e => e.exceso, f: sevCell },
+  { k: 'vmax', t: 'Vel. máx', num: 1, f: e => `<span class="vbig">${e.vmax}</span>` },
+  { k: 'lim', t: 'Límite', num: 1 },
+  { k: 'exceso', t: 'Exceso', num: 1, f: e => `<b>+${e.exceso}</b>` },
+  { k: 'dur', t: 'Duración', num: 1, f: e => durTxt(e.dur) },
+  { k: 'ruta', t: 'Ruta SMart', f: e => e.ruta ? `${esc(e.ruta)} <span class="muted">${e.viaje}</span>` : '<span class="muted">—</span>' },
+  { k: 'loc', t: 'Ubicación', cls: 'loc', f: e => esc(shortLoc(e.loc)) },
+  { k: 'lat', t: 'Mapa', f: mapLink }
+];
+
+function renderOps(opsMap) {
+  const rows = opRows(opsMap);
+  table('tOps', [
+    { k: 'rank', t: '#', sv: r => r.score, f: r => '' },
+    { k: 'clave', t: 'Clave', f: r => `<b>${r.clave || '—'}</b>` },
+    { k: 'op', t: 'Nombre operador', f: r => `${esc(r.op)}${r.estatus && r.estatus !== 'Activo' ? ` <span class="muted">(${esc(r.estatus)})</span>` : ''}` },
+    { k: 'units', t: 'Unidad(es)' }, { k: 'src', t: 'GPS' },
+    { k: 'n', t: 'Excesos', num: 1, f: r => `<b>${r.n}</b>` },
+    { k: 'Crítico', t: 'Crítico', num: 1, f: r => r['Crítico'] ? `<span class="tag t-Crítico">${r['Crítico']}</span>` : '0' },
+    { k: 'Moderado', t: 'Moderado', num: 1 }, { k: 'Leve', t: 'Leve', num: 1 },
+    { k: 'vmax', t: 'Vel. máx', num: 1, f: r => `<span class="vbig">${r.vmax}</span>` },
+    { k: 'exmax', t: 'Exceso máx', num: 1, f: r => '+' + r.exmax },
+    { k: 'score', t: 'Puntaje', num: 1, f: r => `<span class="sc" style="background:${r['Crítico'] ? 'var(--crit)' : r['Moderado'] ? 'var(--mod)' : 'var(--navy)'}">${r.score}</span>` },
+    { k: 'conf', t: 'Vínculo', f: r => `<span class="conf c-${r.conf}">${r.conf}</span>` }
+  ], rows, { sort: { k: 'score', d: -1 }, click: r => { opFilter = r.key; unitFilter = null; go('detalle'); } });
+  $('#tOps').querySelectorAll('tbody tr').forEach((tr, i) => { const td = tr.querySelector('td'); if (td && !td.classList.contains('empty')) td.innerHTML = `<span class="muted">${i + 1}</span>`; });
+}
+
+function renderUni(uniMap) {
+  const rows = [...uniMap.entries()].map(([u, a]) => {
+    const c = sevCount(a); return { unit: u, src: a[0].src, n: a.length, ...c, vmax: Math.max(...a.map(e => e.vmax)), exmax: Math.max(...a.map(e => e.exceso)),
+      ops: [...groupBy(a, e => e.clave || e.op).values()].map(x => `${esc(x[0].op)}${x[0].clave ? ' <span class="muted">' + x[0].clave + '</span>' : ''} (${x.length})`).join('<br>') };
+  });
+  table('tUni', [
+    { k: 'unit', t: 'Unidad', f: r => `<b>${r.unit}</b>` }, { k: 'src', t: 'GPS', f: r => `<span class="tag t-src">${r.src}</span>` },
+    { k: 'n', t: 'Excesos', num: 1, f: r => `<b>${r.n}</b>` },
+    { k: 'Crítico', t: 'Crítico', num: 1, f: r => r['Crítico'] ? `<span class="tag t-Crítico">${r['Crítico']}</span>` : '0' },
+    { k: 'Moderado', t: 'Moderado', num: 1 }, { k: 'Leve', t: 'Leve', num: 1 },
+    { k: 'vmax', t: 'Vel. máx', num: 1, f: r => `<span class="vbig">${r.vmax}</span>` }, { k: 'exmax', t: 'Exceso máx', num: 1, f: r => '+' + r.exmax },
+    { k: 'ops', t: 'Operador(es) — eventos', cls: 'loc', f: r => r.ops }
+  ], rows, { sort: { k: 'n', d: -1 }, click: r => { unitFilter = r.unit; opFilter = null; go('detalle'); } });
+}
+
+function renderCond(C) {
+  table('tCond', [
+    { k: 'hora', t: 'Hora', sv: e => e.ts, f: e => `<b>${e.hora}</b>` },
+    { k: 'unit', t: 'Unidad', f: e => `<b>${e.unit}</b>` },
+    { k: 'clave', t: 'Clave', f: e => e.clave || '<span class="muted">—</span>' },
+    { k: 'op', t: 'Operador', f: e => esc(e.op) },
+    { k: 'conf', t: 'Vínculo', f: confCell },
+    { k: 'tipo', t: 'Evento', f: e => `<b>${esc(e.tipo)}</b>` },
+    { k: 'sev', t: 'Severidad GPS', num: 1, f: e => e.sev === null ? '—' : `<span class="sc" style="background:${e.nivel === 'Alta' ? 'var(--crit)' : e.nivel === 'Media' ? 'var(--mod)' : 'var(--navy)'}">${e.sev}</span>` },
+    { k: 'acel', t: 'Fuerza (g)', num: 1, f: e => e.acel === null ? '—' : e.acel.toFixed(2) },
+    { k: 'loc', t: 'Ubicación', cls: 'loc', f: e => esc(shortLoc(e.loc)) },
+    { k: 'lat', t: 'Mapa', f: mapLink }
+  ], C, { sort: { k: 'hora', d: 1 } });
+}
+
+function renderDet(X) {
+  let rows = X;
+  if (opFilter) rows = rows.filter(e => (e.clave || e.op) === opFilter);
+  if (unitFilter) rows = rows.filter(e => e.unit === unitFilter);
+  const f = opFilter ? `Operador: ${rows[0] ? rows[0].op : opFilter}` : unitFilter ? `Unidad ${unitFilter}` : '';
+  $('#detFilt').innerHTML = f ? `<button class="btn dash" id="bClr">✕ Quitar filtro · ${esc(f)}</button>` : '';
+  if (f) $('#bClr').onclick = () => { opFilter = unitFilter = null; render(); };
+  $('#detHint').textContent = `${rows.length} excesos. En Periférico Ecológico solo cuenta lo que pasa de 90 km/h; lo del Libramiento Elevado no se toma en cuenta.`;
+  table('tDet', evCols, rows, { sort: { k: 'hora', d: 1 } });
+}
+
+function go(v) {
+  curView = v;
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v));
+  if (v !== 'detalle') { opFilter = unitFilter = null; }
+  render(); window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => go(b.dataset.v));
+['#fDate', '#fSrc', '#fSev', '#fTurno'].forEach(s => $(s).onchange = render);
+$('#fQ').oninput = render;
+
+/* tooltip */
+const tip = $('#tip');
+document.addEventListener('mousemove', ev => {
+  const t = ev.target.closest('[data-tip]');
+  if (!t) { tip.style.display = 'none'; return; }
+  tip.innerHTML = t.dataset.tip; tip.style.display = 'block';
+  const x = Math.min(ev.clientX + 14, innerWidth - tip.offsetWidth - 8); tip.style.left = x + 'px'; tip.style.top = (ev.clientY + 14) + 'px';
+});
+
+function toast(m) { const t = $('#toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 2600); }
+
+/* WhatsApp */
+$('#bWa').onclick = () => {
+  const B = base(), X = excesos(B), C = baseCond(), c = sevCount(X), d = $('#fDate').value;
+  const top = X.reduce((a, e) => !a || e.vmax > a.vmax ? e : a, null);
+  const lims = ordenLim([...new Set(X.map(e => e.lim))]);
+  const unis = [...groupBy(X, e => e.unit).entries()].map(([u, a]) => ({ u, n: a.length, op: a[0].op, det: lims.map(l => { const k = a.filter(e => e.lim === l).length; return k ? `${l}: ${k}` : ''; }).filter(Boolean).join(' · ') }))
+    .sort((a, b) => b.n - a.n).slice(0, 10);
+  const crit = X.filter(e => e.cat === 'Crítico').sort((a, b) => b.exceso - a.exceso).slice(0, 6);
+  const h = new Date().getHours();
+  let t = `${h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches'}\nComparto reporte de excesos de velocidad del día ${d ? fmtDate(d) : '(todas las fechas)'}${$('#fTurno').value ? ' · ' + $('#fTurno').selectedOptions[0].text : ''}\n\n`;
+  t += `*🚨 Excesos:* ${X.length} en ${new Set(X.map(e => e.unit)).size} unidades\n⛔ Crítico ${c['Crítico']} · ⚠️ Moderado ${c['Moderado']} · 🟡 Leve ${c['Leve']}\n`;
+  if (top) t += `🏁 Más alta: ${top.vmax} km/h · ${top.unit} · ${top.hora} (límite ${top.lim})\n`;
+  t += `🛣️ Periférico Ecológico (más de 90): ${X.filter(e => e.perif).length}\n\n`;
+  t += `*Unidades con más excesos*\n` + unis.map((r, i) => `${i + 1}. ${r.u} · ${r.op} · *${r.n}* (${r.det})`).join('\n');
+  if (crit.length) t += `\n\n*⛔ Críticos*\n` + crit.map(e => `• ${e.hora} · ${e.unit} · ${e.op} · ${e.vmax}/${e.lim} km/h (+${e.exceso}) · ${shortLoc(e.loc)}`).join('\n');
+  if (C.length) { const g = groupBy(C, e => e.tipo); t += `\n\n*🛑 Manejo brusco:* ${C.length} (frenados ${(g.get('Frenado brusco') || []).length} · giros ${C.length - (g.get('Frenado brusco') || []).length})`; }
+  t += `\n\n_Sin Libramiento Elevado · Periférico Ecológico a 90 km/h_`;
+  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Resumen copiado para WhatsApp ✔'))
+    .catch(() => { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast('Resumen copiado ✔'); } catch (e) { } ta.remove(); });
+};
+
+/* 4.8: vista para captura (solo la infografía, lista para tomar pantalla y mandarla) */
+$('#bCap').onclick = () => { if (curView !== 'resumen') go('resumen'); document.body.classList.add('captura'); window.scrollTo(0, 0); const b = $('#bSalCap'); b.classList.remove('tenue'); setTimeout(() => b.classList.add('tenue'), 3500); toast('Toma la captura. Para regresar toca «Salir» arriba a la derecha.'); };
+$('#bSalCap').onclick = () => document.body.classList.remove('captura');
+/* CSV */
+$('#bCsv').onclick = () => {
+  const B = base(); const rows = B.filter(e => !$('#fSev').value || e.cat === $('#fSev').value || !e.esExceso);
+  const H = ['Fecha', 'Hora', 'GPS', 'Unidad', 'Clave', 'Operador', 'Vinculo', 'Metodo vinculo', 'Nombre en SMart', 'Ruta SMart', 'Viaje', 'Clasificacion', 'Cuenta como exceso', 'Vel max', 'Limite', 'Exceso', 'Duracion s', 'Distancia km', 'Ubicacion', 'Latitud', 'Longitud'];
+  const q = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const csv = [H.join(',')].concat(rows.map(e => [fmtDate(e.date), e.hora, e.src, e.unit, e.clave, e.op, e.conf, e.metodo, e.smartNombre, e.ruta, e.viaje, e.cat, e.esExceso ? 'Si' : 'No', e.vmax, e.lim, e.exceso, e.dur, e.dist, e.loc, e.lat, e.lon].map(q).join(','))).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = `Excesos_STU_${$('#fDate').value || 'todas'}.csv`; a.click();
+};
+
+/* ---------- carga de archivos ---------- */
+const modal = $('#mLoad');
+function slotStatus() { ['webfleet', 'samsara', 'conduccion', 'conduccionSS', 'smart', 'stu'].forEach(k => { const el = $('#s-' + k); if (!el || !RAW[k]) return; el.textContent = RAW[k].name; el.className = 'st' + (RAW[k]._new ? ' ok' : ''); }); }
+$('#bLoad').onclick = () => { slotStatus(); modal.classList.add('on'); };
+$('#bClose').onclick = () => modal.classList.remove('on');
+modal.onclick = e => { if (e.target === modal) modal.classList.remove('on'); };
+$('#bReset').onclick = () => { try { localStorage.removeItem('stu_vel_raw'); } catch (e) { } RAW = loadRaw(); rebuild(); slotStatus(); toast('Se borraron los archivos cargados en este equipo'); };
+let xlsxP = null;
+function needXLSX() {
+  if (window.XLSX) return Promise.resolve();
+  return xlsxP || (xlsxP = new Promise((ok, ko) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; s.onload = ok; s.onerror = () => { xlsxP = null; ko(new Error('No se pudo cargar el lector de Excel (revisa tu conexión).')); }; document.head.appendChild(s); }));
+}
+const normH = s => ENG.norm(s);
+function sheetAoA(ws) {
+  const a = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
+  return a.map(r => r.map(v => v instanceof Date ? (v.getFullYear() < 1901 ? v.toTimeString().slice(0, 8) : `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, '0')}-${String(v.getDate()).padStart(2, '0')}T${v.toTimeString().slice(0, 8)}`) : v));
+}
+function hasHdr(aoa, keys) { for (let i = 0; i < Math.min(15, aoa.length); i++) { const r = (aoa[i] || []).map(normH); if (keys.every(k => r.some(c => c.includes(k)))) return true; } return false; }
+async function handleFiles(files) {
+  try { await needXLSX(); } catch (e) { toast(e.message); return; }
+  const part = {}; const msgs = [];
+  for (const f of files) {
+    try {
+      const wb = XLSX.read(await f.arrayBuffer(), { type: 'array', cellDates: true });
+      const sheets = {}; wb.SheetNames.forEach(n => sheets[n] = sheetAoA(wb.Sheets[n]));
+      const names = Object.keys(sheets);
+      if (sheets['DATOS OP']) { part.stu = { name: f.name, sheets: { 'DATOS OP': sheets['DATOS OP'], 'Bajas': sheets['Bajas'] || [] } }; continue; }
+      const mon = names.find(n => hasHdr(sheets[n], ['operador', 'vehiculo', 'fecha inicial']));
+      if (mon) { part.smart = { name: f.name, sheets: { [mon]: sheets[mon] } }; continue; }
+      const cnd = names.find(n => hasHdr(sheets[n], ['vehiculo', 'evento']) && !hasHdr(sheets[n], ['velocidad maxima']));
+      if (cnd) {
+        const un = sheets[cnd].map(r => +(String(r[0] ?? '').match(/\d{4}/) || [0])[0]).filter(Boolean);
+        const esSam = /samsara/i.test(f.name) || (!/webfleet/i.test(f.name) && un.filter(u => u >= 8105).length > un.length / 2);
+        part[esSam ? 'conduccionSS' : 'conduccion'] = { name: f.name, sheets: { [cnd]: sheets[cnd] } }; continue;
+      }
+      let sp = sheets['Detalle Eventos'] ? 'Detalle Eventos' : names.find(n => hasHdr(sheets[n], ['vehiculo', 'velocidad maxima']));
+      if (sp) {
+        const units = sheets[sp].map(r => +(String(r[0] ?? '').match(/\d{4}/) || [0])[0]).filter(Boolean);
+        const hi = units.filter(u => u >= 8105).length;
+        const isSam = /samsara|reporte_velocidad/i.test(f.name) || sheets['Detalle Eventos'] || (!/excesiva|webfleet/i.test(f.name) && hi > units.length / 2);
+        part[isSam ? 'samsara' : 'webfleet'] = { name: f.name, sheets: { [sp]: sheets[sp] } }; continue;
+      }
+      msgs.push(`No reconocí ${f.name}`);
+    } catch (e) { msgs.push(`Error en ${f.name}`); }
+  }
+  Object.keys(part).forEach(k => { RAW[k] = { ...part[k], _new: true }; });
+  saveRaw(part); rebuild(); slotStatus();
+  toast(Object.keys(part).length ? `Cargado: ${Object.keys(part).join(', ')}${msgs.length ? ' · ' + msgs.join(' · ') : ''}` : msgs.join(' · ') || 'Sin cambios');
+}
+$('#fileIn').onchange = e => { handleFiles([...e.target.files]); e.target.value = ''; };
+const drop = $('#drop');
+['dragover', 'dragenter'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.style.background = '#e6edff'; }));
+['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.style.background = ''; }));
+drop.addEventListener('drop', e => handleFiles([...e.dataTransfer.files]));
+
+RAW = loadRaw(); rebuild();
+</script>
+
+<script>
+/* =====================================================================
+   PUENTE CON LA APP ROL OPERATIVO (4.7)
+   - Quién eres: sale del equipo registrado en la app.
+   - DATOS OP y Bajas: del Excel "datos" que ya tiene la app (no hay que subirlo aquí).
+   - Monitor de Smart: el del día que elijas, si la app lo tiene en la nube.
+   - Solo hay que cargar aquí los GPS: Webfleet y Samsara.
+   ===================================================================== */
+(function () {
+  let P = null;
+  try { if (window.parent && window.parent !== window && window.parent.STU_PUENTE) P = window.parent.STU_PUENTE; } catch (e) { P = null; }
+  if (!P) return;
+  const who = document.getElementById('quienSoy');
+  if (who) who.textContent = '👤 ' + P.quien();
+  const esFecha = h => /fecha/i.test(String(h || ''));
+  // El Monitor guardado en la nube trae las fechas como número de Excel: se pasan al formato que usa este módulo
+  function fechasATexto(aoa) {
+    const hi = aoa.findIndex(r => (r || []).some(c => /fecha inicial/i.test(String(c || ''))));
+    if (hi < 0) return aoa;
+    const cols = aoa[hi].map((h, i) => esFecha(h) ? i : -1).filter(i => i >= 0);
+    return aoa.map((r, i) => i <= hi ? r : (r || []).map((v, j) => {
+      if (cols.indexOf(j) < 0 || typeof v !== 'number' || v < 30000) return v;
+      const d = new Date(Math.round((v - 25569) * 86400000));
+      const p = n => String(n).padStart(2, '0');
+      return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}T${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`;
+    }));
+  }
+  const barra = document.createElement('div');
+  barra.className = 'puente-app';
+  barra.innerHTML = '<span id="puenteTxt">Conectando con la app…</span> <select id="puenteDia" hidden></select> <button id="puenteBase" hidden>Descargar base</button>';
+  const st = document.createElement('style');
+  st.textContent = '.puente-app{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#E6ECF6;color:#1D3F94;font-size:12.5px;font-weight:600;padding:8px 14px;border-bottom:1px solid #C9D5EA}.puente-app select,.puente-app button{font:inherit;font-size:12.5px;border:1.5px solid #9DB1D6;border-radius:8px;padding:4px 8px;background:#fff;color:#1D3F94}.puente-app button{cursor:pointer;background:#1D3F94;color:#fff;border-color:#1D3F94}';
+  document.head.appendChild(st);
+  const hdr = document.querySelector('header');
+  if (hdr && hdr.parentNode) hdr.parentNode.insertBefore(barra, hdr.nextSibling); else document.body.prepend(barra);
+  const txt = document.getElementById('puenteTxt');
+  const partes = [];
+
+  async function cargarBase(forzar) {
+    const b = await P.base(forzar);
+    const btn = document.getElementById('puenteBase');
+    if (b && b.necesitaWifi) {
+      btn.hidden = false;
+      btn.onclick = () => { btn.hidden = true; cargarBase(true).then(pintar); };
+      partes[0] = 'Base de operadores: estás con datos móviles, tócala para descargar';
+      return;
+    }
+    if (b && b.hojas && b.hojas['DATOS OP']) {
+      RAW.stu = { name: 'De la app · ' + (b.nombre || 'datos'), sheets: { 'DATOS OP': b.hojas['DATOS OP'], 'Bajas': b.hojas['Bajas'] || [] } };
+      partes[0] = 'Operadores: de la app (' + (b.nombre || 'datos') + ')';
+    } else partes[0] = 'La app todavía no tiene el Excel "datos" en la nube: súbelo aquí si lo necesitas';
+  }
+  async function cargarMonitor(fecha) {
+    const m = fecha ? await P.monitor(fecha) : null;
+    if (m && m.hojas) {
+      const hoja = Object.keys(m.hojas)[0];
+      RAW.smart = { name: 'De la app · ' + (m.nombre || 'Monitor') + ' (' + fecha + ')', sheets: { [hoja]: fechasATexto(m.hojas[hoja]) } };
+      partes[1] = 'Monitor de Smart: ' + fecha;
+    } else if (fecha === undefined) partes[1] = 'Sin Monitor de Smart en la app: súbelo aquí';
+  }
+  function pintar() {
+    txt.textContent = partes.filter(Boolean).join(' · ') + ' · Aquí solo carga los GPS (Webfleet y Samsara).';
+    try { rebuild(); slotStatus(); } catch (e) { console.error(e); }
+  }
+  (async function () {
+    await cargarBase(false);
+    const lista = await P.monitores();
+    const sel = document.getElementById('puenteDia');
+    if (lista.length) {
+      sel.innerHTML = lista.map(m => `<option value="${m.fecha}">Monitor ${m.fecha.split('-').reverse().join('/')}</option>`).join('');
+      sel.hidden = false;
+      sel.onchange = () => cargarMonitor(sel.value).then(pintar);
+      await cargarMonitor(lista[0].fecha);
+    } else await cargarMonitor(undefined);
+    pintar();
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+# Rol Operativo STU BUAP — reglas del proyecto
+
+App de Germán (Supervisor de operaciones, Estrella Roja) para la operación STU/BUAP.
+Germán es Ingeniero Industrial, no programa: explicar en español sencillo, sin tecnicismos.
+
+## Qué es
+- PWA de un solo `index.html` + `sw.js` + carpeta `modulos/` (entrega-turno, kilometraje, excesos).
+- APK con Capacitor; se arma sola en GitHub Actions (`.github/workflows/generar-apk.yml`).
+- Base: Firebase Realtime Database, proyecto `rutas-operaciones`, nodo principal `operaciones_v6`.
+- Reglas de la base en `reglas-firebase.json` (se pegan a mano en la consola de Firebase).
+
+## Reglas de trabajo (siempre)
+1. Español y horario de 24 horas en todo (textos, horas, archivos).
+2. 100 % gratis: plan Spark de Firebase, GitHub Pages, nada de pago.
+3. No borrar ni romper funciones ni datos que ya existen.
+4. Preguntar antes de cambios grandes (reglas de Firebase, forma de guardar, quitar secciones).
+5. Primero la vista previa (artefacto con datos de ejemplo); los archivos para subir solo cuando Germán apruebe.
+6. Nunca escribir PINs, contraseñas ni llaves en el código: el repositorio es público.
+7. Datos personales: sin domicilios ni columnas sensibles en la nube; los teléfonos personales sí se quedan.
+   El área Consulta no ve nombres completos ni teléfonos; las demás áreas sí ven nombres completos.
+8. En cada versión nueva: subir `CACHE_NAME` en `sw.js` (v21 = 5.0), `STU_VERSION` en `index.html`,
+   `version` en `package.json`, `versionName` en el workflow y el `?v=` de los módulos.
+
+## Áreas y permisos
+Supervisión, Despacho, Torre de Control, Jefatura, Desarrollo, Consulta.
+- Crear, duplicar, borrar días y poner candado: Supervisión, Jefatura, Desarrollo.
+- Quitar candado y administrar usuarios: Jefatura y Desarrollo.
+- Subir el Excel "datos" (plantilla y flota): solo Desarrollo.
+- Consulta: solo lectura.
+
+## Cómo guarda la app
+- `savePatch` = `db.update` por rutas; `saveStore` = `db.update` de cada sección (nunca `set` de toda la base:
+  las reglas no dan permiso de escritura en la raíz de `operaciones_v6`).
+- Caché local: `localStorage` `stu_buap_cache_v7`; funciona sin internet.
+- Días: `store.days[clave] = {label, key, fecha, trips[], origen, candado?}`; cambios en `store.state[clave]`.
+- Flota (5.0): manda la última Entrega de turno (`store.flotaTurno`). Lo marcado en Flota después de esa entrega
+  también cuenta; lo viejo sin confirmar (marcas anteriores, Excel "datos", estados generales) queda "Por confirmar"
+  y NO cuenta como taller. Todo pasa por `isUnidadEnTallerOInhabil` / `ftEstado`.
+- Roles archivados: `operaciones_v6_roles/{aaaa-mm}/{iso}` y resumen en `operaciones_v6_roles_idx/{iso}`.
+
+## Novedades 5.0 (para no romperlas)
+- Usuarios (`stuAbrirUsuarios`): tres formas de entrar. Google con pre-registro en `operaciones_v6_usuarios/invitados/{correo con , en vez de .}`;
+  correo y contraseña; usuario y contraseña (correo interno `usuario@<authDomain>`, mapa público `login/{usuario}`).
+  Las cuentas se crean con una segunda conexión de Firebase ("alta") para no cerrar la sesión de quien da de alta.
+  La contraseña temporal NUNCA se guarda; `debeCambiar` obliga a crear la propia. Requiere el proveedor Correo/contraseña en Firebase.
+- Pendientes y agenda (`pdAbrir`): pantalla completa, base de registros `pdRegistros()` (pendientes, permisos de `estadosRango`,
+  folios, turnos, vueltas extra, roles, cierres). En computadora: `pdVistaCronoPC` (tabla + línea de tiempo) y `pdVistaCalPC`
+  (barras de varios días). Los permisos se editan ahí mismo y se guardan en `estadosRango/{op}/{id}` (campos estado, desde, hasta, nota, papel).
+- Estilo GER: capa CSS "5.0 · ESTILO GER" al final del `<style>`; colores azul rey #1D3F94 y rojo #E31B23. Tablero en celular compacto.
+- Aviso "Sin internet" (`stuMarcarRed`). Kilometraje: números como 17.973,40 (`fNum`).
+
+## Cómo probar antes de entregar
+- Revisar sintaxis de los `<script>` con `node --check`.
+- Playwright con capturas a 400 px (teléfono) y 1440 px (computadora); cero errores en consola.
+- La copia de vista previa (`art/`) lleva datos de ejemplo; la versión real no.
+
+## Entrega
+ZIP con `subir-a-github/` (index.html, sw.js, modulos/, package.json, capacitor.config.json,
+.github/workflows/generar-apk.yml, CLAUDE.md), `firebase/reglas-firebase.json` y `GUIA.txt` paso a paso.

@@ -1,0 +1,1931 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<title>Kilometraje STU</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* Estilo GER: encabezado blanco con franjas rojo/azul/celeste, logo, lema y barra azul inclinada con corte rojo.
+   Contenido con estilo de hoja de Excel profesional: cuadrícula fina, encabezados azul marino, filas alternadas. */
+:root{
+  --bg:#ffffff; --surface:#ffffff; --soft:#f5f8fc; --soft-2:#edf2f8; --ink:#0f1b2d; --muted:#5b6a7d; --line:#e1e7ef;
+  --accent:#1c3f94; --accent-ink:#ffffff; --accent-soft:#e7edf8; --red:#e4032e; --sky:#36b4e8; --navy:#14306f; --grid:#d3dae5;
+  --ok:#14804e; --warn:#b56b00; --bad:#c62f28; --sw:#6a45c2; --np:#0a7b86;
+  --ok-s:#e6f5ee; --warn-s:#fdf2e1; --bad-s:#fdeceb; --sw-s:#f0ebfb; --np-s:#e3f5f6;
+  /* Calibri en toda la app (el logo es imagen). Donde no está instalada se usa su equivalente Carlito o la letra del sistema. */
+  --f-body:Calibri,Carlito,"Segoe UI",Roboto,Arial,sans-serif;
+  --f-head:Calibri,Carlito,"Segoe UI",Roboto,Arial,sans-serif;
+  --f-mono:Calibri,Carlito,"Segoe UI",Roboto,Arial,sans-serif;
+  --r:4px; color-scheme:light;
+}
+/* Siempre en fondo blanco, aunque el teléfono o la computadora estén en modo oscuro. */
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:-3px}
+.wrap{max-width:none;margin:0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{position:relative;background:#fff;overflow:hidden}
+.corner{position:absolute;left:0;top:0;width:190px;height:118px;pointer-events:none}
+.top .wrap{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:6px 22px;padding-block:14px 12px;padding-left:max(150px,env(safe-area-inset-left,0px))}
+.motto{position:absolute;right:max(16px,env(safe-area-inset-right,0px));top:8px;font:700 10.5px var(--f-head);letter-spacing:.3px;color:#8b93a1;text-transform:uppercase}
+.brand{display:flex;align-items:center;gap:18px;min-width:0;margin-top:10px}
+.brand img{height:46px;width:auto;display:block}
+.brand .ttl{border-left:2px solid var(--grid);padding-left:18px}
+.brand h1{font:900 26px/1 var(--f-head);margin:0;color:var(--accent);letter-spacing:.2px;text-transform:uppercase}
+.brand h1 em{font-style:normal;color:var(--red)}
+.brand small{display:block;color:#3b4658;font:600 13px var(--f-body);margin-top:4px}
+.navbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:#fff;border-bottom:1px solid var(--grid)}
+.navbar .wrap{display:flex;align-items:center;padding-block:8px}
+nav.tabs{position:relative;display:flex;gap:2px;background:var(--accent);padding:5px 34px 5px 6px;clip-path:polygon(14px 0,100% 0,calc(100% - 14px) 100%,0 100%);padding-left:20px}
+nav.tabs::after{content:"";position:absolute;right:-2px;top:0;bottom:0;width:22px;background:var(--red);clip-path:polygon(60% 0,100% 0,40% 100%,0 100%)}
+nav.tabs button{display:inline-flex;align-items:center;gap:7px;font:800 12.5px var(--f-head);text-transform:uppercase;letter-spacing:.3px;border:0;background:none;color:#cfdaf2;padding:8px 14px;cursor:pointer;border-radius:2px}
+nav.tabs button:hover{color:#fff}
+nav.tabs button[aria-selected="true"]{background:#fff;color:var(--accent)}
+button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible,tr.unit:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding-block:22px 60px}
+.navbar .stamp{margin-left:auto;font:600 12px var(--f-body);color:var(--muted)}
+section.view{display:flex;flex-direction:column;gap:18px}
+h2{position:relative;display:inline-block;font:800 19px/1.2 var(--f-head);text-transform:uppercase;letter-spacing:.2px;margin:0;color:#fff;background:var(--accent);padding:8px 40px 8px 16px;clip-path:polygon(0 0,100% 0,calc(100% - 14px) 100%,0 100%)}
+h2::after{content:"";position:absolute;right:0;top:0;bottom:0;width:22px;background:var(--red);clip-path:polygon(64% 0,100% 0,36% 100%,0 100%)}
+h2 .flag{vertical-align:2px;text-transform:none}
+.lead{margin-top:8px!important}
+h3{font-family:var(--f-head);font-weight:800;color:var(--accent);font-size:15px;margin:0;display:flex;align-items:center;gap:8px}
+h4{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:0 0 6px;display:flex;align-items:center;gap:6px}
+.lead{color:var(--muted);margin:3px 0 0;max-width:70ch}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.spread{justify-content:space-between}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.btn{display:inline-flex;align-items:center;gap:7px;font:600 13px var(--f-body);border-radius:3px;padding:9px 14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.primary:hover{filter:brightness(1.08);color:var(--accent-ink)}
+.btn.big{padding:11px 20px;font-size:14px}
+.btn.ghost{background:none;border-color:transparent;color:var(--accent);padding-inline:8px}
+.btn.danger{color:var(--bad)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.seg .btn{border:0;border-radius:0;border-right:1px solid var(--line)}
+.seg .btn:last-child{border-right:0}
+.seg .lbl{display:inline-flex;align-items:center;gap:6px;padding:0 12px;font-size:12px;font-weight:600;color:var(--muted);background:var(--soft);border-right:1px solid var(--line)}
+label.fld{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted);font-weight:600}
+input[type=date],input[type=number],input[type=text],input[type=search],select,textarea{font:14px var(--f-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:8px 10px;min-width:0}
+textarea{width:100%;min-height:56px;resize:vertical}
+.search{position:relative;display:flex;align-items:center}
+.search .i{position:absolute;left:10px;color:var(--muted)}
+.search input{padding-left:32px;width:240px;max-width:100%}
+/* carga */
+.drop{display:flex;align-items:center;gap:16px;border:2px dashed #c9d7ec;border-radius:var(--r);padding:20px;background:var(--soft);cursor:pointer;transition:background .15s,border-color .15s}
+.drop:hover,.drop.over{background:var(--accent-soft);border-color:var(--accent)}
+.drop .ico{width:52px;height:52px;border-radius:14px;background:var(--surface);color:var(--accent);display:grid;place-items:center;box-shadow:0 1px 3px rgba(15,27,45,.1);flex:none}
+.drop .ico .i{width:26px;height:26px}
+.drop strong{font-family:var(--f-head);font-size:17px;display:block}
+.drop p{margin:2px 0 0;color:var(--muted)}
+.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:12px}
+.slot{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.slot .hd{display:flex;align-items:center;gap:10px}
+.slot .ico{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:var(--soft-2);color:var(--muted);flex:none}
+.slot.loaded .ico{background:var(--ok-s);color:var(--ok)}
+.slot h3{font-size:15px}
+.slot .sub{font-size:12px;color:var(--muted)}
+.slot .fname{font-family:var(--f-mono);font-size:11.5px;word-break:break-all;color:var(--muted)}
+.slot .state{font-size:12px;font-weight:600;display:flex;gap:6px;align-items:flex-start}
+.slot .state.ok{color:var(--ok)} .slot .state.no{color:var(--muted)} .slot .state.err{color:var(--bad)}
+.slot .foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto;flex-wrap:wrap}
+details.map{font-size:12px}
+details.map summary{cursor:pointer;color:var(--accent);font-weight:600;list-style:none}
+details.map summary::-webkit-details-marker{display:none}
+.mapgrid{display:grid;grid-template-columns:auto 1fr;gap:4px 8px;align-items:center;margin-top:8px}
+.mapgrid select{font-size:12px;padding:4px 6px;max-width:100%}
+.runbar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;background:var(--soft);border-radius:var(--r);padding:16px}
+.notes{display:flex;flex-direction:column;gap:6px}
+.note{display:flex;gap:10px;align-items:flex-start;font-size:13px;padding:10px 12px;border-radius:10px;background:var(--warn-s);color:#5c3a00}
+.note .i{margin-top:1px;color:var(--warn)}
+.note.info{background:var(--accent-soft);color:#173d7a} .note.info .i{color:var(--accent)}
+.note.bad{background:var(--bad-s);color:#7a1d18} .note.bad .i{color:var(--bad)}
+/* resultados */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid #c9d2df;border-top:3px solid var(--accent);border-radius:var(--r);padding:14px;min-width:0}
+.kpi .ico{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--accent-soft);color:var(--accent)}
+.kpi .ico.ok{background:var(--ok-s);color:var(--ok)} .kpi .ico.bad{background:var(--bad-s);color:var(--bad)} .kpi .ico.warn{background:var(--warn-s);color:var(--warn)} .kpi .ico.sw{background:var(--sw-s);color:var(--sw)} .kpi .ico.mut{background:var(--soft-2);color:var(--muted)}
+.kpi .l{font-size:12px;color:var(--muted);font-weight:600}
+.kpi.click{cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.kpi.click:hover,.kpi.click[aria-expanded="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.kpi .more{color:var(--accent);font-weight:600}
+.why{display:flex;flex-direction:column;gap:18px}
+.why-h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.why-h h3{font-size:18px}
+.eq{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px}
+.eq .box{flex:1 1 180px;background:var(--soft);border-radius:12px;padding:12px 14px;min-width:0}
+.eq .box b{display:block;font:600 24px var(--f-mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+.eq .box span{font-size:12.5px;color:var(--muted)}
+.eq .box.res{background:var(--accent);}
+.eq .box.res b,.eq .box.res span{color:#fff}
+.eq .op{align-self:center;font:600 22px var(--f-mono);color:var(--muted)}
+.stack{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--soft-2)}
+.stack i{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:8px;font-size:13px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend .sw8{width:10px;height:10px;border-radius:3px;flex:none}
+.legend em{font-style:normal;color:var(--muted);font-size:12px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.step{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.step .num{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font:600 12px var(--f-mono);background:var(--accent-soft);color:var(--accent)}
+.step .t{font-size:12.5px;line-height:1.3}
+.step .n{font:600 17px var(--f-mono);font-variant-numeric:tabular-nums}
+.step .n small{font:500 12px var(--f-body);color:var(--muted)}
+.step.zero{opacity:.45}
+.step.bad .num{background:var(--bad-s);color:var(--bad)}
+.rlist{display:flex;flex-direction:column;max-height:420px;overflow:auto;border:1px solid #aeb8c8}
+.rrow{display:grid;grid-template-columns:minmax(150px,1.4fr) 120px 100px minmax(70px,1fr) 80px 90px;gap:10px;align-items:center;padding:7px 12px;border-bottom:1px solid var(--line);font-size:13px}
+.rrow.hd{position:sticky;top:0;background:var(--accent);color:#fff;font-weight:700;font-size:12.5px;z-index:1}
+.rrow:nth-child(odd):not(.hd){background:#f3f6fb}
+.rrow .n{white-space:nowrap;font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
+.rrow .rb{height:8px;border-radius:4px;background:var(--soft-2);overflow:hidden}
+.rrow .rb i{display:block;height:100%;background:var(--accent);border-radius:4px}
+@media (max-width:640px){.rrow{grid-template-columns:1fr 92px 70px;}.rrow .kp{display:none}.rrow .rb,.rrow .kc{display:none}.eq .op{display:none}}
+td.zero,td.zero b,.zero{color:#b3bcc8!important;font-weight:400}
+.canc{font:600 10.5px var(--f-body);color:var(--bad);background:var(--bad-s);border-radius:999px;padding:1px 6px;margin-left:6px}
+.dpill{display:inline-block;min-width:64px;padding:3px 8px;border-radius:7px;font-weight:600;text-align:right}
+.kpi .v{font:800 22px var(--f-head);font-variant-numeric:tabular-nums;line-height:1.25;overflow-wrap:anywhere}
+.kpi>div{min-width:0}
+.kpi .s{font-size:12px;color:var(--muted)}
+.cpk{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.cpk button{display:inline-flex;align-items:center;gap:4px;font:600 11.5px var(--f-body,inherit);padding:4px 9px;border-radius:999px;border:1px solid #c9d2df;background:#fff;color:var(--ink,#0b1a30);cursor:pointer}
+.cpk button:hover{border-color:var(--accent);color:var(--accent)}
+.cpk button svg{width:13px;height:13px}
+.cpk button.ok{background:#e8f6ec;border-color:#15803d;color:#15803d}
+.pos{color:var(--warn)} .neg{color:var(--bad)} .okc{color:var(--ok)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;font:600 12px var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:6px 12px;cursor:pointer}
+.chip .n{font-family:var(--f-mono);font-size:11px;opacity:.75}
+.chip .dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+.chip[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tbl-wrap{overflow-x:auto;border:1px solid #aeb8c8;border-radius:2px;background:var(--surface)}
+.tbl-wrap.fixed{max-height:calc(100vh - 80px);overflow:auto}
+table{border-collapse:collapse;width:100%;font:13.5px var(--f-body)}
+th,td{padding:5px 8px;border:1px solid var(--grid);text-align:left;vertical-align:middle;white-space:nowrap}
+th{font:700 12.5px var(--f-body);color:#fff;background:var(--accent);border-color:var(--navy);position:sticky;top:0;z-index:2;user-select:none}
+th.sortable{cursor:pointer} th.sortable:hover{background:var(--navy)}
+th .ar{color:#ffd24d!important}
+tr.unit td{background:#ffffff}
+tr.unit.alt td{background:#e9f0fa}
+tr.unit td{border-color:#c9d3e1}
+tr.unit:focus-visible{outline:none}
+tr.unit:focus-visible td{background:#fff3c4!important}
+tr.unit:focus-visible td:first-child{box-shadow:inset 4px 0 0 var(--red)}
+th .ar{color:var(--accent)}
+td.n,th.n{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+tr.unit{cursor:pointer}
+tr.unit:hover td{background:#fff3c4!important}
+tr.unit:hover td:first-child{box-shadow:inset 4px 0 0 #f0b400}
+tr.unit.open td{background:#d6e3f7!important;border-top:2px solid var(--accent)}
+tr.unit.open td:first-child{box-shadow:inset 4px 0 0 var(--accent)}
+.unav{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--accent);color:#fff;border-radius:3px;padding:6px 8px}
+.unav .btn{background:#fff;color:var(--accent);border-color:#fff;padding:6px 12px}
+.unav .btn:disabled{opacity:.4;cursor:not-allowed}
+.unav .where{font:700 13px var(--f-body)}
+.unav .where small{font-weight:400;opacity:.85;margin-left:6px}
+.cmp th[data-csort]{cursor:pointer} .cmp th[data-csort]:hover{background:var(--navy)}
+tr.isnp td:first-child{box-shadow:inset 3px 0 0 var(--np)}
+tr.det>td{background:#fafcff;white-space:normal;padding:0;border-bottom:2px solid var(--accent-soft)}
+.eco{display:inline-flex;align-items:center;gap:5px;font:700 14px var(--f-mono);background:none;color:var(--accent);padding:0 2px;border-radius:0;letter-spacing:.4px}
+.prov{display:inline-block;font:600 10px var(--f-mono);padding:1px 5px;border-radius:4px;margin-left:6px;vertical-align:1px}
+.prov.W{background:#e9f1ff;color:#1f4f9e} .prov.S{background:#eef7ee;color:#2a6b33}
+.opname{max-width:190px;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:bottom}
+.b{display:inline-flex;align-items:center;gap:4px;font:600 11px var(--f-body);padding:3px 8px 3px 6px;border-radius:999px;margin:1px 3px 1px 0;white-space:nowrap}
+.b .i{width:12px;height:12px;stroke-width:2.4}
+.b.ok{color:var(--ok);background:var(--ok-s)} .b.ex{color:#d35f00;background:#ffeedd} .b.ex.ex2{color:var(--bad);background:var(--bad-s)} .b.df{color:var(--bad);background:var(--bad-s)}
+.b.sg{color:#fff;background:var(--bad)} .b.sp{color:var(--accent);background:var(--accent-soft)} .b.sr{color:var(--muted);background:var(--soft-2)}
+.b.sw{color:var(--sw);background:var(--sw-s)} .b.cx{color:var(--muted);background:var(--soft-2)} .b.np{color:var(--np);background:var(--np-s)}
+.exc{display:flex;flex-direction:column;align-items:flex-end;line-height:1.2}
+.exc small{font-family:var(--f-body);font-size:11px;color:var(--muted)}
+.toggle{display:inline-flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;color:var(--muted)}
+.toggle input{accent-color:var(--np);width:17px;height:17px}
+.chev{color:var(--muted);transition:transform .15s}
+tr.open .chev{transform:rotate(90deg);color:var(--accent)}
+/* detalle */
+.det-in{position:sticky;left:0;max-width:calc(100vw - 60px);display:flex;flex-direction:column;gap:16px;padding:16px}
+.sumpills{display:flex;flex-wrap:wrap;gap:8px}
+.pill{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px;font-size:12px;color:var(--muted)}
+.pill b{font:600 15px var(--f-mono);color:var(--ink)}
+.pill.who b{font:600 13px var(--f-body)}
+.cols2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;align-items:start}
+.cmp{width:100%;font-size:13px;background:var(--surface);border:1px solid #aeb8c8;border-collapse:collapse}
+.cmp th{position:static;padding:5px 8px;font-size:12px;background:var(--accent);color:#fff;border:1px solid var(--navy);white-space:nowrap}
+.cmp td{padding:5px 8px;border:1px solid #c9d3e1;background:#fff}
+.cmp tbody tr:nth-child(even) td{background:#e9f0fa}
+.cmp tr.grp td{background:#d6e3f7!important;font-weight:700;color:var(--accent);border-top:2px solid var(--accent)}
+.cmp tr.tot td{background:#f1f3f6!important;font-weight:700;border-top:2px solid var(--accent)}
+.cmp td.wrap{white-space:normal;min-width:180px}
+.dsec{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dsec .tbl-wrap{border-radius:2px}
+.sec{border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:3px;background:#fff}
+.sec-h{display:flex;align-items:center;gap:14px;width:100%;padding:12px 16px;background:#fff;border:0;cursor:pointer;text-align:left;font:inherit;color:var(--ink)}
+.sec-h:hover{background:#f6f9fd}
+.sec-t{display:flex;align-items:center;gap:8px;font:800 15px var(--f-head);color:var(--accent);white-space:nowrap}
+.sec-s{flex:1;min-width:0;font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sec-h>.i:last-child{color:var(--muted);transition:transform .15s}
+.sec.open .sec-h>.i:last-child{transform:rotate(90deg);color:var(--accent)}
+.sec-b{display:none;flex-direction:column;gap:12px;padding:4px 16px 16px}
+.sec.open .sec-b{display:flex}
+.sec[hidden]{display:none}
+tr.srow{cursor:pointer} tr.srow:hover td{background:#fff3c4!important}
+tr.srow.open td{background:#d6e3f7!important}
+tr.srow.open .chev{transform:rotate(90deg);color:var(--accent)}
+@media (max-width:700px){.sec-h{flex-wrap:wrap}.sec-s{flex-basis:100%;white-space:normal}}
+.gdsheet:focus{outline:2px solid var(--accent);outline-offset:1px}
+.cmp td.rn{background:#f1f3f6!important;color:var(--muted);text-align:center;width:34px;font-size:12px}
+.cmp tr.blank td{background:#fff!important}
+.cmp tr.blank input.gdi::placeholder{color:#b3bcc8}
+.gdwrap{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:16px;align-items:start;margin-top:10px}
+.gdwrap img{max-width:100%;border:1px solid var(--line);border-radius:2px}
+@media (max-width:900px){.gdwrap{grid-template-columns:1fr}}
+.cmp input.gdi{width:100%;min-width:52px;border:0;background:transparent;font:13px var(--f-body);padding:2px 4px;border-radius:2px}
+.cmp input.gdi:focus{outline:2px solid var(--accent);background:#fff}
+.cmp input.gdi.n{text-align:right;font-variant-numeric:tabular-nums}
+.cmp tr.bad td{background:#fff1e0!important}
+.estb{display:inline-block;font:700 10.5px var(--f-body);color:#7a4b00;background:#fff1cc;border:1px solid #f0c75e;border-radius:999px;padding:0 6px;margin-left:4px;white-space:nowrap}
+.firstb{display:inline-block;font:700 10.5px var(--f-body);color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:0 6px;margin-left:4px;white-space:nowrap}
+.cmp .btn.ghost{padding:1px 6px;min-height:0}
+.side2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.side2 .tbl-wrap{max-height:72vh;overflow:auto}
+.tbl-wrap.one{max-height:75vh;overflow:auto}
+.tbl-wrap.one .cmp th{position:sticky;top:0;z-index:1}
+.tbl-wrap.one .cmp td.wrap{max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmp tr.grp.after td{color:var(--muted)}
+.side2 .cmp th{position:sticky;top:0;z-index:1}
+.side2 .cmp td.wrap{min-width:0;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:1100px){.side2{grid-template-columns:1fr}}
+.exg{border-bottom:1px solid var(--line)}
+.exg summary{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:8px 0;cursor:pointer;list-style:none}
+.exg summary::-webkit-details-marker{display:none}
+.exg summary .l{display:flex;align-items:center;gap:8px}
+.exg[open] summary .chev{transform:rotate(90deg)}
+.exg .cmp{margin:2px 0 10px}
+.cmp tr.none td{color:var(--bad)}
+.cmp tr.after td{color:var(--muted);font-style:italic}
+.st{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%}
+.st .i{width:12px;height:12px;stroke-width:2.6}
+.st.ok{background:var(--ok-s);color:var(--ok)} .st.up{background:var(--warn-s);color:var(--warn)} .st.dn{background:var(--bad-s);color:var(--bad)} .st.no{background:var(--bad);color:#fff}
+.prog{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;font-size:13px}
+.prog li{display:grid;grid-template-columns:24px 50px 1fr auto;gap:8px;padding:5px 0;border-bottom:1px solid var(--line);align-items:center}
+.prog .h{font-family:var(--f-mono);color:var(--muted);font-size:12px}
+.prog .k{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.prog li.ex{color:var(--muted)} .prog li.ex .why{grid-column:3/5;font-size:11.5px;color:var(--bad)}
+details.more summary{cursor:pointer;font-weight:600;color:var(--accent);font-size:13px;list-style:none;display:inline-flex;align-items:center;gap:6px}
+details.more summary::-webkit-details-marker{display:none}
+details.more[open] summary .chev{transform:rotate(90deg)}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.bar{height:8px;border-radius:4px;background:var(--soft-2);position:relative;min-width:90px}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--accent)}
+.bar b{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;font-size:13px;z-index:20;max-width:calc(100% - 32px);display:flex;gap:8px;align-items:center}
+.flag{display:inline-flex;align-items:center;gap:5px;font:600 11px var(--f-body);border-radius:999px;padding:3px 9px;vertical-align:4px}
+.flag.sample{color:var(--warn);background:var(--warn-s)} .flag.hist{color:var(--accent);background:var(--accent-soft)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:12px}
+.grid2.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:700px){.grid2.two{grid-template-columns:1fr}}
+.list{display:flex;flex-direction:column;margin:10px 0 0;padding:0;list-style:none;font-size:13px}
+.list li{display:flex;gap:8px;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding:7px 0;flex-wrap:wrap}
+.list li .why{font-size:12px;color:var(--muted)}
+.confirm{display:inline-flex;gap:6px;align-items:center;font-size:12px}
+.empty{padding:28px 16px;text-align:center;color:var(--muted)}
+.cfg{display:flex;flex-direction:column;gap:12px}
+input.cmt{width:160px;font:13px var(--f-body);padding:3px 6px;border:1px solid transparent;border-radius:2px;background:transparent}
+input.cmt:hover{border-color:var(--grid);background:#fff}
+input.cmt:focus{border-color:var(--accent);background:#fff;outline:none}
+textarea#dayCmt{min-height:80px}
+@media (max-width:700px){
+  .corner{width:96px;height:60px}
+  .top .wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-top:52px;justify-content:center}
+  .motto{position:static;width:100%;text-align:center;order:3;font-size:9px}
+  .brand{gap:10px;margin-top:0} .brand img{height:34px} .brand h1{font-size:19px} .brand small{display:none}
+  nav.tabs{width:100%;padding-right:26px}
+  nav.tabs button{flex:1;justify-content:center;padding:7px 4px;flex-direction:column;gap:2px;font-size:10px}
+  .navbar .stamp{display:none}
+  .kpi .v{font-size:18px}
+  .search input{width:100%}
+  .drop{flex-direction:column;text-align:center}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top">
+  <svg class="corner" viewBox="0 0 190 118" aria-hidden="true">
+    <polygon points="0,0 120,0 0,92" fill="#1c3f94"/>
+    <polygon points="0,0 74,0 0,58" fill="#e4032e"/>
+    <polygon points="120,0 150,0 0,118 0,92" fill="#36b4e8"/>
+    <polygon points="150,0 162,0 0,127 0,118" fill="#e4032e"/>
+    <polygon points="74,0 88,0 0,69 0,58" fill="#ffffff"/>
+  </svg>
+  <div class="wrap">
+    <div class="motto">Disciplina • Eficiencia • Seguridad • Servicio al cliente • Tecnología = Rentabilidad</div>
+    <div class="brand"><img alt="GER" src="data:image/png;base64,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"><div class="ttl"><h1>Kilometraje <em>STU</em></h1><small>Planeado vs. real por unidad · Servicio BUAP</small></div></div>
+  </div>
+</header>
+<div class="navbar"><div class="wrap">
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-v="cargar" aria-selected="true" id="tab-cargar"><i data-ic="upload"></i>Cargar</button>
+    <button role="tab" data-v="dia" aria-selected="false" id="tab-dia"><i data-ic="table"></i>Resultados</button>
+    <button role="tab" data-v="hist" aria-selected="false" id="tab-hist"><i data-ic="history"></i>Histórico</button>
+    <button role="tab" data-v="reglas" aria-selected="false" id="tab-reglas"><i data-ic="sliders"></i>Ajustes</button>
+  </nav>
+  <span class="stamp" id="stamp"></span>
+</div></div>
+
+<main class="wrap">
+<!-- ================= CARGAR ================= -->
+<section class="view" id="v-cargar">
+  <div>
+    <h2>Archivos del día</h2>
+    <p class="lead">Suelta todos juntos y se acomodan solos. Todo se procesa en este dispositivo.</p>
+  </div>
+  <label class="drop" id="drop" for="f-any">
+    <span class="ico"><i data-ic="upload"></i></span>
+    <span><strong>Suelta aquí los archivos o toca para elegirlos</strong><p>Excel o CSV · puedes elegir varios a la vez</p></span>
+    <input type="file" id="f-any" multiple accept=".xlsx,.xls,.csv,.xlsm" hidden>
+  </label>
+  <div class="slots" id="slots"></div>
+  <div class="panel gd" id="gdPanel">
+    <div class="row spread"><h3><i data-ic="moon"></i>Guardias y apoyos TP</h3><span class="small muted" id="gdDate"></span></div>
+    <p class="small muted" style="margin:4px 0 10px">No vienen en el Monitor (SMart). Copia las filas en tu Excel y pégalas aquí con Ctrl+V, como en una hoja: Guardia, Hora, Unidad, Clave, Km lleno, Km vacío y Km total. También puedes escribir o corregir cualquier celda.</p>
+    <div class="notes" id="gdStatus" style="margin-bottom:8px"></div>
+    <div class="tbl-wrap gdsheet" id="gdSheet" tabindex="0" aria-label="Hoja de guardias: pega aquí con Ctrl+V"><table class="cmp" id="tblGd"></table></div>
+    <div class="row" style="margin-top:8px"><button class="btn" id="btnGdAdd"><i data-ic="list"></i>Agregar fila</button><button class="btn danger" id="btnGdClear"><i data-ic="ban"></i>Borrar guardias de este día</button><span class="small muted">Enter baja a la siguiente fila · Tab pasa a la siguiente celda</span></div>
+  </div>
+  <div class="runbar">
+    <label class="fld">Fecha
+      <input type="date" id="opDate">
+    </label>
+    <label class="fld">Plan desde
+      <select id="planSrc">
+        <option value="auto">Automático (Monitor)</option>
+        <option value="monitor">Monitor</option>
+        <option value="plantilla">Plantilla</option>
+        <option value="horario">Horario (STU Germán)</option>
+      </select>
+    </label>
+    <button class="btn primary big" id="btnProcess"><i data-ic="play"></i>Calcular</button>
+    <button class="btn ghost" id="btnSample"><i data-ic="flask"></i>Ver ejemplo</button>
+  </div>
+  <div class="notes" id="loadNotes"></div>
+</section>
+
+<!-- ================= RESULTADOS ================= -->
+<section class="view" id="v-dia" hidden>
+  <div class="row spread">
+    <div><h2 id="diaTitle">Resultados</h2><p class="lead" id="diaSub"></p></div>
+    <div class="row">
+      <button class="btn" id="btnXlsDay"><i data-ic="download"></i>Excel</button>
+      <button class="btn primary" id="btnSaveDay"><i data-ic="save"></i>Guardar día</button>
+    </div>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div class="panel why" id="planWhy" hidden></div>
+  <div class="notes" id="dayNotes"></div>
+  <div class="sec" data-sec="units">
+    <button class="sec-h" type="button" aria-expanded="false"><span class="sec-t"><i data-ic="bus"></i>Unidades</span><span class="sec-s" id="sum-units"></span><i data-ic="chev"></i></button>
+    <div class="sec-b">
+      <div class="row spread">
+        <div class="chips" id="filters"></div>
+        <div class="row" style="gap:8px">
+        <label class="fld" style="flex-direction:row;align-items:center;gap:8px"><i data-ic="bus"></i><select id="fUnit" aria-label="Filtrar por unidad"><option value="">Todas las unidades</option></select></label>
+        <label class="search"><i data-ic="search"></i><input type="search" id="q" placeholder="Buscar unidad u operador" aria-label="Buscar unidad u operador"></label>
+        </div>
+      </div>
+      <div class="tbl-wrap fixed"><table id="tblDay"></table></div>
+    </div>
+  </div>
+  <div class="sec" data-sec="rt" id="rtPanel">
+    <button class="sec-h" type="button" aria-expanded="false"><span class="sec-t"><i data-ic="route"></i>Rutas: planeado vs. real GPS</span><span class="sec-s" id="sum-rt"></span><i data-ic="chev"></i></button>
+    <div class="sec-b">
+      <div class="row spread"><p class="small muted" style="margin:0;max-width:110ch">Junta las corridas hechas del día por ruta (o por ruta y horario) y compara el km de ruta contra el GPS. Toca una fila para ver sus corridas. No se cuentan las corridas sin GPS ni las estimadas.</p><div class="chips" id="rtMode"></div></div>
+      <div class="tbl-wrap" style="max-height:62vh;overflow:auto"><table class="cmp" id="tblRt"></table></div>
+    </div>
+  </div>
+  <div class="sec" data-sec="op" id="opPanel">
+    <button class="sec-h" type="button" aria-expanded="false"><span class="sec-t"><i data-ic="user"></i>Operadores: planeado vs. real GPS</span><span class="sec-s" id="sum-op"></span><i data-ic="chev"></i></button>
+    <div class="sec-b">
+      <div class="row spread"><p class="small muted" style="margin:0;max-width:110ch">Operador y unidad de cada corrida según SMart (Monitor). La clave sale de tu archivo de Seguimiento. Toca una fila para ver sus corridas.</p><div class="chips" id="opMode"></div></div>
+      <div class="tbl-wrap" style="max-height:62vh;overflow:auto"><table class="cmp" id="tblOp"></table></div>
+    </div>
+  </div>
+  <div class="sec" data-sec="ex">
+    <button class="sec-h" type="button" aria-expanded="false"><span class="sec-t"><i data-ic="ban"></i>Km excluidos</span><span class="sec-s" id="sum-ex"></span><i data-ic="chev"></i></button>
+    <div class="sec-b"><p class="small muted" style="margin:0">No suman al km real. Cada renglón dice por qué. Los cuentakilómetros corregidos se acumulan en Histórico › GPS por revisar al guardar el día.</p><ul class="list" id="lstEx"></ul></div>
+  </div>
+  <div class="sec" data-sec="sw">
+    <button class="sec-h" type="button" aria-expanded="false"><span class="sec-t"><i data-ic="moon"></i>Switch encendido</span><span class="sec-s" id="sum-sw"></span><i data-ic="chev"></i></button>
+    <div class="sec-b"><p class="small muted" style="margin:0">Viajes que empezaron el día anterior o que duran más de 10 h porque el switch no se apagó. Sí suman al km real.</p><ul class="list" id="lstSw"></ul></div>
+  </div>
+  <div class="sec" data-sec="cm">
+    <button class="sec-h" type="button" aria-expanded="false"><span class="sec-t"><i data-ic="list"></i>Comentarios del día</span><span class="sec-s" id="sum-cm"></span><i data-ic="chev"></i></button>
+    <div class="sec-b"><p class="small muted" style="margin:0">Novedades generales de la operación. Se guardan con el día en el histórico y salen en el Excel.</p><textarea id="dayCmt" placeholder="ej. lluvia fuerte en la tarde, cierre en Av. San Claudio, falla general de Webfleet de 14:00 a 15:30"></textarea></div>
+  </div>
+</section>
+
+<!-- ================= HISTÓRICO ================= -->
+<section class="view" id="v-hist" hidden>
+  <div class="row spread">
+    <div><h2>Histórico</h2><p class="lead" id="histSub"></p></div>
+    <label class="fld">Mes <select id="histMonth"></select></label>
+  </div>
+  <div class="row">
+    <div class="seg"><span class="lbl"><i data-ic="download"></i>Descargar</span><button class="btn" id="btnHistXls">Excel</button><button class="btn" id="btnHistCsv">CSV</button><button class="btn" id="btnHistJson">Respaldo</button></div>
+    <label class="btn" for="f-hist"><i data-ic="upload"></i>Cargar respaldo</label>
+    <input type="file" id="f-hist" accept=".json" hidden>
+  </div>
+  <div class="kpis" id="histKpis"></div>
+  <div class="panel"><h3><i data-ic="calendar"></i>Días guardados</h3><div class="tbl-wrap" style="margin-top:10px"><table id="tblHistDays"></table></div></div>
+  <div class="panel" id="cxPanel">
+    <div class="row spread"><h3><i data-ic="alert"></i>GPS por revisar · cuentakilómetros corregidos</h3><label class="fld">Semana <select id="cxWeek"></select></label></div>
+    <p class="small muted" style="margin:4px 0 10px">Se acumula con cada día guardado. El viernes copia el correo y envíalo a Torre de control.</p>
+    <div class="notes" id="cxNote"></div>
+    <div class="tbl-wrap"><table class="cmp" id="tblCx"></table></div>
+    <div class="row" style="margin-top:10px"><button class="btn primary" id="btnCxCopy"><i data-ic="file"></i>Copiar correo para Torre de control</button><button class="btn" id="btnCxXls"><i data-ic="download"></i>Excel</button></div>
+    <label class="fld" style="margin-top:10px">Correo listo para enviar<textarea id="cxMail" readonly style="min-height:200px;font:13px var(--f-body)"></textarea></label>
+  </div>
+  <div class="panel"><h3><i data-ic="bus"></i>Acumulado por unidad</h3><div class="tbl-wrap" style="margin-top:10px"><table id="tblHistUnits"></table></div></div>
+</section>
+
+<!-- ================= AJUSTES ================= -->
+<section class="view" id="v-reglas" hidden>
+  <div><h2>Ajustes</h2><p class="lead">Se guardan en este dispositivo y recalculan el día abierto.</p></div>
+  <div class="grid2">
+    <div class="panel cfg">
+      <h3><i data-ic="pin"></i>Unidades por GPS</h3>
+      <div class="row">
+        <label class="fld">Webfleet desde <input type="number" id="cfgW0"></label>
+        <label class="fld">hasta <input type="number" id="cfgW1"></label>
+      </div>
+      <div class="row">
+        <label class="fld">Samsara desde <input type="number" id="cfgS0"></label>
+        <label class="fld">hasta <input type="number" id="cfgS1"></label>
+      </div>
+      <label class="fld">Tolerancia (± %) <input type="number" id="cfgTol" min="0" max="100"></label>
+    </div>
+    <div class="panel cfg">
+      <h3><i data-ic="moon"></i>Switch encendido</h3>
+      <label class="fld">Empezó el día anterior y dura al menos (horas) <input type="number" id="cfgSwMin" step="0.5" min="0"></label>
+      <label class="fld">O cualquier viaje de más de (horas) <input type="number" id="cfgSwMax" step="0.5" min="1"></label>
+      <p class="small muted">Se cuenta el día en que cerró y lleva la nota “⚠️ Viaje arrastrado desde el día anterior por switch encendido”.</p>
+    </div>
+    <div class="panel cfg">
+      <h3><i data-ic="ban"></i>Cuentakilómetros corregidos</h3>
+      <p class="small muted">Ya se detectan “cuenta kilómetros corregidos”, “cuentakilómetros corregido”, “corrección de odómetro” y variantes. Agrega otras frases si hace falta.</p>
+      <label class="fld">Otras frases (una por línea)<textarea id="cfgCx" placeholder="ej. ajuste manual de km"></textarea></label>
+    </div>
+    <div class="panel cfg">
+      <h3><i data-ic="save"></i>Archivos guardados</h3>
+      <p class="small muted">El último archivo de Rutas y km (Seguimiento) y de Flota que subas se guarda en este dispositivo y se carga solo cada vez que abras la app. Cuando cambie, sube el nuevo.</p>
+      <div id="savedFiles"></div>
+    </div>
+  </div>
+</section>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+"use strict";
+/* ============================================================
+   UTILIDADES
+   ============================================================ */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const NORM=s=>String(s??'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+const KEY=s=>NORM(s).replace(/[^a-z0-9]+/g,'');
+const DAY=864e5;
+// 5.0 · Números como 17.973,40 (punto para miles, coma para decimales) para pegarlos sin problema en Excel de OneDrive
+const fNum=(n,d)=>{const neg=n<0,t=Math.abs(n).toFixed(d).split('.');t[0]=t[0].replace(/\B(?=(\d{3})+(?!\d))/g,'.');return(neg?'-':'')+t[0]+(d?','+t[1]:'')};
+const f1=n=>n==null||!isFinite(n)?'—':fNum(n,1);
+const f0=n=>n==null||!isFinite(n)?'—':fNum(Math.round(n),0);
+const sgn=n=>n==null||!isFinite(n)?'—':(n>0?'+':'')+f1(n);
+const pct=n=>n==null||!isFinite(n)?'—':(n>0?'+':'')+n.toFixed(1).replace('.',',')+'%';
+const lsGet=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch{return d}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
+const ICONS={
+  bus:'<rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 21v-3M16 21v-3"/><circle cx="8" cy="14.5" r=".6"/><circle cx="16" cy="14.5" r=".6"/>',
+  upload:'<path d="M12 15V4M7 9l5-5 5 5M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/>',
+  table:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 10v10"/>',
+  history:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/>',
+  sliders:'<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
+  play:'<path d="M7 4l12 8-12 8z"/>',
+  flask:'<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 15h9"/>',
+  download:'<path d="M12 4v11M7 10l5 5 5-5M4 20h16"/>',
+  save:'<path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 3v5h8V3M7 21v-7h10v7"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
+  ban:'<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>',
+  moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+  calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  pin:'<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+  route:'<circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h8.5a3.5 3.5 0 0 0 0-7h-9a3.5 3.5 0 0 1 0-7H16"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7"/>',
+  up:'<path d="M12 19V5M6 11l6-6 6 6"/>',
+  down:'<path d="M12 5v14M6 13l6 6 6-6"/>',
+  alert:'<path d="M12 3.5l9.5 16.5h-19z"/><path d="M12 10v4M12 17v.5"/>',
+  nosignal:'<path d="M3 3l18 18"/><path d="M12 19.5h.01M8.5 16a5 5 0 0 1 6-.6M5 12.5a10 10 0 0 1 4.3-2.3M15.5 10.3A10 10 0 0 1 19 12.5"/>',
+  minus:'<path d="M6 12h12"/>',
+  help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17v.5"/>',
+  chev:'<path d="M9 6l6 6-6 6"/>',
+  list:'<path d="M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+  diff:'<path d="M7 4v16M3 8l4-4 4 4M17 20V4M13 16l4 4 4-4"/>',
+  file:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'
+};
+const ic=(n,c='')=>`<svg class="i ${c}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]||''}</svg>`;
+function hydrateIcons(root=document){root.querySelectorAll('i[data-ic]').forEach(e=>e.outerHTML=ic(e.dataset.ic))}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,3200)}
+
+function num(v){
+  if(v==null||v==='')return NaN;
+  if(typeof v==='number')return v;
+  let s=String(v).trim().replace(/\s/g,'').replace(/[^0-9,.\-]/g,'');
+  const c=s.lastIndexOf(','),d=s.lastIndexOf('.');
+  if(c>-1&&d>-1){s=c>d?s.replace(/\./g,'').replace(',','.'):s.replace(/,/g,'')}
+  else if(c>-1){s=s.replace(',','.')}
+  const n=parseFloat(s);return isFinite(n)?n:NaN;
+}
+/* Fechas como "hora de pared" en milisegundos (campos UTC = hora local del reporte). */
+const MONTHS={ene:1,jan:1,feb:2,mar:3,abr:4,apr:4,may:5,jun:6,jul:7,ago:8,aug:8,sep:9,set:9,oct:10,nov:11,dic:12,dec:12};
+let DT_REF=null;
+/* Fecha "invertida" (18-11-2026 leída como 26/11/2018): si la fecha cae a más de un año de la referencia
+   y al intercambiar año (2 dígitos) y día queda cerca, se usa la intercambiada. */
+function fixYMD(Y,M,D){
+  const ref=DT_REF??Date.now(),far=t=>Math.abs(t-ref)>366*DAY;
+  const t0=Date.UTC(Y,M-1,D);if(!far(t0))return[Y,M,D];
+  const y2=Y%100;if(D>=1&&D<=31&&y2>=1&&y2<=31){const t1=Date.UTC(2000+D,M-1,y2);if(!far(t1))return[2000+D,M,y2]}
+  return[Y,M,D];
+} // fecha de referencia (la del nombre del archivo) para resolver años de 2 dígitos
+function dmyPair(s){const m=String(s??'').match(/(?<!\d)(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})(?!\d)/);return m?[+m[1],+m[2]]:null}
+function parseDT(v,order){
+  if(v==null||v==='')return null;
+  if(v instanceof Date&&!isNaN(v))return{ms:Date.UTC(v.getFullYear(),v.getMonth(),v.getDate(),v.getHours(),v.getMinutes(),v.getSeconds()),d:true,t:true};
+  if(typeof v==='number'){
+    if(v>=0&&v<1)return{ms:Math.round(v*DAY/1000)*1000,d:false,t:true};
+    if(v>20000&&v<90000){const ms=Math.round((v-25569)*DAY/1000)*1000,dd=new Date(ms);
+      const [y,mo,d]=fixYMD(dd.getUTCFullYear(),dd.getUTCMonth()+1,dd.getUTCDate());
+      return{ms:Date.UTC(y,mo-1,d)+ms%DAY,d:true,t:v%1!==0}}
+    return null;
+  }
+  let s=NORM(v); let ampm=null, m;
+  if(m=s.match(/\b([ap])\.?\s?m\b\.?/)){ampm=m[1];s=s.replace(m[0],' ')}
+  let Y,M,D,h=0,mi=0,se=0,hasD=false,hasT=false;
+  if(m=s.match(/(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/)){Y=+m[1];M=+m[2];D=+m[3];hasD=true;s=s.replace(m[0],' ')}
+  else if(m=s.match(/(?<!\d)(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})(?!\d)/)){
+    let a=+m[1],b=+m[2];Y=+m[3];
+    if(Y<100){
+      // año de 2 dígitos ("mi. 18/11/26", "26-11-18"): se prueban día/mes/año, año/mes/día y mes/día/año
+      // y se queda la fecha válida más cercana a la del archivo (o a hoy)
+      const ref=DT_REF??Date.now(),c=+m[3];
+      const cands=[[2000+c,b,a],[2000+a,b,c],[2000+c,a,b]].filter(([y,mo,d])=>mo>=1&&mo<=12&&d>=1&&d<=31);
+      if(order==='mdy')cands.unshift([2000+c,a,b]);
+      let best=null,bd=Infinity;for(const k of cands){const dd=Math.abs(Date.UTC(k[0],k[1]-1,k[2])-ref);if(dd<bd){bd=dd;best=k}}
+      if(best){[Y,M,D]=best}else{Y=2000+c;D=a;M=b}
+    }else if(a>12){D=a;M=b}else if(b>12){M=a;D=b}else if(order==='mdy'){M=a;D=b}else{D=a;M=b}
+    hasD=true;s=s.replace(m[0],' ');
+  }else if(m=s.match(/(\d{1,2})\s*(?:de\s*)?([a-z]{3})[a-z]*\.?\s*(?:de\s*|,\s*)?(\d{4})/)&&MONTHS[m[2]]){D=+m[1];M=MONTHS[m[2]];Y=+m[3];hasD=true;s=s.replace(m[0],' ')}
+  else if(m=s.match(/([a-z]{3})[a-z]*\.?\s*(\d{1,2}),?\s*(\d{4})/)&&MONTHS[m[1]]){M=MONTHS[m[1]];D=+m[2];Y=+m[3];hasD=true;s=s.replace(m[0],' ')}
+  if(m=s.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/)){h=+m[1];mi=+m[2];se=+(m[3]||0);hasT=true;
+    if(ampm==='p'&&h<12)h+=12; if(ampm==='a'&&h===12)h=0;}
+  if(!hasD&&!hasT)return null;
+  if(hasD&&(M<1||M>12||D<1||D>31))return null;
+  if(hasD)[Y,M,D]=fixYMD(Y,M,D);
+  const base=hasD?Date.UTC(Y,M-1,D):0;
+  return{ms:base+((h*60+mi)*60+se)*1000,d:hasD,t:hasT};
+}
+function parseDur(v,hdr){
+  if(v==null||v==='')return NaN;
+  const h=NORM(hdr);
+  if(typeof v==='number'){
+    if(/\bmin/.test(h))return v/60;
+    if(/\(s\)|\bseg|second/.test(h))return v/3600;
+    if(/\(h\)|\bhoras?\b|\bhours?\b/.test(h))return v;
+    return v<5?v*24:v/60;
+  }
+  const s=NORM(v);let d=0,m;
+  if(m=s.match(/(\d+)\s*d(ia|ias|ay|ays)?\b/))d=+m[1]*24;
+  if(m=s.match(/(\d+):(\d{2})(?::(\d{2}))?/))return d+(+m[1])+m[2]/60+(m[3]?m[3]/3600:0);
+  let t=0,ok=false;
+  if(m=s.match(/(\d+(?:[.,]\d+)?)\s*h/)){t+=num(m[1]);ok=true}
+  if(m=s.match(/(\d+)\s*min/)){t+=m[1]/60;ok=true}
+  return ok?d+t:(d?d:NaN);
+}
+const dayKey=ms=>new Date(ms).toISOString().slice(0,10);
+const hhmm=ms=>ms==null?'—':new Date(ms).toISOString().slice(11,16);
+const dShort=k=>k?k.slice(8,10)+'/'+k.slice(5,7):'';
+const dmy=k=>k?k.slice(8,10)+'/'+k.slice(5,7)+'/'+k.slice(0,4):'';
+const tsShort=ms=>ms==null?'—':dShort(dayKey(ms))+' '+hhmm(ms);
+
+/* Fecha que aparece en el nombre del archivo: "13-11", "2026-11-13", "17.11"... toma la última válida. */
+function dateFromName(name){
+  const yr=new Date().getFullYear(); let best=null, m;
+  const s=name.replace(/\.[a-z0-9]+$/i,'');
+  const re=/(\d{4})[-_.](\d{1,2})[-_.](\d{1,2})|(\d{1,2})[-_.](\d{1,2})(?:[-_.](\d{2,4}))?/g;
+  while((m=re.exec(s))){
+    let Y,M,D;
+    let cands;
+    if(m[1])cands=[[+m[1],+m[2],+m[3]]];
+    else if(m[6]&&m[6].length<=2){const a=+m[4],b=+m[5],c=+m[6];
+      // año de 2 dígitos: puede ser día-mes-año (18-11-26) o año-mes-día como Samsara (26-11-18); se elige la más cercana a hoy
+      cands=[[2000+c,b,a],[2000+a,b,c]]}
+    else cands=[[m[6]?+m[6]:yr,+m[5],+m[4]]];
+    let pick=null,bd=Infinity;
+    for(const [Y,M,D] of cands){if(!(M>=1&&M<=12&&D>=1&&D<=31&&Y>2000&&Y<2100))continue;const d=Math.abs(Date.UTC(Y,M-1,D)-Date.now());if(d<bd){bd=d;pick=[Y,M,D]}}
+    if(pick&&bd<366*DAY)best=`${pick[0]}-${String(pick[1]).padStart(2,'0')}-${String(pick[2]).padStart(2,'0')}`;
+  }
+  return best;
+}
+function unitOf(v){
+  if(v==null||v==='')return null;
+  if(typeof v==='number'){const n=Math.round(v);return n>=8000&&n<=8299?n:null}
+  const s=String(v);let m=s.match(/(?:^|\D)(8[0-2]\d{2})(?!\d)/);if(m)return +m[1];
+  m=s.match(/stu\s*-?\s*0*(\d{1,3})(?!\d)/i);if(m){const n=8000+ +m[1];return n<=8299?n:null}
+  return null;
+}
+
+/* ============================================================
+   DETECCIÓN DE COLUMNAS
+   ============================================================ */
+const LOC=['lugar','direccion','ubicacion','location','address','latitud','longitud','origen','destino','posicion','geocerca','geofence'];
+const ODO=['cuentakil','cuenta kil','odomet','kilometraje'];
+const FIELDS={
+  tele:{
+    odo0:{l:'Cuentakm inicio',inc:['cuentakilometros inicio','cuentakilometros de inicio','cuentakilometros inicial','cuenta kilometros inicio','odometro inicio','odometro inicial','odometro de inicio','start odometer','odometer start','km inicial','kilometraje inicial','kilometraje de inicio']},
+    odo1:{l:'Cuentakm fin',inc:['cuentakilometros fin','cuentakilometros de fin','cuentakilometros final','cuenta kilometros fin','odometro fin','odometro final','odometro de fin','end odometer','odometer end','km final','kilometraje final','kilometraje de fin']},
+    from:{l:'Lugar inicio',inc:['lugar de inicio','direccion de inicio','ubicacion de inicio','ubicacion inicial','start location','start address','origen','punto de inicio','direccion inicial','desde']},
+    to:{l:'Lugar fin',inc:['lugar de destino','lugar de fin','destino','direccion de fin','direccion final','ubicacion final','ubicacion de fin','end location','end address','hasta']},
+    start:{l:'Inicio',inc:['inicio','hora de inicio','fecha de inicio','fecha y hora de inicio','fecha/hora de inicio','start','start time','hora inicio','fecha inicio','salida','comienzo','inicio del viaje'],exc:[...LOC,...ODO,'km','distancia']},
+    end:{l:'Fin',inc:['fin','hora de fin','fecha de fin','fecha y hora de fin','fecha/hora de fin','end','end time','hora fin','fecha fin','llegada','termino','final','fin del viaje'],exc:[...LOC,...ODO,'km','distancia']},
+    km:{l:'Distancia',inc:['distancia','distance','km recorridos','kilometros recorridos','distancia recorrida','recorrido','millas','miles','km','kms','distancia (km)','distance (km)'],exc:[...ODO,'inicio','inicial','fin','final','start','end','privad','negocio','business','private']},
+    dur:{l:'Duración',inc:['duracion','duration','tiempo de viaje','tiempo de conduccion','drive time','duracion del viaje','tiempo'],exc:['inactiv','ralenti','idle','parada','stop','espera']},
+    unit:{l:'Unidad',inc:['vehiculo','unidad','vehicle','objeto','economico','asset','activo','eco','camion','nombre del vehiculo','vehicle name','numero economico']},
+    driver:{l:'Operador',inc:['conductor','operador','driver','chofer','driver name']},
+    fecha:{l:'Fecha',inc:['fecha','date','dia'],exc:['fin','inicio','start','end','final','inicial']}
+  },
+  plan:{
+    unit:{l:'Unidad',inc:['unidad','economico','eco','vehiculo','autobus','camion','bus','no unidad','numero de unidad','num eco','no eco','unidad asignada','unidad real'],exc:['faltante','repeticion','smart']},
+    route:{l:'Ruta',inc:['ruta','ruta cliente','servicio','recorrido','nombre de ruta','ruta asignada','orden de servicio','nombre del servicio','corrida'],exc:['tipo','simplificada','titular','proxima','especifica','smart','auditor','$','tiempo','no.']},
+    hora:{l:'Hora',inc:['hr','hora','horario','hora de salida','salida','hora inicio','hora programada','fecha inicial','fecha inicio'],exc:['final','fin','estancia','convertidor','empalme','tiempo','finalizacion']},
+    fin:{l:'Hora fin',inc:['fecha final','hora fin','hora final','hora de llegada','llegada','hr finalizacion','hora de termino']},
+    km:{l:'Km',inc:['tot kms','km total','kms totales','total km','km totales','km','kms','kilometros','distancia'],exc:['lleno','vac','real','smart','webfleet','$']},
+    status:{l:'Estatus',inc:['estatus','status','estado','cumplimiento','realizado','realizada','observacion','observaciones','comentarios','incidencia']},
+    oper:{l:'Operador',inc:['operador','conductor','nombre operador','nombre del operador','nombre']},
+  }
+};
+const ALL_ALIASES=Object.values(FIELDS).flatMap(g=>Object.values(g).flatMap(f=>f.inc));
+function scoreHdr(h,f){
+  if(!h)return 0;let best=0;
+  for(const [ai,a] of f.inc.entries()){
+    if(h===a){best=Math.max(best,1000-ai);continue}  // coincidencia exacta: gana el alias que va primero en la lista
+    if(f.exc&&f.exc.some(x=>h.includes(x)))continue;
+    const re=new RegExp('(^|[^a-z])'+a.replace(/[.*+?^${}()|[\]\\\/]/g,'\\$&')+'($|[^a-z])');
+    if(re.test(h))best=Math.max(best,a.length);
+  }
+  return best;
+}
+function findHeader(aoa){
+  let bi=0,bs=-1;
+  for(let r=0;r<Math.min(aoa.length,40);r++){
+    const row=aoa[r]||[];let s=0;
+    for(const c of row){const h=NORM(c);if(h&&h.length<60&&ALL_ALIASES.some(a=>h===a||h.includes(a)))s++}
+    if(s>bs){bs=s;bi=r}
+  }
+  return{row:bi,score:bs};
+}
+function autoMap(headers,group,aoa,hdr){
+  const defs=FIELDS[group],map={},used=new Set();
+  // columnas con datos (una columna vacía como "Ruta(Id)" no debe ganar)
+  const filled=headers.map((_,i)=>{let n=0;if(!aoa)return 1;for(const r of aoa.slice(hdr+1,hdr+60))if(r&&r[i]!=null&&String(r[i]).trim()!=='')n++;return n});
+  for(const [k,f] of Object.entries(defs)){
+    let bi=-1,bs=0;
+    headers.forEach((h,i)=>{if(used.has(i))return;const hn=NORM(h);let s=scoreHdr(hn,f);if(!s)return;
+      if(k==='km'&&/\bkm|kms\b|\(km/.test(hn))s+=300;      // "Distancia de trabajo (Km.)" gana a "Distancia" en metros
+      if(filled[i]===0)s=s/1000;                            // vacía: solo si no hay otra
+      if(s>bs){bs=s;bi=i}});
+    if(bi>=0){map[k]=bi;used.add(bi)}
+  }
+  // estatus por contenido (el Monitor trae REALIZADA/CANCELADA en una columna sin título)
+  if(group==='plan'&&map.status==null&&aoa){
+    for(let i=0;i<headers.length;i++){if(used.has(i))continue;let n=0,t=0;
+      for(const r of aoa.slice(hdr+1,hdr+200)){if(!r||r[i]==null)continue;t++;if(/^(realizad|cancelad|inicial|pendiente|no realizad|en curso|finalizad)/.test(NORM(r[i])))n++}
+      if(t&&n/t>0.5){map.status=i;break}}
+  }
+  return map;
+}
+/* Elige la hoja con mejor encabezado para el grupo y devuelve tabla + mapeo */
+function pickTable(wb,group,prefer){
+  let best=null;
+  for(const name of wb.SheetNames){
+    if(prefer&&!prefer(NORM(name)))continue;
+    const aoa=wb.aoa(name); if(!aoa.length)continue;
+    const h=findHeader(aoa);
+    const headers=(aoa[h.row]||[]).map(x=>x==null?'':String(x).trim());
+    const map=autoMap(headers,group,aoa,h.row);
+    const sc=h.score*10+Object.keys(map).length+Math.min(aoa.length,2000)/2000;
+    if(!best||sc>best.sc)best={sheet:name,aoa,hdr:h.row,headers,map,sc};
+  }
+  return best;
+}
+
+/* ============================================================
+   LECTURA DE ARCHIVOS
+   ============================================================ */
+async function readWorkbook(file){
+  const isCsv=/\.csv$/i.test(file.name);
+  let wb;
+  if(isCsv){const txt=await file.text();wb=XLSX.read(txt,{type:'string',raw:true})}
+  else{const buf=await file.arrayBuffer();wb=XLSX.read(buf,{type:'array',cellDates:false})}
+  const cache={};
+  return{SheetNames:wb.SheetNames,aoa:n=>cache[n]||(cache[n]=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:null,blankrows:false}))};
+}
+function wbFromAoa(sheets){return{SheetNames:Object.keys(sheets),aoa:n=>sheets[n]}}
+
+function classifyByName(n){
+  if(/stu.?germ|seguimiento|base.?de.?datos.?km/i.test(n))return'stu';
+  if(/plantilla|orden(es)?.?(de.?)?servicio/i.test(n))return'plan';
+  if(/monitor|smart/i.test(n))return'mon';
+  if(/webfleet|informe.?de.?viajes/i.test(n))return'W';
+  if(/samsara|reporte.?(de.?)?viajes/i.test(n))return'S';
+  return null;
+}
+function sniffKind(wb){
+  const names=wb.SheetNames.map(NORM);
+  if(names.includes('rutas')&&names.some(x=>x.includes('horario')))return'stu';
+  for(const n of wb.SheetNames){const aoa=wb.aoa(n);for(const r of aoa.slice(0,12)){const h=(r||[]).map(NORM);
+    if(h.includes('servicio')&&h.includes('viaje')&&(h.includes('vehiculo')||h.includes('cuenta'))||h.some(x=>x.startsWith('distancia de trabajo')))return'mon'}}
+  const t=pickTable(wb,'tele');
+  if(t&&t.map.km!=null&&t.map.start!=null&&t.map.unit!=null){
+    const flat=JSON.stringify(t.aoa.slice(0,15)).toLowerCase();
+    if(flat.includes('samsara'))return'S';
+    if(flat.includes('webfleet'))return'W';
+    let w=0,s=0;for(const r of t.aoa.slice(t.hdr+1)){const u=unitOf(r[t.map.unit]);if(!u)continue;if(inRange(u,'W'))w++;else if(inRange(u,'S'))s++}
+    return s>w?'S':'W';
+  }
+  return'plan';
+}
+
+/* ---------- STU Germán: catálogo de rutas, horario, operadores ---------- */
+function parseSTU(wb){
+  const out={routes:new Map(),horario:null,ops:new Map(),byClave:new Map(),byName:new Map(),notes:[]};
+  // Catálogo RUTAS / Base de datos km
+  const rs=wb.SheetNames.find(n=>NORM(n)==='rutas')||wb.SheetNames.find(n=>/base de datos km|^rutas/.test(NORM(n)));
+  if(rs){
+    const aoa=wb.aoa(rs);const h=findHeader(aoa);const hd=(aoa[h.row]||[]).map(x=>NORM(x));
+    const ci=hd.indexOf('ruta'),ck=hd.findIndex(x=>x==='tot kms'||x==='km total'||x==='total km'),cm=hd.indexOf('modelo'),cl=hd.findIndex(x=>/^kms? lleno/.test(x)),cv=hd.findIndex(x=>/^kms? vac/.test(x));
+    for(const r of aoa.slice(h.row+1)){const name=r[ci];const km=num(r[ck]);if(!name||!isFinite(km))continue;
+      out.routes.set(KEY(name),{name:String(name).trim(),km,kl:cl>=0?num(r[cl]):NaN,kv:cv>=0?num(r[cv]):NaN,modelo:r[cm]||'',src:'RUTAS'})}
+  }else out.notes.push('No se encontró la hoja RUTAS en STU Germán.');
+  // Horario = programa del día (unidad asignada por corrida)
+  const hs=wb.SheetNames.find(n=>NORM(n).includes('horario'));
+  if(hs){
+    const t=pickTable(wb,'plan',n=>n===NORM(hs));
+    out.horario=t;
+    // rutas que solo existen en Horario (guardias, apoyos TP)
+    if(t&&t.map.route!=null&&t.map.km!=null)for(const r of t.aoa.slice(t.hdr+1)){
+      const name=r[t.map.route],km=num(r[t.map.km]);if(!name||!isFinite(km))continue;
+      const k=KEY(name);if(!out.routes.has(k))out.routes.set(k,{name:String(name).trim(),km,modelo:'',src:'Horario'})}
+    // km de la hoja Horario por ruta y hora de salida: con esto se cuadran las corridas del Monitor
+    out.hor=new Map();
+    const hL=t?t.headers.findIndex(h=>/^kms? lleno/.test(NORM(h))):-1,hV=t?t.headers.findIndex(h=>/^kms? vac/.test(NORM(h))):-1;
+    if(t&&t.map.route!=null&&t.map.km!=null)for(const r of t.aoa.slice(t.hdr+1)){
+      const name=r[t.map.route];const kl0=hL>=0?num(r[hL]):NaN,kv0=hV>=0?num(r[hV]):NaN;
+      let km=(isFinite(kl0)||isFinite(kv0))?(isFinite(kl0)?kl0:0)+(isFinite(kv0)?kv0:0):num(r[t.map.km]);if(!name||!isFinite(km))continue;
+      const hp=t.map.hora!=null?parseDT(r[t.map.hora]):null;
+      const k=KEY(name);if(!out.hor.has(k))out.hor.set(k,{name:String(name).trim(),list:[]});
+      out.hor.get(k).list.push({t:hp&&hp.t?hp.ms%DAY:null,km,kl:kl0,kv:kv0,u:t.map.unit!=null?unitOf(r[t.map.unit]):null});
+    }
+  }
+  // DATOS OP
+  const ds=wb.SheetNames.find(n=>NORM(n)==='datos op')||wb.SheetNames.find(n=>NORM(n).includes('datos op'));
+  if(ds){
+    const aoa=wb.aoa(ds);let hr=aoa.findIndex(r=>(r||[]).some(c=>NORM(c)==='unidad'));
+    if(hr>=0){const hd=aoa[hr].map(x=>NORM(x));const cu=hd.indexOf('unidad'),cn=hd.findIndex(x=>x.startsWith('nombre')),cc=hd.indexOf('clave'),ce=hd.indexOf('estatus'),cr=hd.indexOf('ruta asignada');
+      for(const r of aoa.slice(hr+1)){const name=String(r[cn]??'').trim();const cl=num(r[cc]);if(isFinite(cl)&&name){out.byClave.set(cl,name);out.byName.set(KEY(name),cl)}
+        const u=unitOf(r[cu]);if(!u)continue;out.ops.set(u,{name,clave:r[cc],estatus:r[ce],ruta:r[cr]})}}
+  }
+  return out;
+}
+/* Empate de nombres de ruta: "0301 - CU a Héroes" ↔ "CU - HEROES" (origen y destino por separado) */
+const RALIAS=[[/\bciudad judicial\b/g,'cd judicial'],[/\bfacultad de lenguas\b/g,'lenguas'],[/\bplaza san diego\b/g,'san diego'],
+  [/\bprepa\b/g,'preparatoria'],[/\bbachillerato\b(?!\s*(tecnologico|5))/g,'bachillerato 5 de mayo'],[/\bsn\b/g,'san'],[/\bcuatla\b/g,'cuautlancingo'],[/\bsan pedro zacachimalpa\b|\bsn pedro zacachimalpa\b/g,'zacachimalpa']];
+function sides(name){
+  let s=NORM(name).replace(/^\s*\d{3,4}\s*-?\s*/,'');
+  for(const [re,r] of RALIAS)s=s.replace(re,r);
+  const p=s.split(/\s+-\s*|\s*-\s+|\s+a\s+|-/).map(x=>KEY(x.trim().replace(/\s+\d+$/,''))||KEY(x)).filter(Boolean);
+  return p.length===2?p:null;
+}
+const sideMatch=(a,b)=>{if(a===b)return 2;const[s,l]=a.length<b.length?[a,b]:[b,a];return s.length>=4&&l.includes(s)?1:0};
+const kmCache=new Map(),horCache=new Map();
+/* Km de la hoja Horario: misma ruta, de preferencia la misma unidad, y la salida más cercana (±45 min);
+   si no hay hora, el km más común de esa ruta */
+function kmFromHorario(name,tms,unit){
+  const H=S.stu?.hor;if(!H||!name)return null;
+  const k=KEY(name);let e=H.get(k);
+  if(!e){if(horCache.has(k))e=horCache.get(k);else{const sd=sides(name);let bs=0;
+    if(sd)for(const v of H.values()){const o=sides(v.name);if(!o)continue;const a=sideMatch(sd[0],o[0]),b=sideMatch(sd[1],o[1]);if(a&&b&&a+b>bs){bs=a+b;e=v}}
+    horCache.set(k,e||null)}}
+  if(!e)return null;
+  // Solo hoja Horario: misma ruta y misma hora exacta
+  if(tms==null)return null;
+  let best=null,bd=Infinity;for(const x of e.list){if(x.t==null)continue;let d=Math.abs(x.t-tms);d=Math.min(d,DAY-d);if(d>60e3)continue;if(d<bd){bd=d;best=x}}
+  if(!best)return null;
+  return{km:best.km,kl:best.kl,kv:best.kv,how:bd<=60e3?'hora':'horaCerca',hrH:hhmm(best.t)};
+}
+function lookupKm(name){
+  const routes=S.stu?.routes;if(!routes||!name)return null;
+  const k=KEY(name);if(routes.has(k))return routes.get(k);
+  if(kmCache.has(k))return kmCache.get(k);
+  let best=null,bs=0;const sd=sides(name);
+  if(sd)for(const v of routes.values()){const o=sides(v.name);if(!o)continue;const a=sideMatch(sd[0],o[0]),b=sideMatch(sd[1],o[1]);
+    if(a&&b){const sc=a+b+(v.src==='RUTAS'?.5:0);if(sc>bs){bs=sc;best=v}}}
+  kmCache.set(k,best);return best;
+}
+/* Catálogo de códigos de ruta de la Plantilla (Hoja2: "0301 - CU a Héroes" | 0301) */
+function findCodes(wb){
+  const codes={};
+  for(const n of wb.SheetNames){const aoa=wb.aoa(n);
+    for(let r=0;r<Math.min(aoa.length,10);r++){const hd=(aoa[r]||[]).map(NORM);const ci=hd.findIndex(x=>x==='id ruta'||x==='id'||x==='clave ruta'),ni=hd.indexOf('ruta');
+      if(ci>=0&&ni>=0){for(const row of aoa.slice(r+1)){const c=String(row[ci]??'').trim();if(/^\d{1,4}$/.test(c)&&row[ni])codes[c.padStart(4,'0')]=String(row[ni]).trim()}break}}}
+  return codes;
+}
+function codeName(v,codes){
+  const c=String(v??'').trim();if(!codes||!/^\d{3,4}$/.test(c))return null;const k=c.padStart(4,'0');
+  if(codes[k])return codes[k];
+  const KNOWN={'2301':'2301 - CU a San Pedro Zacachimalpa','2302':'2302 - San Pedro Zacachimalpa a CU'};if(KNOWN[k])return KNOWN[k];
+  // código de regreso sin nombre (ej. 0202): se toma el de ida (0201) invertido
+  const twin=k.slice(0,2)+(k.endsWith('01')?'02':k.endsWith('02')?'01':'');
+  if(codes[twin]){const sd=String(codes[twin]).replace(/^\s*\d{3,4}\s*-?\s*/,'').split(/\s+a\s+|\s+-\s+/);if(sd.length===2)return `${k} - ${sd[1]} a ${sd[0]}`}
+  return null;
+}
+const CANCEL=/cancel|no realiz|no se realiz|falt[oa]|no cumpl|no sali|sin unidad|no asist|suspend|^inicial|pendiente/;
+// solo canceladas (no entran al km planeado real); "inicial/pendiente" siguen planeadas
+const CANC=/cancel|suspend|no realiz|no se realiz|no sali|falt[oa]|no cumpl|no asist/;
+/* Plan (Horario, Plantilla) o realizado (Monitor) → por unidad */
+function planFromTable(t,isMonitor,codes){
+  const by=new Map(),planBy=new Map(),realBy=new Map(),ledger=[];let rows=0,noKm=0,skipped=0,planRows=0,fromHor=0,cancRows=0;
+  if(!t||t.map.unit==null)return{by,planBy,realBy,ledger,rows,noKm,skipped,err:'Sin columna de unidad'};
+  const tL=t.headers.findIndex(h=>/^kms? lleno/.test(NORM(h))),tV=t.headers.findIndex(h=>/^kms? vac/.test(NORM(h)));
+  for(const r of t.aoa.slice(t.hdr+1)){
+    if(!r)continue;
+    const u0=unitOf(r[t.map.unit]);const u=u0&&u0>=8000?u0:null;
+    const rv0=t.map.route!=null?r[t.map.route]:'';
+    if(!u&&(rv0==null||String(rv0).trim()===''))continue;   // renglón vacío o de totales
+    const cancelled=isMonitor&&t.map.status!=null&&CANCEL.test(NORM(r[t.map.status]));
+    const canc=isMonitor&&t.map.status!=null&&CANC.test(NORM(r[t.map.status]));
+    const rv=t.map.route!=null?r[t.map.route]:'';
+    const ruta=codeName(rv,codes)||String(rv??'').trim();
+    const hv=t.map.hora!=null?r[t.map.hora]:null;const hp=parseDT(hv);
+    // Monitor y Plantilla: el km se cuadra con la hoja Horario de STU Germán (ruta + hora); si no aparece ahí, con RUTAS
+    let km=NaN,how='',kl=NaN,kv=NaN,hrHor='';
+    if(!isFinite(km)){const H=kmFromHorario(ruta,hp&&hp.t?hp.ms%DAY:null,u);if(H){km=H.km;kl=num(H.kl);kv=num(H.kv);how=H.how;hrHor=H.hrH;fromHor++}}
+    if(!isFinite(km)){how='sin';km=0;if(u){noKm++;(t._noKm=t._noKm||new Set()).add(ruta||'(sin ruta)')}}
+    const stx=isMonitor&&t.map.status!=null?String(r[t.map.status]??'').trim():'';
+    ledger.push({u,ruta,hr:hp&&hp.t?hhmm(hp.ms):'',km,how,st:stx,cancelled:canc});
+    if(!u)continue;
+    const fp2=t.map.fin!=null?parseDT(r[t.map.fin]):null;
+    let op=t.map.oper!=null?r[t.map.oper]:'';
+    if(typeof op==='number'||/^\d{4,7}$/.test(String(op??'').trim()))op=S.stu?.byClave.get(+op)||'';
+    op=String(op??'').replace(/\s+/g,' ').trim();
+    const corr={hrH:hrHor,ruta,hr:hp&&hp.t?hhmm(hp.ms):(hv&&typeof hv==='string'?hv:''),km,kl:isFinite(kl)?kl:null,kv:isFinite(kv)?kv:null,how,s:hp&&hp.t?hp:null,e:fp2&&fp2.t?fp2:null,st:stx,op:/^#/.test(op)?'':op};
+    const add=(M,c)=>{let U=M.get(u);if(!U)M.set(u,U={km:0,n:0,c:[],ops:{}});U.km+=km;U.n++;U.c.push(c);if(op&&!/^#/.test(op))U.ops[op]=(U.ops[op]||0)+1};
+    add(planBy,corr);planRows++;
+    if(canc)cancRows++;else add(realBy,corr);
+    if(cancelled){skipped++;continue}
+    add(by,corr);rows++;
+  }
+  return{by,planBy,realBy,ledger,rows,planRows,cancRows,noKm,skipped,fromHor};
+}
+
+/* ---------- Telemática: Webfleet / Samsara ---------- */
+const CX_RE=/(cuenta ?kil[oó]?metros?|cuentakm|odometro|odometer|kilometraje).{0,25}(corregid|correccion|corrigio|ajustad|ajuste|correct|adjust)|(corregid|correccion|ajuste|correct|adjust)\w*.{0,25}(cuenta ?kilometros?|cuentakm|odometro|odometer|kilometraje)/;
+function isCorrected(txt){const t=NORM(txt);if(CX_RE.test(t))return true;return(S.cfg.cx||[]).some(p=>p&&t.includes(NORM(p)))}
+function parseTele(f){
+  DT_REF=f.nameDate&&plausible(f.nameDate)?Date.parse(f.nameDate):null;
+  try{return parseTeleRows(f)}finally{DT_REF=null}
+}
+function parseTeleRows(f){
+  const t=f.table;const m=t.map;const trips=[];let unresolved=0;
+  if(m.unit==null&&m.km==null)return{trips,err:'No se reconocieron columnas de unidad ni distancia'};
+  // orden de fecha del archivo (dd/mm o mm/dd)
+  let order='dmy';{let a=0,b=0;for(const r of t.aoa.slice(t.hdr+1,t.hdr+400)){for(const ci of[m.start,m.end,m.fecha]){const p=ci!=null?dmyPair(r[ci]):null;if(p){if(p[0]>12)a++;if(p[1]>12)b++}}}if(b>a)order='mdy'}
+  const kmH=m.km!=null?NORM(t.headers[m.km]):'';
+  const kmScale=/mill|\bmi\b|miles|\(mi\)/.test(kmH)?1.609344:(/\[m\]|\(m\)|metros|meters/.test(kmH)&&!/km/.test(kmH)?0.001:1);
+  let last=null;
+  for(const r of t.aoa.slice(t.hdr+1)){
+    if(!r||!r.some(c=>c!=null&&c!==''))continue;
+    const txt=r.filter(c=>c!=null&&c!=='').join(' | ');
+    let km=m.km!=null?num(r[m.km])*kmScale:NaN;
+    if(!isFinite(km)&&m.odo0!=null&&m.odo1!=null){const a=num(r[m.odo0]),b=num(r[m.odo1]);if(isFinite(a)&&isFinite(b)&&b>=a)km=(b-a)*kmScale}
+    let sp=m.start!=null?parseDT(r[m.start],order):null, ep=m.end!=null?parseDT(r[m.end],order):null;
+    const fp=m.fecha!=null?parseDT(r[m.fecha],order):null;
+    // Reportes con "Fecha" + "Hora de inicio/fin" (Webfleet y Samsara de STU): la Fecha es el día del reporte.
+    // Si la hora de fin es menor que la de inicio, el viaje empezó el día anterior (switch encendido) y cierra en la Fecha.
+    const byFecha=sp&&!sp.d&&fp&&fp.d;
+    if(byFecha)sp={ms:Math.floor(fp.ms/DAY)*DAY+sp.ms,d:true,t:true};
+    if(ep&&!ep.d){const base=sp&&sp.d?Math.floor(sp.ms/DAY)*DAY:(fp&&fp.d?Math.floor(fp.ms/DAY)*DAY:null);
+      if(base!=null){let e=base+ep.ms;if(sp&&e<sp.ms){if(byFecha)sp={...sp,ms:sp.ms-DAY};else e+=DAY}ep={ms:e,d:true,t:true}}}
+    let u=m.unit!=null?unitOf(r[m.unit]):null;
+    const uEmpty=m.unit==null||r[m.unit]==null||r[m.unit]==='';
+    const isTrip=isFinite(km)||(sp&&sp.d);
+    if(!isTrip){ // renglón de grupo ("8002 - STU02") o totales
+      const g=u||r.map(c=>typeof c==='string'?unitOf(c):null).find(Boolean);
+      if(g&&!/total|suma/.test(NORM(txt)))last=g;
+      continue;
+    }
+    if(/(^|\W)(total|suma|totales)(\W|$)/.test(NORM(txt))&&!(sp&&sp.d))continue;
+    if(u==null&&uEmpty)u=last;
+    if(u==null){unresolved++;continue}
+    last=u;
+    const s=sp&&sp.d?sp.ms:null,e=ep&&ep.d?ep.ms:null;
+    let dur=s!=null&&e!=null?(e-s)/36e5:(m.dur!=null?parseDur(r[m.dur],t.headers[m.dur]):NaN);
+    trips.push({u,raw:m.unit!=null?r[m.unit]:'',s,e,km:isFinite(km)?km:0,dur,
+      from:m.from!=null?String(r[m.from]??''):'',to:m.to!=null?String(r[m.to]??''):'',
+      drv:m.driver!=null?String(r[m.driver]??''):'',cx:isCorrected(txt)});
+  }
+  return{trips,unresolved,order};
+}
+function tripDay(t){return t.e!=null?dayKey(t.e):t.s!=null?dayKey(t.s):null}
+
+/* ============================================================
+   ESTADO
+   ============================================================ */
+const swTxt=t=>t.s!=null&&S.day&&dayKey(t.s)<S.day.D?'Viaje arrastrado desde el día anterior por switch encendido':`Switch sin apagar: un solo viaje de ${isFinite(t.dur)?t.dur.toFixed(1)+' h':'muchas horas'} que junta varias corridas`;
+const CFG_DEF={W0:8002,W1:8104,S0:8105,S1:8127,tol:15,swMin:2,swMax:10,cx:[]};
+const S={
+  cfg:Object.assign({},CFG_DEF,lsGet('kmstu.cfg',{})),
+  files:{stu:null,plan:null,mon:null,W:null,S:null},
+  stu:null, day:null, sample:false,
+  guards:lsGet('kmstu.guards',{}), // {fecha:[{name,hr,u,clave,kl,kv,km}]}
+  np:lsGet('kmstu.np',{}),      // {fecha:{unidad:true}}
+  notes:lsGet('kmstu.notes',{}),
+  dayNotes:lsGet('kmstu.daynotes',{}),// {fecha:{unidad:"texto"}}
+  filter:'all', q:'', unit:'', exOpen:new Set(), cmpSort:{k:'i',d:1}, rt:{mode:'ruta',first:false,sort:{k:'pc',d:-1}}, op:{sort:{k:'pc',d:-1}}, rtOpen:new Set(), opOpen:new Set(), secOpen:new Set(), sort:{k:'u',d:1}, open:new Set()
+};
+const inRange=(u,p)=>p==='W'?u>=S.cfg.W0&&u<=S.cfg.W1:p==='S'?u>=S.cfg.S0&&u<=S.cfg.S1:false;
+const provOf=u=>inRange(u,'W')?'W':inRange(u,'S')?'S':null;
+const PROV={W:'Webfleet',S:'Samsara'};
+
+const SLOT_DEF=[
+  {k:'stu',t:'Rutas y km',sub:'Archivo de Seguimiento (opcional)',ic:'route',keep:true,d:'Km de cada ruta de la hoja RUTAS (lleno, vacío y total).'},
+  {k:'plan',t:'Flota',sub:'Plantilla de órdenes de servicio (opcional)',ic:'list',keep:true,d:'Solo se usa como plan si no hay Monitor.'},
+  {k:'mon',t:'Corridas del día real',sub:'Monitor de servicio (SMart)',ic:'check',d:'Corridas programadas y realizadas, y el operador. Es la base del km planeado.'},
+  {k:'W',t:'GPS Webfleet',sub:'',ic:'pin',d:'Informe de viajes.'},
+  {k:'S',t:'GPS Samsara',sub:'',ic:'pin',d:'Reporte de viajes.'}
+];
+
+async function ingest(file,kind){
+  let wb;
+  try{wb=await readWorkbook(file)}catch(e){toast('No se pudo leer '+file.name);return}
+  kind=kind||classifyByName(file.name)||sniffKind(wb);
+  loadInto(kind,{name:file.name,wb,nameDate:dateFromName(file.name)});
+}
+const SAVE_KINDS={stu:'kmstu.saved.stu',plan:'kmstu.saved.plan'};
+const SAVE_LABEL={stu:'Rutas y km',plan:'Flota'};
+const KEEP_SHEETS={stu:n=>/^(rutas|base de datos km|horario|datos op)/.test(NORM(n))||NORM(n).includes('parque')};   // archivos que se recuerdan entre sesiones
+function rememberFile(kind,f){
+  const key=SAVE_KINDS[kind];if(!key||f.saved)return;
+  try{const sheets={};for(const n of f.wb.SheetNames){if(KEEP_SHEETS[kind]&&!KEEP_SHEETS[kind](n))continue;sheets[n]=f.wb.aoa(n).map(r=>{const a=[...(r||[])];while(a.length&&(a[a.length-1]==null||a[a.length-1]===''))a.pop();return a})}
+    localStorage.setItem(key,JSON.stringify({name:f.name,nameDate:f.nameDate,savedAt:new Date().toISOString(),sheets}));
+    f.saved=true;f.savedAt=new Date().toISOString();
+  }catch(e){toast(`No se pudo guardar ${SAVE_LABEL[kind]} en este dispositivo (sin espacio)`)}
+}
+function restoreFiles(){
+  for(const [kind,key] of Object.entries(SAVE_KINDS)){
+    try{const j=JSON.parse(localStorage.getItem(key)||'null');if(!j||!j.sheets||S.files[kind])continue;
+      loadInto(kind,{name:j.name,wb:wbFromAoa(j.sheets),nameDate:j.nameDate,saved:true,savedAt:j.savedAt,restored:true})}catch(e){}
+  }
+}
+function forgetFile(kind){try{localStorage.removeItem(SAVE_KINDS[kind])}catch{}S.files[kind]=null;renderSlots();renderLoadNotes();renderSaved();toast(`${SAVE_LABEL[kind]}: archivo quitado de este dispositivo`)}
+function renderSaved(){
+  const el=document.getElementById('savedFiles');if(!el)return;
+  el.innerHTML=Object.entries(SAVE_KINDS).map(([k,key])=>{let j=null;try{j=JSON.parse(localStorage.getItem(key)||'null')}catch{}
+    return`<div class="row spread" style="gap:8px;padding:8px 0;border-bottom:1px solid var(--line)"><div><div class="small muted">${SAVE_LABEL[k]}</div>${j?`<b>${esc(j.name)}</b><div class="small muted">Guardado el ${esc(new Date(j.savedAt).toLocaleString('es-MX',{dateStyle:'short',timeStyle:'short'}))}</div>`:'<span class="small muted">Sin archivo guardado. El último que subas se queda aquí.</span>'}</div>${j?`<button class="btn danger" data-unsave="${k}">${ic('ban')}Quitar</button>`:''}</div>`}).join('');
+}
+function loadInto(kind,f){
+  f.kind=kind;
+  if(kind==='stu'){S.stu=parseSTU(f.wb);f.info=`${S.stu.routes.size} rutas · ${S.stu.ops.size} operadores · ${S.stu.horario?S.stu.horario.aoa.length-S.stu.horario.hdr-1:0} renglones de Horario`;
+    // si hay plan/monitor cargados, recalcular km por ruta
+    for(const k of['plan','mon'])if(S.files[k])buildPlanFile(S.files[k]);}
+  else if(kind==='plan'||kind==='mon'){f.table=pickTable(f.wb,'plan');buildPlanFile(f)}
+  else{f.table=pickTable(f.wb,'tele');buildTeleFile(f);
+    if(plausible(f.dataDate)){const el=$('#opDate');el.value=f.dataDate;el.dataset.user='';S.lastGpsDate=f.dataDate}}  // el reporte GPS recién cargado manda la fecha
+  S.files[kind]=f;
+  rememberFile(kind,f);
+  renderSlots();suggestDate();renderLoadNotes();try{renderGuards()}catch{};try{renderSaved()}catch{}
+}
+function buildPlanFile(f){
+  kmCache.clear();horCache.clear();if(!f.codes)f.codes=findCodes(f.wb);
+  if(f.table)delete f.table._noKm;
+  f.res=planFromTable(f.table,f.kind==='mon',f.codes);
+  f.noKmRoutes=f.table&&f.table._noKm?[...f.table._noKm]:[];
+  // fecha que traen los datos (columna Fecha / Fecha Inicial)
+  const t=f.table;f.dataDate=null;
+  if(t){const ci=t.headers.findIndex(h=>/^fecha/.test(NORM(h)));if(ci>=0){const c={};for(const r of t.aoa.slice(t.hdr+1,t.hdr+300)){const p=parseDT(r[ci]);if(p&&p.d){const k=dayKey(p.ms);c[k]=(c[k]||0)+1}}f.dataDate=Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0]||null}}
+  f.info=f.res.err||(f.kind==='mon'?`${f.res.planRows} corridas programadas · ${f.res.cancRows} canceladas · ${f.res.rows} hechas · ${f.res.planBy.size} unidades${f.res.noKm?` · ${f.res.noKm} sin km`:''}`:`${f.res.rows} corridas · ${f.res.by.size} unidades${f.res.noKm?` · ${f.res.noKm} sin km en catálogo`:''}`);
+}
+function buildTeleFile(f){
+  f.res=parseTele(f);
+  let days={};for(const t of f.res.trips){const d=tripDay(t);if(d)days[d]=(days[d]||0)+1}
+  // La fecha del nombre del archivo manda: si el reporte trae un solo día distinto (ej. "13-11" con Fecha 30/10),
+  // se asume que la columna Fecha viene mal y los viajes se cuentan en la fecha del nombre, conservando las horas.
+  f.rebased=null;const ds=Object.keys(days);
+  if(f.nameDate&&plausible(f.nameDate)&&ds.length===1&&ds[0]!==f.nameDate&&!f.noRebase){
+    const shift=Date.parse(f.nameDate)-Date.parse(ds[0]);
+    for(const t of f.res.trips){if(t.s!=null)t.s+=shift;if(t.e!=null)t.e+=shift}
+    f.rebased={from:ds[0],to:f.nameDate};days={[f.nameDate]:days[ds[0]]};
+  }
+  f.days=days;f.dataDate=Object.entries(days).sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
+  const units=new Set(f.res.trips.map(t=>t.u));const inR=[...units].filter(u=>inRange(u,f.kind)).length;
+  f.info=f.res.err||`${f.res.trips.length} viajes · ${units.size} unidades (${inR} en rango ${PROV[f.kind]})`;
+}
+
+/* ============================================================
+   CÁLCULO DEL DÍA
+   ============================================================ */
+function planSource(){
+  const v=$('#planSrc').value;const M=S.files.mon;
+  if((v==='monitor'||v==='auto')&&M&&M.res&&M.res.planBy&&M.res.planBy.size)
+    return{by:M.res.planBy,realBy:M.res.realBy,ledger:M.res.ledger,kind:'monitor',label:'Monitor (corridas programadas, km de Horario) · '+M.name,date:M.dataDate||M.nameDate,n:M.res.planRows};
+  if(v==='plantilla'||(v==='auto'&&S.files.plan&&S.files.plan.res&&S.files.plan.res.by.size))
+    return S.files.plan&&S.files.plan.res?{by:S.files.plan.res.by,ledger:S.files.plan.res.ledger,kind:'plantilla',label:'Plantilla · '+S.files.plan.name,date:S.files.plan.nameDate}:null;
+  if(S.stu&&S.stu.horario){const r=planFromTable(S.stu.horario,false);return{by:r.by,ledger:r.ledger,kind:'horario',label:'Horario · '+(S.files.stu?.name||'STU Germán'),date:S.files.stu?.nameDate}}
+  return null;
+}
+function processDay(D){
+  S._cmpCache=new Map();
+  const plan=planSource();
+  const mon=S.files.mon?.res?.by||null;
+  const units=new Map();
+  const ensure=u=>{let U=units.get(u);if(!U)units.set(u,U={u,p:provOf(u),kp:0,np:0,kq:0,nq:0,c:[],kr:null,nv:0,trips:[],sw:0,cx:0,cxKm:0,ex:[],exKm:0,km:null,nm:0,op:''});return U};
+  if(plan)for(const [u,P] of plan.by){if(!provOf(u))continue;const U=ensure(u);U.kp=P.km;U.np=P.n;U.kq=P.km;U.nq=P.n;U.c=P.c;
+    const top=Object.entries(P.ops).sort((a,b)=>b[1]-a[1])[0];if(top)U.op=top[0]}
+  // planeado real = programado sin canceladas
+  if(plan&&plan.realBy)for(const U of units.values()){const P=plan.realBy.get(U.u);U.kq=P?P.km:0;U.nq=P?P.n:0}
+  // Monitor (SMart): km de corridas realizadas × km de ruta del catálogo, y el operador que registró SMart
+  if(mon)for(const [u,P] of mon){if(!provOf(u))continue;const U=ensure(u);U.km=P.km;U.nm=P.n;U.mc=P.c;
+    const top=Object.entries(P.ops).sort((a,b)=>b[1]-a[1])[0];if(top){U.op=top[0];U.opSrc='Monitor'}}
+  // Guardias y apoyos TP (captura): no vienen en el Monitor; cuentan como planeadas, planeadas reales y hechas
+  const gLedger=[];
+  for(const g of S.guards[D]||[]){const u=+g.u;if(!provOf(u)||!(+g.km>0))continue;const U=ensure(u);
+    const hp=parseDT(g.hr);const c={ruta:g.name||'Guardia',hr:hp&&hp.t?hhmm(hp.ms):(g.hr||''),km:+g.km,kl:g.kl!=null&&g.kl!==''?+g.kl:null,kv:g.kv!=null&&g.kv!==''?+g.kv:null,how:'guardia',s:hp&&hp.t?{ms:hp.ms%DAY,d:false,t:true}:null,e:null,st:''};
+    U.kp+=c.km;U.np++;U.kq=(U.kq??0)+c.km;U.nq=(U.nq??0)+1;U.c=[...(U.c||[]),c];
+    if(mon){U.km=(U.km||0)+c.km;U.nm=(U.nm||0)+1;U.mc=[...(U.mc||[]),c]}
+    U.gd=(U.gd||0)+1;gLedger.push({u,ruta:c.ruta,hr:c.hr,km:c.km,how:'guardia',st:'',cancelled:false})}
+  const cxList=[],swList=[],out={W:new Map(),S:new Map()},loaded=new Set(),emptyProv=[];let otherDay=0;
+  for(const P of['W','S']){
+    const f=S.files[P];if(!f||!f.res)continue;
+    // un reporte cargado que no trae viajes de esta fecha no puede declarar "Sin GPS" a todas sus unidades
+    if(f.res.trips.some(t=>tripDay(t)===D))loaded.add(P);else{emptyProv.push(P);otherDay+=f.res.trips.length;continue}
+    for(const t of f.res.trips){
+      if(tripDay(t)!==D){otherDay++;continue}
+      if(!inRange(t.u,P)){out[P].set(t.u,(out[P].get(t.u)||0)+1);
+        continue}
+      const U=ensure(t.u);
+      if(t.cx){U.cx++;U.cxKm+=t.km;cxList.push({...t,P});U.ex.push({...t,P,why:'El reporte indica cuentakilómetros corregidos (no es un recorrido real)',short:'Cuentakm corregido'});U.exKm+=t.km;continue}
+      const sw=(t.s!=null&&dayKey(t.s)<D&&(isFinite(t.dur)?t.dur>=S.cfg.swMin:true))||(isFinite(t.dur)&&t.dur>=S.cfg.swMax);
+      const T={...t,sw};U.trips.push(T);U.kr=(U.kr||0)+t.km;U.nv++;
+      if(sw){U.sw++;swList.push({...T,P})}
+    }
+  }
+  for(const U of units.values()){
+    if(U.kr==null&&loaded.has(U.p))U.kr=0;
+    U.trips.sort((a,b)=>(a.s??a.e??0)-(b.s??b.e??0));
+  }
+  S.day={D,units,cxList,swList,out,loaded,emptyProv,otherDay,planLedger:[...(plan?.ledger||[]),...gLedger],nGuard:gLedger.length,planKind:plan?.kind||'',planFile:plan?.label||'',planLabel:plan?plan.label:'Sin plan',planDate:plan?.date||null,
+    monLabel:S.files.mon?S.files.mon.name:null,src:{plan:plan?plan.label:'',W:S.files.W?.name||'',S:S.files.S?.name||'',mon:S.files.mon?.name||''},fromHist:false};
+  tagAll();
+}
+function tagsOf(U,D){
+  const tags=[];const np=!!(S.np[D]&&S.np[D][U.u]);
+  const base=U.kq??U.kp; U.dev=U.kr!=null?U.kr-base:null; U.pc=U.kr!=null&&base>0?(U.kr-base)/base*100:null;
+  if(U.kr==null)tags.push('SR');
+  else if(base>0&&U.kr===0)tags.push('SG');
+  else if(base===0&&U.kr>0)tags.push('SP');
+  else if(U.pc!=null){tags.push(Math.abs(U.pc)<=S.cfg.tol?'OK':U.pc>0?'EX':'DF')}
+  if(U.sw)tags.push('SW');
+  if(U.cx)tags.push('CX');
+  if(np)tags.push('NP');
+  return tags;
+}
+function obsOf(U){
+  const o=[];
+  for(const t of U.trips.filter(t=>t.sw))o.push(`⚠️ ${swTxt(t)} (${tsShort(t.s)} → ${tsShort(t.e)}, ${f1(t.km)} km)`);
+  for(const x of U.ex||[])o.push(`Excluido ${f1(x.km)} km: ${x.why}`);
+  return o;
+}
+function tagAll(){const d=S.day;if(!d)return;for(const U of d.units.values()){U.tags=tagsOf(U,d.D);if(!d.fromHist)U.obs=obsOf(U)}}
+
+const TAG={OK:['ok','En rango','check'],EX:['ex','Exceso','up'],DF:['df','Déficit','down'],SG:['sg','Sin GPS','nosignal'],SP:['sp','Sin plan','help'],SR:['sr','Sin reporte','minus'],SW:['sw','Switch','moon'],CX:['cx','Km corregido','ban'],NP:['np','No pos','nosignal']};
+const SEV={SG:0,DF:1,EX:2,SP:3,NP:4,SW:5,CX:6,SR:7,OK:8};
+const badge=(t,U)=>{const hi=t==='EX'&&U&&U.pc!=null&&U.pc>2*S.cfg.tol;
+  return`<span class="b ${TAG[t][0]}${hi?' ex2':''}" title="${TAG[t][1]}${hi?` (más de ${2*S.cfg.tol}% sobre el plan)`:''}">${ic(TAG[t][2])}${TAG[t][1]}</span>`};
+/* Color de la diferencia: verde dentro de la tolerancia; fuera de ella pasa de naranja a rojo conforme se aleja (tope a 60 puntos más) */
+function devColor(pc){
+  if(pc==null||!isFinite(pc))return null;const a=Math.abs(pc),tol=S.cfg.tol;
+  if(a<=tol)return{bg:'#e3f4ea',fg:'#12723f'};
+  const t=Math.min(1,(a-tol)/60),h=Math.round(32-32*t);
+  return{bg:`hsl(${h} 95% ${92-10*t}%)`,fg:`hsl(${h} 85% ${36-8*t}%)`};
+}
+
+/* ============================================================
+   RENDER · CARGA
+   ============================================================ */
+function renderSlots(){
+  $('#slots').innerHTML=SLOT_DEF.map(s=>{
+    const f=S.files[s.k];
+    const sub=s.k==='W'?`Unidades ${S.cfg.W0}–${S.cfg.W1}`:s.k==='S'?`Unidades ${S.cfg.S0}–${S.cfg.S1}`:s.sub;
+    const dates=f?[f.nameDate&&`archivo ${dShort(f.nameDate)}`,f.dataDate&&f.dataDate!==f.nameDate&&`datos ${dShort(f.dataDate)}`].filter(Boolean).join(' · '):'';
+    let map='';
+    if(f&&f.table){
+      const grp=(s.k==='W'||s.k==='S')?'tele':'plan';
+      map=`<details class="map"><summary>${ic('sliders')} Ajustar columnas</summary><div class="small muted" style="margin-top:6px">Hoja “${esc(f.table.sheet)}”, títulos en la fila ${f.table.hdr+1}</div><div class="mapgrid">${
+        Object.entries(FIELDS[grp]).map(([k,def])=>`<span>${def.l}</span><select data-slot="${s.k}" data-field="${k}" id="map-${s.k}-${k}"><option value="">—</option>${
+          f.table.headers.map((h,i)=>h?`<option value="${i}"${f.table.map[k]===i?' selected':''}>${esc(h)}</option>`:'').join('')}</select>`).join('')
+      }</div></details>`;
+    }
+    return`<div class="slot${f?' loaded':''}">
+      <div class="hd"><span class="ico">${ic(f?'check':s.ic)}</span><div><h3>${s.t}</h3><div class="sub">${esc(sub)}</div></div></div>${s.keep&&!(f&&f.saved)?`<div class="small" style="color:var(--accent)">${ic('save')} Se queda guardado el último archivo cargado.</div>`:''}
+      ${f?`<div class="state ${f.res&&f.res.err?'err':'ok'}">${esc(f.info||'')}</div><div class="fname">${esc(f.name)}${dates?' · '+dates:''}</div>${map}`
+        :`<div class="state no">${s.d}</div>`}
+      ${f&&f.saved?`<div class="small" style="color:var(--accent)">${ic('save')} Último archivo cargado, guardado en este dispositivo${f.restored?' · se cargó solo':''}</div>`:''}<div class="foot"><span class="small muted">${f?(f.saved?`<button class="btn ghost danger" data-unsave="${s.k}">Quitar</button>`:'Listo'):'Pendiente'}</span><label class="btn" for="f-${s.k}">${ic(f?'file':'upload')}${f?'Cambiar':'Elegir'}</label><input type="file" id="f-${s.k}" data-kind="${s.k}" accept=".xlsx,.xls,.csv,.xlsm" hidden></div>
+    </div>`}).join('');
+}
+const noteHTML=([c,t,date])=>`<div class="note ${c==='warn'?'':c}">${ic(c==='info'?'info':'alert')}<span style="flex:1">${esc(t)}</span>${date?`<button class="btn" data-setdate="${date}">${ic('calendar')}Usar ${dShort(date)}</button>`:''}</div>`;
+/* Una fecha de operación válida está a menos de un año de hoy (evita 2018 por un año de 2 dígitos mal leído) */
+const plausible=k=>{if(!k||!/^\d{4}-\d{2}-\d{2}$/.test(k))return false;const t=Date.parse(k);return isFinite(t)&&Math.abs(t-Date.now())<366*DAY};
+function bestDate(){
+  const F=S.files;
+  const c=[S.lastGpsDate,...['S','W'].map(k=>F[k]&&F[k].dataDate===F[k].nameDate?F[k].dataDate:null),F.mon?.dataDate,
+    ...['S','W'].map(k=>F[k]?.dataDate),...['S','W','mon','plan'].map(k=>F[k]?.nameDate)];
+  return c.find(plausible)||null;
+}
+function suggestDate(){
+  const el=$('#opDate');if(el.dataset.user&&plausible(el.value))return;
+  const cand=bestDate();if(cand){el.value=cand;el.dataset.user=''}
+}
+function renderLoadNotes(){
+  const D=$('#opDate').value;const n=[];
+  if(!S.stu)n.push(['info','Sube una vez tu archivo de Seguimiento en “Rutas y km” para tener los km de la hoja RUTAS. Después se queda guardado.']);
+  for(const k of['W','S']){const f=S.files[k];if(!f)continue;
+    const ds=Object.keys(f.days||{}).sort();
+    if(ds.length>1)n.push(['info',`${PROV[k]} trae viajes de ${ds.map(dShort).join(', ')}. Se cuentan los que terminan el ${dShort(D)}; los que empezaron antes se marcan como switch encendido si duran más de ${S.cfg.swMin} h.`]);
+    if(D&&f.dataDate&&f.dataDate!==D)n.push(['bad',`${PROV[k]}: sus viajes son del ${dmy(f.dataDate)}, pero la fecha elegida es ${dmy(D)}. Con esta fecha no se contará ningún km de ${PROV[k]}.`,f.dataDate]);
+    if(f.res.unresolved)n.push(['warn',`${PROV[k]}: ${f.res.unresolved} renglones con distancia pero sin número de unidad reconocible.`]);
+    if(f.rebased)n.push(['warn',`${PROV[k]}: la columna Fecha dice ${dmy(f.rebased.from)}, pero el archivo es del ${dmy(f.rebased.to)}. Se tomó la fecha del nombre del archivo y sus ${f.res.trips.length} viajes se cuentan el ${dmy(f.rebased.to)}.`]);
+    else if(f.nameDate&&f.dataDate&&f.nameDate!==f.dataDate)n.push(['bad',`${PROV[k]}: el nombre del archivo dice ${dShort(f.nameDate)} pero sus viajes son de varias fechas (${Object.keys(f.days).map(dShort).join(', ')}).`]);
+  }
+  const usePl2=$('#planSrc').value==='plantilla'||(!S.files.mon&&$('#planSrc').value!=='horario');
+  for(const k of['plan','mon']){const f=S.files[k];if(k==='plan'&&!usePl2)continue;if(f&&f.noKmRoutes&&f.noKmRoutes.length)n.push(['warn',`${k==='plan'?'Plantilla':'Monitor'}: ${f.noKmRoutes.length} rutas sin kilometraje en el catálogo RUTAS (cuentan 0 km): ${f.noKmRoutes.slice(0,8).join(', ')}${f.noKmRoutes.length>8?'…':''}`])}
+  const p=S.files.plan;const pd=p&&(p.dataDate||p.nameDate);const usePl=$('#planSrc').value==='plantilla'||(!S.files.mon&&$('#planSrc').value!=='horario');if(p&&usePl&&D&&pd&&pd!==D)n.push(['warn',`La Plantilla es del ${dmy(pd)} y la operación es del ${dmy(D)}. Se usará como programa del día; revisa que el rol no haya cambiado.`]);
+  const m=S.files.mon;const md=m&&(m.dataDate||m.nameDate);if(m&&D&&md&&md!==D)n.push(['warn',`El Monitor es del ${dmy(md)} y la operación es del ${dmy(D)}.`]);
+  const st=S.files.stu;if(st&&D&&st.nameDate&&st.nameDate!==D&&!S.files.plan&&!S.files.mon)n.push(['info',`El plan sale de la hoja Horario de STU Germán (${dmy(st.nameDate)}). Si el rol del ${dmy(D)} fue distinto, carga la Plantilla de ese día.`]);
+  $('#loadNotes').innerHTML=n.map(noteHTML).join('');
+}
+
+/* ============================================================
+   RENDER · DÍA
+   ============================================================ */
+const isZ=v=>v!=null&&isFinite(v)&&Math.abs(v)<0.05;
+const kmTd=(v,cls='',bold=false)=>`<td class="n${isZ(v)?' zero':''}${cls?' '+cls:''}">${bold&&!isZ(v)?'<b>':''}${f1(v)}${bold&&!isZ(v)?'</b>':''}</td>`;
+function rowsSorted(){
+  const d=S.day;let rows=[...d.units.values()];
+  const q=NORM(S.q);
+  if(S.unit)rows=rows.filter(U=>String(U.u)===S.unit);
+  if(q)rows=rows.filter(U=>String(U.u).includes(q)||NORM(U.op).includes(q));
+  const f=S.filter;
+  if(f==='W'||f==='S')rows=rows.filter(U=>U.p===f);
+  else if(f==='alert')rows=rows.filter(U=>U.tags.some(t=>['EX','DF','SG','SP','SW'].includes(t)));
+  else if(f==='EXC')rows=rows.filter(U=>U.exKm>0||(U.ex&&U.ex.length));
+  else if(f!=='all')rows=rows.filter(U=>U.tags.includes(f));
+  const {k,d:dir}=S.sort;
+  const sev=U=>Math.min(...U.tags.map(t=>SEV[t]??9))*1000-Math.abs(U.pc||0);
+  const val=U=>k==='u'?U.u:k==='op'?NORM(U.op):k==='kp'?U.kp:k==='kq'?(U.kq??U.kp):k==='kr'?(U.kr??-1e9):k==='dev'?(U.dev??-1e9):k==='pc'?(U.pc??-1e9):k==='km'?(U.km??-1):k==='np'?U.np:k==='ex'?(U.exKm||0):k==='tags'?sev(U):k==='npos'?(U.tags.includes('NP')?0:1):k==='cm'?((S.notes[S.day.D]&&S.notes[S.day.D][U.u])?0:1):U.u;
+  return rows.sort((a,b)=>{const x=val(a),y=val(b);return(x<y?-1:x>y?1:a.u-b.u)*dir});
+}
+const kpiHTML=([icn,cls,l,v,s,act])=>`<div class="kpi${act?' click':''}"${act?` data-act="${act}" role="button" tabindex="0" aria-expanded="${act==='why'&&S.whyOpen?'true':'false'}"`:''}><span class="ico ${cls}">${ic(icn)}</span><div><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div></div>`;
+const exShort=U=>[...new Set((U.ex||[]).map(x=>x.short))].join(', ');
+function renderDay(){
+  if(S.day){const dc=$('#dayCmt');if(document.activeElement!==dc)dc.value=S.dayNotes[S.day.D]||'';$('#stamp').textContent='Operación del '+dmy(S.day.D)}
+  const d=S.day;if(!d){$('#tblDay').innerHTML='<tr><td class="empty">Calcula un día en la pestaña Cargar.</td></tr>';return}
+  const all=[...d.units.values()];
+  const withR=all.filter(U=>U.kr!=null);
+  const kp=withR.reduce((s,U)=>s+(U.kq??U.kp),0),kr=withR.reduce((s,U)=>s+U.kr,0);
+  const kqAll=all.reduce((s,U)=>s+(U.kq??U.kp),0),nqAll=all.reduce((s,U)=>s+(U.nq??U.np),0),npAll=all.reduce((s,U)=>s+U.np,0);
+  const krW=withR.filter(U=>U.p==='W').reduce((s,U)=>s+U.kr,0),krS=withR.filter(U=>U.p==='S').reduce((s,U)=>s+U.kr,0);
+  const kpAll=all.reduce((s,U)=>s+U.kp,0);
+  const hasMon=all.some(U=>U.km!=null);
+  const kmH=all.reduce((s,U)=>s+(U.km||0),0);
+  const exAll=all.flatMap(U=>(U.ex||[]).map(x=>({...x,u:U.u})));
+  const exKm=all.reduce((s,U)=>s+(U.exKm||0),0);
+  const cnt=t=>all.filter(U=>U.tags.includes(t)).length;
+  $('#diaTitle').innerHTML=`Resultados del ${esc(dmy(d.D))}${S.sample?` <span class="flag sample">${ic('flask')}Ejemplo</span>`:''}${d.fromHist?` <span class="flag hist">${ic('history')}Desde histórico</span>`:''}`;
+  $('#diaSub').textContent=`Plan: ${d.planLabel}${d.src.mon?' · Corridas hechas: '+d.src.mon:''}${d.nGuard?` · ${d.nGuard} guardias y apoyos TP capturados`:''}`;
+  const dv=kr-kp, pc=kp?dv/kp*100:null;
+  $('#kpis').innerHTML=[
+    ...(hasMon?[]:[['bus','mut','Unidades',f0(all.length),`${all.filter(U=>U.p==='W').length} Webfleet · ${all.filter(U=>U.p==='S').length} Samsara`]]),
+    ['route','','Km planeado',f0(kpAll),`${npAll} corridas programadas${npAll>nqAll?` · incluye ${npAll-nqAll} canceladas`:''}<br><span class="more">${S.whyOpen?'Ocultar detalle':'Ver de dónde sale ›'}</span>`,'why'],
+    ['list','','Km planeado real',f0(kqAll),npAll>nqAll?`${nqAll} corridas · se quitaron <b>${npAll-nqAll} canceladas</b> (−${f0(kpAll-kqAll)} km)<br><span class="more">${S.whyOpen?'Ocultar detalle':'Ver cuáles ›'}</span>`:`${nqAll} corridas · no hubo canceladas`,npAll>nqAll?'why':''],
+    ...(hasMon?[['check','ok','Km corridas hechas',f0(kmH),'realizadas × km de Horario']]:[]),
+    ['pin','','Km real (GPS)',f0(kr),`Webfleet <b>${f0(krW)}</b> · Samsara <b>${f0(krS)}</b><br>${withR.reduce((s,U)=>s+U.nv,0)} viajes contados<span class="cpk" aria-label="Copiar km real"><button type="button" data-cp="T" title="Copiar el total">${ic('file')}Total</button><button type="button" data-cp="W" title="Copiar el km real de Webfleet">Webfleet</button><button type="button" data-cp="S" title="Copiar el km real de Samsara">Samsara</button><button type="button" data-cp="U" title="Copiar unidad por unidad para pegar en Excel">Por unidad</button></span>`],
+    ['diff',dv>0?'warn':dv<0?'bad':'ok','Diferencia',`<span class="${dv>0?'pos':dv<0?'neg':'okc'}">${(dv>0?'+':'')+f0(dv)}</span>`,pct(pc)+' real GPS vs. planeado real'],
+    ['ban','mut','Km excluido',f0(exKm),`${exAll.length} viajes fuera del conteo${exAll.length?'<br><span class="more">Ver detalle ›</span>':''}`,exAll.length?'ex':''],
+    ['alert','bad','Alertas',f0(cnt('EX')+cnt('DF')+cnt('SG')),`${cnt('SG')} sin GPS · ${cnt('DF')} déficit · ${cnt('EX')} exceso`],
+    ['moon','sw','Switch',f0(cnt('SW')),`${f1(d.swList.reduce((s,t)=>s+t.km,0))} km de viajes arrastrados${d.swList.length?'<br><span class="more">Ver detalle ›</span>':''}`,d.swList.length?'sw':'']
+  ].map(kpiHTML).join('');
+  renderPlanWhy(kpAll);
+  try{renderRoutes()}catch(e){console.error(e)}
+  const notes=[];
+  if(!d.loaded.size&&!d.fromHist)notes.push(['warn','No hay reportes de GPS cargados: el km real queda vacío.']);
+  for(const P of(d.emptyProv||[]))notes.push(['bad',`El GPS de ${PROV[P]} no trae viajes del ${dmy(d.D)}${S.files[P]?.dataDate?` (son del ${dmy(S.files[P].dataDate)})`:''}. Sus unidades quedan “Sin reporte”.`,S.files[P]?.dataDate]);
+  for(const P of['W','S'])if(!d.fromHist&&!d.loaded.has(P)&&!(d.emptyProv||[]).includes(P)&&d.loaded.size)notes.push(['info',`Falta el GPS de ${PROV[P]}: sus unidades aparecen “Sin reporte” y no cuentan en la diferencia.`]);
+  if(d.otherDay)notes.push(['info',`${d.otherDay} viajes de otras fechas no se contaron.`]);
+  for(const P of['W','S']){const n=[...d.out[P].values()].reduce((a,b)=>a+b,0);if(n)notes.push(['info',`${PROV[P]} trajo ${n} viajes de ${d.out[P].size} unidades fuera de su rango (${[...d.out[P].keys()].sort((a,b)=>a-b).join(', ')}). Se ignoraron: las unidades ${S.cfg.W0}–${S.cfg.W1} solo se miden con Webfleet y las ${S.cfg.S0}–${S.cfg.S1} solo con Samsara.`])}
+  // cuadre del plan del Monitor contra la hoja Horario de STU Germán
+  if(!d.fromHist&&/^Monitor/.test(d.planLabel)&&S.stu&&S.stu.horario){
+    const h=planFromTable(S.stu.horario,false);let hk=0,hn=0;for(const [u,P] of h.by)if(provOf(u)){hk+=P.km;hn+=P.n}
+    const dk=kpAll-hk;
+    notes.push([Math.abs(dk)<=hk*0.01?'info':'warn',`Cuadre con Horario: el Monitor programa ${all.reduce((s,U)=>s+U.np,0)} corridas y ${f0(kpAll)} km; la hoja Horario tiene ${hn} corridas y ${f0(hk)} km (diferencia ${(dk>0?'+':'')+f0(dk)} km).`]);
+  }
+  $('#dayNotes').innerHTML=notes.map(noteHTML).join('');
+  const F=[['all','Todas',null,all.length],['W','Webfleet','#1f4f9e',all.filter(U=>U.p==='W').length],['S','Samsara','#2a6b33',all.filter(U=>U.p==='S').length],
+    ['alert','Con alerta','var(--bad)',all.filter(U=>U.tags.some(t=>['EX','DF','SG','SP','SW'].includes(t))).length],['SG','Sin GPS','var(--bad)',cnt('SG')],
+    ['SW','Switch','var(--sw)',cnt('SW')],['NP','No pos','var(--np)',cnt('NP')],['EXC','Km excluido','var(--muted)',all.filter(U=>U.exKm>0||(U.ex&&U.ex.length)).length]];
+  $('#filters').innerHTML=F.map(([k,l,c,n])=>`<button class="chip" data-f="${k}" aria-pressed="${S.filter===k}">${c?`<span class="dot" style="color:${c}"></span>`:''}${l}<span class="n">${n}</span></button>`).join('');
+  const fu=$('#fUnit');const opts=all.map(U=>U.u).sort((a,b)=>a-b);
+  fu.innerHTML='<option value="">Todas las unidades</option>'+opts.map(u=>`<option value="${u}"${String(u)===S.unit?' selected':''}>${u} · ${PROV[provOf(u)]||''}</option>`).join('');
+  const H=[['u','Unidad'],['op','Operador'],['np','Corridas','n'],['kp','Km plan','n'],['kq','Km plan real','n'],...(hasMon?[['km','Km hechas','n']]:[]),['kr','Km real','n'],['dev','Dif.','n'],['pc','%','n'],['ex','Excluido','n'],['tags','Estado'],['npos','No pos'],['cm','Comentarios'],['x','']];
+  const rows=rowsSorted();const cols=H.length;S._order=rows.map(U=>U.u);
+  const arrow=k=>S.sort.k===k?`<span class="ar">${S.sort.d>0?' ▲':' ▼'}</span>`:'';
+  $('#tblDay').innerHTML=`<thead><tr>${H.map(([k,l,c])=>`<th class="${c||''}${k==='x'?'':' sortable'}" data-sort="${k}" title="${k==='x'?'':'Ordenar'}">${l}${arrow(k)}</th>`).join('')}</tr></thead><tbody>${
+    rows.map((U,ri)=>{
+      const isnp=U.tags.includes('NP');const open=S.open.has(U.u);
+      return`<tr class="unit${ri%2?' alt':''}${open?' open':''}${isnp?' isnp':''}" data-u="${U.u}" tabindex="0" aria-expanded="${open}">
+      <td><span class="eco">${U.u}</span><span class="prov ${U.p}">${U.p==='W'?'WF':'SAM'}</span></td>
+      <td><span class="opname" title="${esc(U.op||'')}">${esc(U.op||'—')}</span></td>
+      <td class="n" title="planeadas reales / hechas${U.np>U.nq?` · ${U.np-U.nq} canceladas`:''}">${U.nq||U.np||'—'}${hasMon?`<span class="muted"> / ${U.nm||0}</span>`:''}${U.np>U.nq?`<span class="canc">${U.np-U.nq} canc.</span>`:''}</td>
+      ${kmTd(U.kp)}${kmTd(U.kq??U.kp,'',true)}${hasMon?kmTd(U.km):''}
+      ${kmTd(U.kr,'',true)}${(()=>{const noPlan=!((U.kq??U.kp)>0)&&U.kr>0;const c=noPlan?{bg:'hsl(0 95% 82%)',fg:'hsl(0 85% 28%)'}:devColor(U.pc);return c?`<td class="n"><span class="dpill" style="background:${c.bg};color:${c.fg}">${sgn(U.dev)}</span></td><td class="n" style="color:${c.fg};font-weight:600">${noPlan?'sin plan':pct(U.pc)}</td>`:`<td class="n${isZ(U.dev)?' zero':''}">${sgn(U.dev)}</td><td class="n zero">${pct(U.pc)}</td>`})()}
+      <td class="n">${U.exKm>0||(U.ex&&U.ex.length)?`<div class="exc"><span>${f1(U.exKm)}</span><small>${esc(exShort(U)||'Km corregido')}</small></div>`:'<span class="muted">—</span>'}</td>
+      <td>${U.tags.map(t=>badge(t,U)).join('')}</td>
+      <td><label class="toggle" title="Marcar como No pos correctamente"><input type="checkbox" data-np="${U.u}" id="np-${U.u}" aria-label="No pos ${U.u}"${isnp?' checked':''}></label></td>
+      <td><input class="cmt" type="text" data-note="${U.u}" id="cmt-${U.u}" placeholder="Agregar comentario…" value="${esc((S.notes[d.D]&&S.notes[d.D][U.u])||'')}" aria-label="Comentario ${U.u}"></td>
+      <td>${ic('chev','chev')}</td></tr>`+
+      (open?`<tr class="det"><td colspan="${cols}">${detailHTML(U)}</td></tr>`:'')}).join('')||`<tr><td colspan="${cols}" class="empty">Sin unidades con este filtro.</td></tr>`
+  }</tbody>`;
+  const li=(arr,fn)=>arr.length?arr.map(fn).join(''):'<li class="muted">Ninguno</li>';
+  {const g={};for(const x of exAll)(g[x.u]=g[x.u]||[]).push(x);const us=Object.keys(g).map(Number).sort((a,b)=>a-b);
+   $('#lstEx').innerHTML=us.length?us.map(u=>{const a=g[u].sort((x,y)=>(x.s??0)-(y.s??0)),km=a.reduce((s,x)=>s+x.km,0);
+     return`<li style="display:block;padding:0;border:0"><details class="exg"${S.exOpen&&S.exOpen.has(u)?' open':''} data-exu="${u}"><summary><span class="l">${ic('chev','chev')}<span class="eco">${u}</span><span class="small muted">${a.length} ${a.length===1?'registro':'registros'} de cuentakilómetros corregido</span></span><b class="n">${f1(km)} km</b></summary>
+     <div class="tbl-wrap"><table class="cmp"><thead><tr><th>#</th><th>Fecha y hora</th><th>Lugar</th><th class="n">Km</th><th>Motivo</th></tr></thead><tbody>${a.map((x,i)=>`<tr><td class="muted">${i+1}</td><td>${esc(tsShort(x.s))}</td><td class="wrap">${esc(x.from||'—')}</td><td class="n">${f1(x.km)}</td><td class="wrap neg">${esc(x.why)}</td></tr>`).join('')}
+     <tr class="tot"><td></td><td colspan="2">Total ${u}</td><td class="n">${f1(km)}</td><td><button class="btn ghost" data-gou="${u}">Ver unidad ›</button></td></tr></tbody></table></div></details></li>`}).join(''):'<li class="muted">Ninguno</li>';}
+  setSum('units',`${all.length} unidades · ${all.filter(U=>U.tags.some(t=>['EX','DF','SG','SP'].includes(t))).length} con alerta · ${cnt('SG')} sin GPS · ${cnt('DF')} déficit · ${cnt('EX')} exceso${cnt('NP')?` · ${cnt('NP')} no pos`:''}`);
+  setSum('ex',exAll.length?`${new Set(exAll.map(x=>x.u)).size} unidades · ${exAll.length} registros · ${f1(exKm)} km fuera del conteo`:'Sin km excluidos');
+  setSum('sw',d.swList.length?`${d.swList.length} ${d.swList.length===1?'viaje':'viajes'} · ${f1(d.swList.reduce((s,t)=>s+t.km,0))} km`:'Sin viajes arrastrados');
+  {const c=S.dayNotes[d.D]||'';setSum('cm',c?c.replace(/\s+/g,' ').slice(0,140):'Sin comentarios')}
+  $('#lstSw').innerHTML=li(d.swList,t=>`<li><span><span class="eco">${t.u}</span> ${esc(tsShort(t.s))} → ${esc(tsShort(t.e))} · ${isFinite(t.dur)?t.dur.toFixed(1)+' h':''} <span class="small muted">${esc(swTxt(t))}</span></span><b>${f1(t.km)} km</b></li>`);
+}
+const HOW={guardia:'Guardias y apoyos TP (pegados en Cargar)',unidad:'Hoja Horario: misma unidad, ruta y hora',hora:'Hoja Horario: misma ruta y hora',horaCerca:'Hoja Horario: misma ruta, salida más cercana',ruta:'Hoja Horario: km más común de la ruta',
+  rutas:'Hoja RUTAS (la ruta no está en Horario)',archivo:'Km que trae el propio archivo',sin:'La ruta y hora no están en la hoja Horario (cuenta 0)'};
+function renderPlanWhy(kpAll){
+  const el=$('#planWhy');const d=S.day;
+  if(!S.whyOpen||!d){el.hidden=true;return}
+  el.hidden=false;
+  const head=t=>`<div class="why-h"><div><h3>${ic('route')}${t}</h3><div class="small muted" style="margin-top:3px">${esc(d.planFile||'')}</div></div><button class="btn ghost" data-act="why">Cerrar</button></div>`;
+  if(d.fromHist||!d.planLedger.length){el.innerHTML=head('De dónde sale el km planeado')+`<p class="small muted">${d.fromHist?'El histórico guarda solo el total por unidad. Calcula el día desde Cargar para ver el desglose.':'No hay plan cargado.'}</p>`;return}
+  const L=d.planLedger,sum=a=>a.reduce((s,x)=>s+x.km,0);
+  const asg=L.filter(x=>x.u&&provOf(x.u)),noU=L.filter(x=>!x.u),outR=L.filter(x=>x.u&&!provOf(x.u)),canc=asg.filter(x=>x.cancelled);
+  const kpA=sum(asg);
+  // 1) la cuenta
+  const src=d.planKind==='monitor'?'corridas del Monitor con unidad':d.planKind==='plantilla'?'corridas de la Plantilla':'corridas de la hoja Horario';
+  const okA=asg.filter(x=>!x.cancelled);
+  const eq=`<div class="eq"><div class="box"><b>${f0(kpA)} km</b><span>Km planeado · ${f0(asg.length)} ${src}</span></div><div class="op">−</div><div class="box"><b class="${canc.length?'':'zero'}">${f0(sum(canc))} km</b><span>${f0(canc.length)} corridas canceladas</span></div><div class="op">=</div><div class="box res"><b>${f0(sum(okA))} km</b><span>Km planeado real · ${f0(okA.length)} corridas</span></div></div>`;
+  // 2) reparto de las corridas del archivo
+  const seg=[['Planeado real',okA,'var(--accent)'],['Canceladas (no cuentan en el real)',canc,'var(--bad)'],['Sin unidad asignada (no cuentan)',noU,'var(--warn)'],['Unidad fuera de 8002–8127 (no cuentan)',outR,'#9aa6b5']].filter(x=>x[1].length);
+  const bar=`<div><h4>${ic('list')}Las ${f0(L.length)} corridas del archivo</h4><div class="stack">${seg.map(([,a,c])=>`<i style="width:${(a.length/L.length*100).toFixed(2)}%;background:${c}"></i>`).join('')}</div>
+    <div class="legend">${seg.map(([l,a,c])=>`<span><span class="sw8" style="background:${c}"></span>${l}: <b>${f0(a.length)}</b> <em>${f0(sum(a))} km</em></span>`).join('')}</div></div>`;
+  // 3) cómo se encontró el km (en el orden en que se busca)
+  const order=['hora','guardia','sin'].filter(h=>h!=='archivo'||d.planKind!=='monitor');
+  const STEP={guardia:'Captura de guardias y apoyos TP (no están en SMart)',unidad:'Horario: misma unidad, ruta y hora',hora:'Horario: misma ruta y misma hora',horaCerca:'Horario: misma ruta, salida más cercana (±45 min)',ruta:'Horario: km más común de la ruta',rutas:'Hoja RUTAS (no está en Horario)',archivo:'Km que trae el archivo',sin:'No está en Horario (cuenta 0)'};
+  const byHow={};for(const x of asg){const h=byHow[x.how]||(byHow[x.how]={n:0,km:0});h.n++;h.km+=x.km}
+  const steps=`<div><h4>${ic('search')}Cómo se encontró el km de cada corrida</h4><div class="steps">${order.map((h,i)=>{const v=byHow[h]||{n:0,km:0};
+    return`<div class="step${v.n?'':' zero'}${h==='sin'?' bad':''}"><span class="num">${h==='sin'?'!':i+1}</span><span class="t">${STEP[h]}</span><span class="n">${f0(v.n)} <small>corridas · ${f1(v.km)} km</small></span></div>`}).join('')}</div></div>`;
+  // 4) por ruta
+  const byRoute={};for(const x of asg){const k=cleanRuta(x.ruta)||'(sin ruta)';const r=byRoute[k]||(byRoute[k]={n:0,km:0,c:0,vals:new Set()});r.n++;r.km+=x.km;r.vals.add(x.km);if(x.cancelled)r.c++;else r.kq=(r.kq||0)+x.km}
+  const rs=Object.entries(byRoute).sort((a,b)=>b[1].km-a[1].km);const mx=rs.length?rs[0][1].km:1;
+  const kmRange=v=>{const a=[...v].sort((x,y)=>x-y);return a.length===1?f1(a[0]):`${f1(a[0])}–${f1(a[a.length-1])}`};
+  const routes=`<div><h4>${ic('route')}Por ruta · ${rs.length} rutas</h4><div class="rlist"><div class="rrow hd"><span>Ruta</span><span class="n">Corridas</span><span class="n">Km c/corrida</span><span class="kc"></span><span class="n kp">Km planeado</span><span class="n">Km plan real</span></div>${
+    rs.map(([r,v])=>`<div class="rrow"><span>${esc(r)}</span><span class="n">${v.n}${v.c?`<span class="canc">${v.c} canc.</span>`:''}</span><span class="n">${kmRange(v.vals)}</span><span class="rb"><i style="width:${(v.km/mx*100).toFixed(1)}%"></i></span><span class="n kp">${f1(v.km)}</span><span class="n${v.kq?'':' zero'}"><b>${f1(v.kq||0)}</b></span></div>`).join('')}</div></div>`;
+  const noUl=noU.length?`<details class="more"><summary>${ic('chev','chev')}Ver las ${noU.length} corridas sin unidad</summary><ul class="prog" style="margin-top:6px">${noU.map((x,i)=>`<li><span class="h">${i+1}.</span><span class="h">${esc(x.hr||'—')}</span><span>${esc(cleanRuta(x.ruta))}${x.st?` <span class="muted">· ${esc(x.st.toLowerCase())}</span>`:''}</span><span class="k">${f1(x.km)} km</span></li>`).join('')}</ul></details>`:'';
+  // cuadre contra el total de la hoja Horario del Seguimiento
+  let horCmp='';{const H=S.stu?.hor;if(H&&H.size){const xs=[...H.values()].flatMap(e=>e.list||[]);const tAll=xs.reduce((s,x)=>s+(+x.km||0),0),wu=xs.filter(x=>x.u),tU=wu.reduce((s,x)=>s+(+x.km||0),0);
+    const sinKm=asg.filter(x=>x.how==='sin');const sinR=[...new Set(sinKm.map(x=>(cleanRuta(x.ruta)||x.ruta)+' '+(x.hr||'')))];
+    horCmp=`<div class="panel" style="background:#f6f9fd"><h4 style="margin:0 0 6px">${ic('diff')}Cuadre con tu hoja Horario</h4><p class="small" style="margin:0">Tu hoja Horario suma <b>${f1(tAll)} km</b> en ${xs.length} horarios (${f1(tU)} km en los ${wu.length} que tienen unidad). El plan de aquí sale de las <b>${asg.length} corridas de ${d.planKind==='monitor'?'SMart (Monitor)':'la Plantilla'}</b>: <b>${f1(kpA)} km</b>, diferencia ${sgn(kpA-tAll)} km. La diferencia viene de corridas que están en un archivo y no en el otro, o que cambiaron de horario.${sinKm.length?` <span class="neg">${sinKm.length} corridas sin km porque esa ruta y hora no están en tu hoja Horario: ${esc(sinR.join(', '))}.</span>`:''}</p></div>`}}
+  el.innerHTML=head(`¿De dónde salen los ${f0(kpA)} km planeados y los ${f0(sum(okA))} reales?`)+eq+horCmp+bar+steps+routes+noUl;
+}
+/* Compara cada corrida (del Monitor o del programa) con los viajes GPS de la unidad.
+   Cada viaje GPS se asigna a la primera corrida que termina después de él (incluye el traslado en vacío previo). */
+/* Compara cada corrida con los viajes GPS de la unidad.
+   - Un viaje normal se asigna a la primera corrida que termina después de su punto medio (incluye el traslado en vacío previo).
+   - Un viaje largo que se traslapa con 2 o más corridas (la unidad nunca se paró o no cerró el switch) se REPARTE
+     entre esas corridas en proporción a su km de ruta, y esas corridas quedan marcadas como "estimado".
+   - La primera corrida del día incluye la salida del encierro: se evalúa con el doble de tolerancia. */
+function compareRuns(U,D){
+  const key=U.u+'|'+D+'|'+(U.trips||[]).length+'|'+((U.mc||U.c)||[]).length;
+  if(S._cmpCache&&S._cmpCache.has(key))return S._cmpCache.get(key);
+  const src=U.mc&&U.mc.length?'mon':'plan';const list=(src==='mon'?U.mc:U.c)||[];
+  const base=Date.parse(D);
+  // si el Monitor es de otra fecha que el GPS, se comparan solo las horas del día
+  const abs=x=>x?(x.d&&dayKey(x.ms)===D?x.ms:base+(x.ms%DAY)):null;
+  const runs=list.map(c=>{const s=abs(c.s);let e=abs(c.e);if(s!=null&&(e==null||e<s))e=s+3600e3;return{...c,s0:s,e0:e,gps:0,nt:0,trips:[],est:false,estKm:0}}).filter(c=>c.s0!=null).sort((a,b)=>a.s0-b.s0);
+  if(runs.length)runs[0].first=true;
+  const after=[],loose=[];const M=10*60e3;
+  for(const t of U.trips||[]){
+    if(t.s!=null&&t.e!=null&&runs.length){
+      const ov=runs.filter(r=>t.s<r.e0&&t.e>r.s0);
+      if(ov.length>=2){
+        const tot=ov.reduce((a,r)=>a+(r.km||0),0);
+        for(const r of ov){const share=tot?(r.km||0)/tot:1/ov.length,k=t.km*share;r.gps+=k;r.nt++;r.est=true;r.estKm+=k;r.trips.push({...t,share,part:k,nov:ov.length})}
+        continue;
+      }
+    }
+    const mid=t.s!=null&&t.e!=null?(t.s+t.e)/2:(t.s??t.e);
+    if(mid==null||!runs.length){loose.push(t);continue}
+    const r=runs.find(c=>mid<=c.e0+M);
+    if(!r){after.push(t);continue}
+    r.gps+=t.km;r.nt++;r.trips.push(t);
+  }
+  for(const r of runs){const tol=r.first?S.cfg.tol*2:S.cfg.tol;r.dev=r.gps-r.km;r.pc=r.km?r.dev/r.km*100:null;r.st=r.nt===0?'no':(r.pc==null||Math.abs(r.pc)<=tol)?'ok':r.pc>0?'up':'dn'}
+  const out={src,runs,after,loose};
+  (S._cmpCache||(S._cmpCache=new Map())).set(key,out);return out;
+}
+/* Corridas del día comparables (con GPS, no estimadas y con km de ruta). La unidad, la ruta y el operador vienen de SMart. */
+function runPool(){
+  const d=S.day,out=[];if(!d||d.fromHist)return out;
+  for(const U of d.units.values()){if(U.kr==null)continue;const C=compareRuns(U,d.D);
+    for(const r of C.runs){if(!r.nt||r.est||!r.km)continue;if(r.first&&!S.rt.first)continue;
+      out.push({u:U.u,op:r.op||U.op||'',ruta:cleanRuta(r.ruta),hr:r.hr||hhmm(r.s0),km:r.km,gps:r.gps,dev:r.dev,pc:r.pc,st:r.st,first:!!r.first})}}
+  return out;
+}
+const med=a=>{const b=[...a].sort((x,y)=>x-y),m=b.length>>1;return b.length?(b.length%2?b[m]:(b[m-1]+b[m])/2):0};
+function aggStats(keyFn,labelFn){
+  const g={};for(const x of runPool()){const k=keyFn(x);if(k==null)continue;(g[k]||(g[k]={key:k,...labelFn(x),xs:[]})).xs.push(x)}
+  return Object.values(g).map(G=>{const n=G.xs.length,sp=G.xs.reduce((s,x)=>s+x.km,0),sg=G.xs.reduce((s,x)=>s+x.gps,0),kp=sp/n,kg=sg/n,mg=med(G.xs.map(x=>x.gps)),mp=med(G.xs.map(x=>x.km));
+    const pc=sp?(sg-sp)/sp*100:null,up=G.xs.filter(x=>x.pc!=null&&x.pc>S.cfg.tol).length,dn=G.xs.filter(x=>x.pc!=null&&x.pc<-S.cfg.tol).length;
+    return{...G,n,sp,sg,kp,kg,mg,mp,dev:kg-kp,dsum:sg-sp,pc,up,dn,units:[...new Set(G.xs.map(x=>x.u))].sort((a,b)=>a-b),ops:[...new Set(G.xs.map(x=>x.op).filter(Boolean))]}});
+}
+function routeStats(){
+  return aggStats(x=>S.rt.mode==='hr'?x.ruta+'|'+x.hr:x.ruta,x=>({ruta:x.ruta,hr:S.rt.mode==='hr'?x.hr:''})).map(r=>{
+    let sug='';if(r.n>=3&&r.up/r.n>=0.6&&r.pc>S.cfg.tol)sug=`Km real probablemente mayor: el GPS marca ~${f1(r.mg)} km contra ${f1(r.mp)} planeados`;
+    else if(r.n>=3&&r.dn/r.n>=0.6&&r.pc<-S.cfg.tol)sug=`El GPS marca menos: ~${f1(r.mg)} km contra ${f1(r.mp)} planeados`;
+    else if(r.n<3&&Math.abs(r.pc)>S.cfg.tol)sug='Pocas corridas para concluir';
+    return{...r,sug}});
+}
+function opStats(){
+  return aggStats(x=>x.op?KEY(x.op):null,x=>({op:x.op,clave:S.stu?.byName?.get(KEY(x.op))??''})).map(r=>{
+    let sug='';if(r.n>=3&&r.up/r.n>=0.6&&r.pc>S.cfg.tol)sug='Hace más km de lo planeado en la mayoría de sus corridas';
+    else if(r.n>=3&&r.dn/r.n>=0.6&&r.pc<-S.cfg.tol)sug='Marca menos km de lo planeado (revisar GPS o recorrido incompleto)';
+    else if(r.n<3&&Math.abs(r.pc)>S.cfg.tol)sug='Pocas corridas para concluir';
+    return{...r,sug}});
+}
+/* tabla de corridas que se abre al tocar una fila de las comparativas */
+function poolDetail(xs,cols){
+  return`<div class="tbl-wrap"><table class="cmp"><thead><tr><th>Unidad</th>${cols.op?'<th>Operador</th>':''}<th>Hora</th>${cols.ruta?'<th>Ruta</th>':''}<th class="n">Km ruta</th><th class="n">Km GPS</th><th class="n">Dif.</th><th>Estado</th></tr></thead><tbody>${
+    [...xs].sort((a,b)=>String(a.hr).localeCompare(String(b.hr))||a.u-b.u).map(x=>{const c=devColor(x.pc);return`<tr><td><button class="btn ghost" data-gou="${x.u}" title="Ver la unidad"><span class="eco">${x.u}</span></button></td>${cols.op?`<td>${esc(x.op||'—')}</td>`:''}<td>${esc(x.hr)}${x.first?' <span class="firstb">1ª del día</span>':''}</td>${cols.ruta?`<td>${esc(x.ruta)}</td>`:''}<td class="n">${f1(x.km)}</td><td class="n">${f1(x.gps)}</td><td class="n">${c?`<span class="dpill" style="background:${c.bg};color:${c.fg}">${sgn(x.dev)}</span>`:sgn(x.dev)}</td><td><span class="st ${x.st}" title="${STI[x.st][1]}">${ic(STI[x.st][0])}</span></td></tr>`}).join('')}</tbody></table></div>`;
+}
+function statTable(el,rows,H,sortSt,openSet,cellsFn,detCols,attr){
+  const {k,d:dir}=sortSt;
+  const val=r=>{const v=r[k];return typeof v==='string'?NORM(v):(v??-1e9)};
+  rows.sort((a,b)=>{const x=k==='up'?a.up/a.n:val(a),y=k==='up'?b.up/b.n:val(b);return(x<y?-1:x>y?1:0)*dir});
+  const ar=kk=>sortSt.k===kk?`<span class="ar">${sortSt.d>0?' ▲':' ▼'}</span>`:'';
+  el.innerHTML=`<thead><tr><th></th>${H.map(([kk,l,c])=>kk?`<th class="${c||''}" data-${attr}sort="${kk}" style="cursor:pointer" title="Ordenar">${l}${ar(kk)}</th>`:`<th>${l}</th>`).join('')}</tr></thead><tbody>${
+    rows.length?rows.map(r=>{const open=openSet.has(r.key);return`<tr class="srow${open?' open':''}" data-${attr}key="${esc(r.key)}" tabindex="0"><td>${ic('chev','chev')}</td>${cellsFn(r)}</tr>`+(open?`<tr class="det"><td colspan="${H.length+1}"><div class="det-in" style="padding:10px 12px">${poolDetail(r.xs,detCols)}</div></td></tr>`:'')}).join('')
+    :`<tr><td colspan="${H.length+1}" class="empty">No hay corridas con GPS para comparar.</td></tr>`}</tbody>`;
+}
+const difCell=r=>{const c=devColor(r.pc);return`<td class="n">${c?`<span class="dpill" style="background:${c.bg};color:${c.fg}">${sgn(r.dsum)}</span>`:sgn(r.dsum)}</td><td class="n" style="${c?`color:${c.fg};font-weight:700`:''}">${pct(r.pc)}</td>`};
+function renderRoutes(){
+  const el=$('#tblRt');if(!el)return;const d=S.day;
+  $('#rtPanel').hidden=!d||d.fromHist;$('#opPanel').hidden=!d||d.fromHist;if(!d||d.fromHist)return;
+  const firstChip=`<button class="chip" data-rtfirst="1" aria-pressed="${S.rt.first}">${S.rt.first?'Con':'Sin'} 1ª corrida del día</button>`;
+  $('#rtMode').innerHTML=`<button class="chip" data-rtmode="ruta" aria-pressed="${S.rt.mode==='ruta'}">Por ruta</button><button class="chip" data-rtmode="hr" aria-pressed="${S.rt.mode==='hr'}">Por ruta y horario</button>${firstChip}`;
+  $('#opMode').innerHTML=firstChip;
+  const rr=routeStats();
+  statTable(el,rr,[['ruta','Ruta'],...(S.rt.mode==='hr'?[['hr','Horario']]:[]),['n','Corridas','n'],['mp','Km plan (mediana)','n'],['kg','Km GPS promedio','n'],['mg','Km GPS mediana','n'],['dsum','Dif. total','n'],['pc','%','n'],['up','Corridas arriba','n'],[null,'Lectura']],
+    S.rt.sort,S.rtOpen,r=>`<td title="Unidades: ${r.units.join(', ')}"><b>${esc(r.ruta)}</b></td>${S.rt.mode==='hr'?`<td>${esc(r.hr)}</td>`:''}<td class="n">${r.n}</td><td class="n">${f1(r.mp)}</td><td class="n">${f1(r.kg)}</td><td class="n">${f1(r.mg)}</td>${difCell(r)}<td class="n">${r.up} de ${r.n}</td><td class="small${r.sug.startsWith('Km real')?' neg':''}">${esc(r.sug)}</td>`,{op:true,ruta:S.rt.mode!=='ruta'?false:false},'rt');
+  const oo=opStats();
+  statTable($('#tblOp'),oo,[['op','Operador'],['clave','Clave'],['n','Corridas','n'],['units','Unidades'],['sp','Km plan','n'],['sg','Km GPS','n'],['dsum','Dif.','n'],['pc','%','n'],['up','Corridas arriba','n'],['dn','Corridas abajo','n'],[null,'Lectura']],
+    S.op.sort,S.opOpen,r=>`<td><b>${esc(r.op)}</b></td><td>${esc(r.clave)}</td><td class="n">${r.n}</td><td>${r.units.join(', ')}</td><td class="n">${f1(r.sp)}</td><td class="n">${f1(r.sg)}</td>${difCell(r)}<td class="n">${r.up}</td><td class="n">${r.dn}</td><td class="small${r.sug.startsWith('Hace más')?' neg':''}">${esc(r.sug)}</td>`,{op:false,ruta:true},'op');
+  // resúmenes de las secciones
+  const hiR=rr.filter(r=>r.sug.startsWith('Km real')).sort((a,b)=>b.pc-a.pc);
+  setSum('rt',`${rr.length} ${S.rt.mode==='hr'?'rutas y horarios':'rutas'} · ${hiR.length?`${hiR.length} con km real mayor (${hiR.slice(0,2).map(r=>`${r.ruta}${r.hr?' '+r.hr:''} ${pct(r.pc)}`).join(', ')})`:'ninguna con km real claramente mayor'}`);
+  const hiO=oo.filter(r=>r.sug.startsWith('Hace más')).sort((a,b)=>b.pc-a.pc),loO=oo.filter(r=>r.sug.startsWith('Marca menos'));
+  setSum('op',`${oo.length} operadores · ${hiO.length} con más km de lo planeado${hiO.length?` (${hiO.slice(0,2).map(r=>`${r.op} ${pct(r.pc)}`).join(', ')})`:''} · ${loO.length} con menos`);
+}
+function setSum(k,t){const e=document.getElementById('sum-'+k);if(e)e.textContent=t}
+function setSec(k,open){const el=document.querySelector(`.sec[data-sec="${k}"]`);if(!el)return;el.classList.toggle('open',open);el.querySelector('.sec-h').setAttribute('aria-expanded',open);open?S.secOpen.add(k):S.secOpen.delete(k)}
+function sortRuns(runs){
+  runs.forEach((r,i)=>{if(r.i==null)r.i=i});
+  const {k,d}=S.cmpSort,ST={no:0,dn:1,up:2,ok:3};
+  const v=r=>k==='i'?r.i:k==='hr'?r.s0:k==='ruta'?NORM(cleanRuta(r.ruta)):k==='km'?r.km:k==='gps'?(r.nt?r.gps:-1):k==='dev'?(r.nt?r.dev:-1e9):k==='st'?ST[r.st]:r.i;
+  return[...runs].sort((a,b)=>{const x=v(a),y=v(b);return(x<y?-1:x>y?1:a.i-b.i)*d});
+}
+const STI={ok:['check','En rango'],up:['up','Más km que la ruta'],dn:['down','Menos km que la ruta'],no:['nosignal','Sin registro GPS']};
+const cleanRuta=r=>String(r).replace(/^\s*\d{3,4}\s*-\s*/,'');
+function detailHTML(U){
+  const D=S.day.D;const note=(S.notes[D]&&S.notes[D][U.u])||'';
+  const pill=(icn,l,v)=>`<div class="pill">${ic(icn)}${l} <b>${v}</b></div>`;
+  const pills=`<div class="sumpills">${pill('route','Plan',f1(U.kp))}${U.km!=null?pill('check','Corridas hechas',f1(U.km)):''}${pill('pin','GPS',f1(U.kr))}${pill('diff','Dif.',sgn(U.dev))}${U.exKm?pill('ban','Excluido',f1(U.exKm)):''}${U.op?pill('user','',esc(U.op)).replace('class="pill"','class="pill who"'):''}</div>`;
+  let left='',tripsT='';
+  if(S.day.fromHist)left='<div class="small muted">El histórico guarda solo totales por unidad; el detalle de corridas y viajes no se conserva.</div>';
+  else{
+    const C=compareRuns(U,D);
+    const sum=(a,f)=>a.reduce((s,x)=>s+(f(x)||0),0);
+    const aft=sum(C.after,t=>t.km);
+    if(C.runs.length){
+      // Una sola tabla: cada corrida es un renglón de grupo (lleno, vacío, km ruta, km GPS, diferencia y estado) y debajo sus viajes GPS
+      const tk=sum(C.runs,r=>r.km),tl=sum(C.runs,r=>r.kl),tv=sum(C.runs,r=>r.kv),tg=sum(C.runs,r=>r.gps)+aft+sum(C.loose,t=>t.km),td=tg-tk;
+      const tc=devColor(tk?td/tk*100:null);
+      const totSt=!tk?'':Math.abs(td/tk*100)<=S.cfg.tol?'ok':td>0?'up':'dn';
+      const stI=st=>st?`<span class="st ${st}" title="${STI[st][1]}">${ic(STI[st][0])}</span>`:'';
+      const difC=(d,km)=>{const c=devColor(km?d/km*100:null);return c?`<span class="dpill" style="background:${c.bg};color:${c.fg}">${sgn(d)}</span>`:sgn(d)};
+      const H=[['i','#'],['hr','Hora / ruta'],[null,'Desde'],[null,'Hasta'],['kl','Km lleno','n'],['kv','Km vacío','n'],['km','Km ruta','n'],['gps','Km real GPS','n'],['dev','Dif.','n'],['st','Estado']];
+      const head=`<tr>${H.map(([k,l,c])=>k?`<th class="${c||''}" data-csort="${k}" title="Ordenar corridas">${l}${S.cmpSort.k===k?`<span class="ar">${S.cmpSort.d>0?' ▲':' ▼'}</span>`:''}</th>`:`<th>${l}</th>`).join('')}</tr>`;
+      const tr=t=>`<tr${t.sw?' style="color:var(--sw)"':''}><td></td><td class="muted small">${hhmm(t.s)} – ${hhmm(t.e)}</td><td class="wrap" title="${esc(t.from)}">${esc(t.from)}</td><td class="wrap" title="${esc(t.to)}">${esc(t.to)}${t.sw?' · switch encendido':''}${t.share!=null?` <span class="estb" title="Viaje de ${f1(t.km)} km sin parar que cubre ${t.nov} corridas; se repartió por km de ruta">≈ ${Math.round(t.share*100)}% de ${f1(t.km)} km</span>`:''}</td><td></td><td></td><td></td><td class="n">${t.share!=null?'≈ '+f1(t.part):f1(t.km)}</td><td></td><td></td></tr>`;
+      const grp=r=>`<tr class="grp${r.st==='no'?' none':''}"><td>${r.i+1}</td><td colspan="3">${esc(r.hr||hhmm(r.s0))} · ${esc(cleanRuta(r.ruta))} <span class="muted" style="font-weight:400">· ${r.nt} ${r.nt===1?'viaje':'viajes'}</span>${r.first?' <span class="firstb" title="Incluye la salida del encierro al punto de inicio; se evalúa con el doble de tolerancia">1ª del día · sale del encierro</span>':''}${r.est?' <span class="estb" title="La unidad no se paró o no cerró el switch: el km de un viaje largo se repartió entre las corridas que cubre">≈ estimado</span>':''}</td>
+        <td class="n${r.kl?'':' zero'}">${f1(r.kl??0)}</td><td class="n${r.kv?'':' zero'}">${f1(r.kv??0)}</td><td class="n${r.km?'':' zero'}">${f1(r.km||0)}</td><td class="n${r.nt&&!isZ(r.gps)?'':' zero'}">${r.est?'≈ ':''}${f1(r.gps)}</td><td class="n">${r.nt?difC(r.dev,r.km):''}</td><td>${stI(r.st)}</td></tr>`
+        +(r.trips.length?r.trips.map(tr).join(''):'<tr><td></td><td colspan="9" class="zero">Sin viajes GPS en esta corrida</td></tr>');
+      const body=sortRuns(C.runs).map(grp).join('')
+        +(C.after.length?`<tr class="grp after"><td></td><td colspan="3">Después de la última corrida · ${C.after.length} viajes</td><td></td><td></td><td></td><td class="n">${f1(aft)}</td><td></td><td></td></tr>`+C.after.map(tr).join(''):'')
+        +(C.loose.length?`<tr class="grp after"><td></td><td colspan="3">Viajes sin hora</td><td></td><td></td><td></td><td class="n">${f1(sum(C.loose,t=>t.km))}</td><td></td><td></td></tr>`+C.loose.map(tr).join(''):'');
+      left=`<div class="dsec"><h4>${ic('list')}Corridas ${C.src==='mon'?'hechas (Monitor)':'del programa'} y sus viajes GPS · ${C.runs.length} corridas · ${U.trips.length} viajes</h4><div class="tbl-wrap one">
+      <table class="cmp"><thead>${head}</thead><tbody>${body}
+      <tr class="tot"><td></td><td colspan="3">Total · ${C.runs.length} corridas</td><td class="n">${f1(tl)}</td><td class="n">${f1(tv)}</td><td class="n">${f1(tk)}</td><td class="n">${f1(tg)}</td><td class="n">${tc?`<span class="dpill" style="background:${tc.bg};color:${tc.fg}">${sgn(td)}</span>`:sgn(td)}</td><td>${stI(totSt)}</td></tr></tbody></table></div>
+      <p class="small muted" style="margin:0">Km ruta = lleno + vacío (hoja Horario). El km real GPS de cada corrida incluye el traslado en vacío hacia su inicio. Toca un encabezado para ordenar las corridas. <b>≈ estimado</b>: la unidad no se paró o no cerró el switch y el GPS marcó un solo viaje largo; su km se repartió entre las corridas que cubre según su km de ruta. <b>1ª del día</b>: incluye la salida del encierro y se evalúa con el doble de tolerancia.</p></div>`;
+    }else left=`<div class="small muted">No hay corridas con hora para comparar.</div>`;
+  }
+  const exl=(U.ex||[]).length?`<div class="dsec"><h4>${ic('ban')}Km excluido</h4><div class="tbl-wrap"><table class="cmp"><thead><tr><th>#</th><th>Hora</th><th>Lugar</th><th class="n">Km</th><th>Motivo</th></tr></thead><tbody>${U.ex.map((x,i)=>`<tr><td class="muted">${i+1}</td><td>${hhmm(x.s)}</td><td class="wrap">${esc(x.from||'—')}</td><td class="n">${f1(x.km)}</td><td class="wrap neg">${esc(x.why)}</td></tr>`).join('')}</tbody></table></div></div>`:'';
+  const obs=(U.obs||[]).filter(o=>!/^Excluido/.test(o)).map(o=>`<div class="note">${ic('moon')}<span>${esc(o)}</span></div>`).join('');
+  const prog=U.c&&U.c.length?`<details class="more"><summary>${ic('chev','chev')}Programa del plan · ${U.c.length} corridas · ${f1(U.kp)} km</summary><div class="tbl-wrap" style="margin-top:6px"><table class="cmp"><thead><tr><th>#</th><th>Hora</th><th>Ruta</th><th class="n">Lleno</th><th class="n">Vacío</th><th class="n">Km</th><th>Origen del km</th></tr></thead><tbody>${
+    [...U.c].sort((a,b)=>String(a.hr).localeCompare(String(b.hr))).map((c,i)=>`<tr${c.st&&CANCEL.test(NORM(c.st))?' class="none"':''}><td class="muted">${i+1}</td><td>${esc(c.hr||'—')}</td><td>${esc(cleanRuta(c.ruta))}${c.st&&CANCEL.test(NORM(c.st))?` <span class="canc">${esc(c.st.toLowerCase())}</span>`:''}</td><td class="n${c.kl?'':' zero'}">${f1(c.kl??0)}</td><td class="n${c.kv?'':' zero'}">${f1(c.kv??0)}</td><td class="n${c.km?'':' zero'}"><b>${f1(c.km||0)}</b></td><td class="small muted">${esc(HOW[c.how]||'')}</td></tr>`).join('')}</tbody></table></div></details>`:'';
+  const ord=S._order||[],pos=ord.indexOf(U.u),prev=pos>0?ord[pos-1]:null,next=pos>=0&&pos<ord.length-1?ord[pos+1]:null;
+  const nav=`<div class="unav"><button class="btn" data-nav="${prev??''}"${prev==null?' disabled':''}>‹ ${prev??'Anterior'}</button><span class="where">Unidad ${U.u}<small>${pos+1} de ${ord.length} · usa ↑ ↓ en la tabla</small></span><button class="btn" data-nav="${next??''}"${next==null?' disabled':''}>${next??'Siguiente'} ›</button></div>`;
+  return`<div class="det-in">${nav}${pills}${obs}${left}<div class="cols2"><div style="display:flex;flex-direction:column;gap:14px;min-width:0">${exl}${prog}</div>
+    <label class="fld">Observaciones de torre de control<textarea data-note="${U.u}" id="note-${U.u}" placeholder="ej. sin señal desde las 14:00, se reportó a Webfleet">${esc(note)}</textarea></label></div></div>`;
+}
+
+/* ============================================================
+   HISTÓRICO (agregados diarios por unidad)
+   ============================================================ */
+const LSK='kmstu.hist.v1';
+const Store={
+  days:lsGet(LSK,{}), db:null, mode:'local',
+  async init(){
+    if(!window.claude||typeof window.claude.use!=='function')return;
+    try{const db=await window.claude.use('db');if(!db)return;this.db=db;this.mode='nube';
+      const snap=await db.collection('historico').get();
+      for(const doc of snap.docs){const x=doc.data();if(x&&x.f)this.days[x.f]=JSON.parse(JSON.stringify(x))}
+      lsSet(LSK,this.days);renderHist();
+    }catch(e){this.db=null;this.mode='local'}
+  },
+  async put(rec){this.days[rec.f]=rec;lsSet(LSK,this.days);
+    if(this.db){try{await this.db.doc('historico/'+rec.f).set(rec);return'nube'}catch(e){return'local'}}return'local'},
+  async del(f){delete this.days[f];lsSet(LSK,this.days);if(this.db){try{await this.db.doc('historico/'+f).delete()}catch(e){}}}
+};
+function dayRecord(){
+  const d=S.day;const D=d.D;
+  return{v:1,f:D,g:new Date().toISOString().slice(0,16),src:d.src,cm:S.dayNotes[D]||'',gd:S.guards[D]||[],
+    r:[...d.units.values()].sort((a,b)=>a.u-b.u).map(U=>{
+      const ob=[...(U.obs||[])];const n=S.notes[D]&&S.notes[D][U.u];if(n)ob.push(n);
+      return{u:U.u,p:U.p,kp:+U.kp.toFixed(1),np:U.np,kq:+(U.kq??U.kp).toFixed(1),nq:U.nq??U.np,kr:U.kr==null?null:+U.kr.toFixed(1),nv:U.nv,km:U.km==null?null:+U.km.toFixed(1),xk:U.exKm?+U.exKm.toFixed(1):0,cx:U.cx||0,ck:U.cxKm?+U.cxKm.toFixed(1):0,
+        tg:U.tags.map(t=>t==='SW'?'SW'+U.sw:t==='CX'?'CX'+U.cx:t).join('|'),ob:ob.join(' / ')}})};
+}
+function openFromHist(f){
+  const rec=Store.days[f];if(!rec)return;
+  const units=new Map();
+  for(const x of rec.r){
+    const tg=String(x.tg||'').split('|').filter(Boolean);
+    const sw=+((tg.find(t=>t.startsWith('SW'))||'SW0').slice(2))||0,cx=+((tg.find(t=>t.startsWith('CX'))||'CX0').slice(2))||0;
+    if(tg.includes('NP')){(S.np[f]=S.np[f]||{})[x.u]=true}
+    units.set(x.u,{u:x.u,p:x.p,kp:x.kp,np:x.np||0,kq:x.kq??x.kp,nq:x.nq??x.np,kr:x.kr,nv:x.nv||0,km:x.km??null,nm:0,sw,cx,cxKm:0,exKm:x.xk||0,ex:[],trips:[],c:[],op:'',obs:x.ob?[x.ob]:[]});
+  }
+  if(rec.cm)S.dayNotes[f]=rec.cm;
+  S.day={D:f,units,cxList:[],swList:[],out:{W:new Map(),S:new Map()},loaded:new Set(['W','S']),otherDay:0,planLabel:rec.src?.plan||'',src:rec.src||{},fromHist:true};
+  tagAll();S.open.clear();show('dia');renderDay();
+}
+function monthRecs(mo){return Object.values(Store.days).filter(r=>r.f.startsWith(mo)).sort((a,b)=>a.f<b.f?-1:1)}
+const monday=k=>{const t=Date.parse(k),wd=(new Date(t).getUTCDay()+6)%7;return dayKey(t-wd*DAY)};
+function cxAgg(wk){
+  const end=dayKey(Date.parse(wk)+6*DAY),by={};
+  for(const r of Object.values(Store.days)){if(r.f<wk||r.f>end)continue;
+    for(const x of r.r){const n=x.cx||+((String(x.tg||'').match(/CX(\d+)/)||[])[1]||0);if(!n)continue;
+      const A=by[x.u]||(by[x.u]={u:x.u,p:x.p,n:0,km:0,dias:[]});A.n+=n;A.km+=x.ck||0;A.dias.push(r.f)}}
+  return Object.values(by).sort((a,b)=>b.n-a.n||a.u-b.u);
+}
+function cxMailText(wk,rows){
+  const end=dayKey(Date.parse(wk)+6*DAY),tn=rows.reduce((s,a)=>s+a.n,0),tk=rows.reduce((s,a)=>s+a.km,0);
+  if(!rows.length)return`Sin correcciones de cuentakilómetros en la semana del ${dShort(wk)} al ${dmy(end)}.`;
+  return`Asunto: Revisión de GPS por cuentakilómetros corregidos · semana del ${dShort(wk)} al ${dmy(end)}
+
+Buen día, equipo de Torre de control:
+
+Durante la semana del ${dShort(wk)} al ${dmy(end)} los reportes de GPS registraron correcciones de cuentakilómetros en las siguientes unidades. Les pido revisar el equipo GPS de cada una:
+
+${rows.map(a=>`• Unidad ${a.u} (${PROV[a.p]}): ${a.n} ${a.n===1?'corrección':'correcciones'} en ${a.dias.length} ${a.dias.length===1?'día':'días'} (${a.dias.sort().map(dShort).join(', ')})${a.km?` · ${f1(a.km)} km corregidos`:''}`).join('\n')}
+
+Total: ${rows.length} ${rows.length===1?'unidad':'unidades'}, ${tn} correcciones${tk?`, ${f1(tk)} km corregidos`:''}.
+
+Saludos.`;
+}
+function renderCx(){
+  const days=Object.keys(Store.days).sort();const wsel=$('#cxWeek');
+  const weeks=[...new Set(days.map(monday))].sort().reverse();
+  const today=dayKey(Date.now()),curW=monday(today);
+  let wk=wsel.value&&weeks.includes(wsel.value)?wsel.value:(weeks.includes(curW)?curW:weeks[0]);
+  wsel.innerHTML=weeks.length?weeks.map(w=>`<option value="${w}"${w===wk?' selected':''}>${dShort(w)} al ${dmy(dayKey(Date.parse(w)+6*DAY))}</option>`).join(''):'<option value="">Sin días guardados</option>';
+  if(!wk){$('#tblCx').innerHTML='<tbody><tr><td class="empty">Guarda los días para ir acumulando.</td></tr></tbody>';$('#cxMail').value='';$('#cxNote').innerHTML='';return}
+  const rows=cxAgg(wk);
+  const isFri=new Date().getDay()===5;
+  $('#cxNote').innerHTML=isFri&&rows.length?noteHTML(['bad','Hoy es viernes: copia el correo y envíalo a Torre de control.']):'';
+  $('#tblCx').innerHTML=`<thead><tr><th>Unidad</th><th>GPS</th><th class="n">Correcciones</th><th class="n">Días</th><th>Fechas</th><th class="n">Km corregidos</th></tr></thead><tbody>${
+    rows.length?rows.map(a=>`<tr><td><span class="eco">${a.u}</span></td><td>${PROV[a.p]}</td><td class="n"><b>${a.n}</b></td><td class="n">${a.dias.length}</td><td>${a.dias.sort().map(dShort).join(', ')}</td><td class="n">${a.km?f1(a.km):'—'}</td></tr>`).join('')
+      +`<tr class="tot"><td>Total</td><td>${rows.length} unidades</td><td class="n">${rows.reduce((s,a)=>s+a.n,0)}</td><td></td><td></td><td class="n">${f1(rows.reduce((s,a)=>s+a.km,0))}</td></tr>`
+      :'<tr><td colspan="6" class="empty">Sin correcciones de cuentakilómetros esta semana.</td></tr>'}</tbody>`;
+  $('#cxMail').value=cxMailText(wk,rows);
+}
+function renderHist(){
+  try{renderCx()}catch(e){}
+  const months=[...new Set(Object.keys(Store.days).map(f=>f.slice(0,7)))].sort().reverse();
+  const sel=$('#histMonth');const cur=sel.value||months[0]||'';
+  sel.innerHTML=months.length?months.map(m=>`<option value="${m}"${m===cur?' selected':''}>${mesLabel(m)}</option>`).join(''):'<option value="">Sin datos</option>';
+  $('#histSub').textContent=`Un renglón por unidad y día, sin coordenadas. Se guarda ${Store.mode==='nube'?'en la página y en este navegador':'en este navegador'}; descarga el respaldo cada mes.`;
+  const recs=monthRecs(sel.value);
+  if(!recs.length){$('#histKpis').innerHTML='';$('#tblHistDays').innerHTML='<tr><td class="empty">Todavía no hay días guardados. Procesa un día y toca “Guardar día”.</td></tr>';$('#tblHistUnits').innerHTML='';return}
+  let tp=0,tr=0,nNP=0,nSW=0;const per={};
+  const days=recs.map(r=>{let p=0,re=0,np=0,sw=0,cx=0;for(const x of r.r){if(x.kr!=null){p+=x.kq??x.kp;re+=x.kr}
+      const tg=String(x.tg||'');if(tg.includes('NP'))np++;if(tg.includes('SW'))sw++;if(tg.includes('CX'))cx++;
+      const A=per[x.u]||(per[x.u]={u:x.u,p:x.p,d:0,kp:0,kr:0,np:0,sw:0,cx:0,sg:0});A.d++;if(x.kr!=null){A.kp+=x.kq??x.kp;A.kr+=x.kr}
+      if(tg.includes('NP'))A.np++;if(tg.includes('SW'))A.sw++;if(tg.includes('CX'))A.cx++;if(tg.includes('SG'))A.sg++}
+    tp+=p;tr+=re;nNP+=np;nSW+=sw;return{f:r.f,p,re,np,sw,cx,n:r.r.length}});
+  const max=Math.max(...days.map(x=>Math.max(x.p,x.re)),1);
+  $('#histKpis').innerHTML=[['calendar','mut','Días guardados',recs.length,mesLabel(sel.value)],['list','','Km planeado real',f0(tp),'ya sin las canceladas · unidades con GPS'],['pin','','Km real',f0(tr),''],['diff',tr-tp>0?'warn':'bad','Diferencia',`<span class="${tr-tp>0?'pos':'neg'}">${sgn(tr-tp)}</span>`,pct(tp?(tr-tp)/tp*100:null)],['moon','sw','Marcas',nNP+nSW,`${nNP} no pos · ${nSW} switch`]].map(kpiHTML).join('');
+  $('#tblHistDays').innerHTML=`<thead><tr><th>Fecha</th><th class="n">Unidades</th><th class="n">Km plan</th><th class="n">Km real</th><th class="n">Dif.</th><th>Real vs. plan</th><th class="n">No pos</th><th class="n">Switch</th><th class="n">Km corr.</th><th></th></tr></thead><tbody>${
+    days.slice().reverse().map(x=>`<tr><td>${dmy(x.f)}</td><td class="n">${x.n}</td><td class="n">${f0(x.p)}</td><td class="n">${f0(x.re)}</td><td class="n ${x.re-x.p>0?'pos':'neg'}">${sgn(x.re-x.p)}</td>
+      <td><div class="bar" title="Barra: km real · línea: km planeado"><i style="width:${(x.re/max*100).toFixed(1)}%"></i><b style="left:${(x.p/max*100).toFixed(1)}%"></b></div></td>
+      <td class="n">${x.np}</td><td class="n">${x.sw}</td><td class="n">${x.cx}</td>
+      <td><span class="row" style="gap:4px;flex-wrap:nowrap"><button class="btn ghost" data-hopen="${x.f}">${ic('table')}Abrir</button><span class="confirm" id="del-${x.f}"><button class="btn ghost danger" data-hdel="${x.f}">Borrar</button></span></span></td></tr>`).join('')}</tbody>`;
+  const units=Object.values(per).sort((a,b)=>a.u-b.u);
+  $('#tblHistUnits').innerHTML=`<thead><tr><th>Unidad</th><th></th><th class="n">Días</th><th class="n">Km plan</th><th class="n">Km real</th><th class="n">Dif.</th><th class="n">%</th><th class="n">Días sin GPS</th><th class="n">No pos</th><th class="n">Switch</th><th class="n">Km corr.</th></tr></thead><tbody>${
+    units.map(A=>{const dv=A.kr-A.kp,pc=A.kp?dv/A.kp*100:null;return`<tr${A.np?' class="isnp"':''}><td><span class="eco">${A.u}</span><span class="prov ${A.p}">${A.p==='W'?'WF':'SAM'}</span></td><td></td><td class="n">${A.d}</td><td class="n">${f0(A.kp)}</td><td class="n">${f0(A.kr)}</td><td class="n ${dv>0?'pos':dv<0?'neg':''}">${sgn(dv)}</td><td class="n">${pct(pc)}</td><td class="n">${A.sg||''}</td><td class="n">${A.np||''}</td><td class="n">${A.sw||''}</td><td class="n">${A.cx||''}</td></tr>`}).join('')}</tbody>`;
+}
+const MES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const mesLabel=m=>m?MES[+m.slice(5,7)-1]+' '+m.slice(0,4):'';
+
+/* ============================================================
+   EXPORTAR / IMPORTAR
+   ============================================================ */
+let dlCap=null;
+async function saveFile(name,data){
+  try{if(dlCap===null&&window.claude&&typeof window.claude.use==='function')dlCap=await Promise.race([window.claude.use('downloads'),new Promise(r=>setTimeout(()=>r(false),2500))]);}catch{dlCap=false}
+  if(dlCap){try{await dlCap.save({filename:name,data});toast('Listo: '+name);return}catch(e){if(e&&e.code==='declined'){toast('Descarga cancelada');return}if(e&&e.code==='rate_limited'){toast('Espera un momento e intenta de nuevo');return}}}
+  const blob=data instanceof Blob?data:new Blob([data],{type:'application/octet-stream'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},3000);toast('Descargando '+name);
+}
+function xlsxBlob(sheets){
+  const wb=XLSX.utils.book_new();
+  for(const [n,aoa] of Object.entries(sheets)){const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=aoa[0].map((h,i)=>({wch:Math.min(60,Math.max(8,...aoa.slice(0,200).map(r=>String(r[i]??'').length)))}));XLSX.utils.book_append_sheet(wb,ws,n.slice(0,31))}
+  return new Blob([XLSX.write(wb,{type:'array',bookType:'xlsx'})]);
+}
+const r1=n=>n==null||!isFinite(n)?'':Math.round(n*10)/10;
+const tagTxt=tg=>String(tg||'').split('|').filter(Boolean).map(t=>{const b=t.replace(/\d+$/,'');return TAG[b]?TAG[b][1]+(t.length>2?` (${t.slice(2)})`:''):t}).join(', ');
+function exportDayXlsx(){
+  const d=S.day;if(!d)return;const rec=dayRecord();
+  const res=[['Fecha','Unidad','Proveedor','Operador','Corridas plan','Km planeado','Corridas sin canceladas','Km planeado real','Corridas hechas','Km corridas hechas','Km real','Viajes','Km excluido','Diferencia','Desviación %','Etiquetas','Observaciones']];
+  for(const x of rec.r){const U=d.units.get(x.u);res.push([dmy(d.D),x.u,PROV[x.p],U.op||'',x.np,x.kp,x.nq,x.kq,U.nm||'',r1(x.km),x.kr??'',x.nv,x.xk||'',x.kr==null?'':r1(x.kr-x.kq),U.pc==null?'':r1(U.pc),tagTxt(x.tg),x.ob])}
+  const sw=[['Unidad','Proveedor','Inicio','Fin','Horas','Km','Nota']].concat(d.swList.map(t=>[t.u,PROV[t.P],tsShort(t.s),tsShort(t.e),r1(t.dur),r1(t.km),swTxt(t)]));
+  const ex=[['Unidad','Reporte','Inicio','Fin','Km excluidos','Motivo']];for(const U of d.units.values())for(const x of U.ex||[])ex.push([U.u,PROV[x.P],tsShort(x.s),tsShort(x.e),r1(x.km),x.why]);
+  const cm=[['Fecha','Unidad','Comentario']];if(S.dayNotes[d.D])cm.push([dmy(d.D),'Día',S.dayNotes[d.D]]);
+  for(const [u,t] of Object.entries(S.notes[d.D]||{}))if(t)cm.push([dmy(d.D),+u,t]);
+  const gd=[['Guardia / apoyo','Hora','Unidad','Clave operador','Km lleno','Km vacío','Km total']].concat((S.guards[d.D]||[]).map(g=>[g.name,g.hr,+g.u||g.u,g.clave,g.kl??'',g.kv??'',+g.km||'']));
+  const keep=S.rt.mode;S.rt.mode='ruta';const rr=routeStats();S.rt.mode='hr';const rh=routeStats();S.rt.mode=keep;
+  const rtA=(rows,hr)=>[['Ruta',...(hr?['Horario']:[]),'Corridas','Km plan (mediana)','Km GPS promedio','Km GPS mediana','Dif. promedio','Dif. %','Corridas arriba','Lectura']].concat(rows.sort((a,b)=>(b.pc??0)-(a.pc??0)).map(r=>[r.ruta,...(hr?[r.hr]:[]),r.n,r1(r.mp),r1(r.kg),r1(r.mg),r1(r.dev),r1(r.pc),r.up,r.sug]));
+  const opA=[['Operador','Clave','Corridas','Unidades','Km plan','Km GPS','Dif.','Dif. %','Corridas arriba','Corridas abajo','Lectura']].concat(opStats().sort((a,b)=>(b.pc??0)-(a.pc??0)).map(r=>[r.op,r.clave,r.n,r.units.join(', '),r1(r.sp),r1(r.sg),r1(r.dsum),r1(r.pc),r.up,r.dn,r.sug]));
+  saveFile(`km_planeado_vs_real_${d.D}.xlsx`,xlsxBlob({'Resumen por unidad':res,'Rutas plan vs GPS':rtA(rr,false),'Rutas y horario':rtA(rh,true),'Operadores plan vs GPS':opA,'Guardias y TP':gd,'Comentarios':cm,'Km excluidos':ex,'Switch encendido':sw}));
+}
+const COLS=['u','p','kp','np','kq','nq','kr','nv','km','xk','cx','ck','tg','ob'];
+function exportHistJson(){
+  const mo=$('#histMonth').value;const recs=monthRecs(mo);if(!recs.length){toast('No hay días en este mes');return}
+  const out={tipo:'historico_km_stu',v:1,mes:mo,cols:COLS,dias:{}};
+  for(const r of recs)out.dias[r.f]={g:r.g,src:r.src,cm:r.cm||'',r:r.r.map(x=>COLS.map(c=>x[c]??null))};
+  saveFile(`historico_km_stu_${mo}.json`,JSON.stringify(out));
+}
+function histAoa(mo){
+  const a=[['Fecha','Unidad','Proveedor','Km planeado','Corridas plan','Km planeado real','Corridas sin canceladas','Km real','Viajes','Km corridas hechas','Km excluido','Diferencia','Desviación %','Etiquetas','Observaciones']];
+  for(const r of monthRecs(mo))for(const x of r.r)a.push([r.f,x.u,PROV[x.p],x.kp,x.np,x.kq??x.kp,x.nq??x.np,x.kr??'',x.nv,x.km??'',x.xk||'',x.kr==null?'':r1(x.kr-(x.kq??x.kp)),x.kr==null||!(x.kq??x.kp)?'':r1((x.kr-(x.kq??x.kp))/(x.kq??x.kp)*100),tagTxt(x.tg),x.ob||'']);
+  return a;
+}
+function exportHistCsv(){const mo=$('#histMonth').value;const a=histAoa(mo);if(a.length<2){toast('No hay días en este mes');return}
+  const csv='﻿'+a.map(r=>r.map(v=>{const s=String(v??'');return/[",\n;]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s}).join(',')).join('\r\n');
+  saveFile(`historico_km_stu_${mo}.csv`,csv)}
+function exportHistXls(){const mo=$('#histMonth').value;const a=histAoa(mo);if(a.length<2){toast('No hay días en este mes');return}saveFile(`historico_km_stu_${mo}.xlsx`,xlsxBlob({['Histórico '+mo]:a}))}
+async function importHist(file){
+  try{const j=JSON.parse(await file.text());let n=0;
+    const add=async rec=>{await Store.put(rec);n++};
+    if(j.dias&&j.cols){for(const [f,d] of Object.entries(j.dias))await add({v:1,f,g:d.g,src:d.src||{},cm:d.cm||'',r:d.r.map(a=>Object.fromEntries(j.cols.map((c,i)=>[c,a[i]])))})}
+    else if(j.f&&j.r)await add(j);
+    else throw 0;
+    toast(`Histórico importado: ${n} días`);renderHist();
+  }catch{toast('El archivo no es un histórico de Kilometraje STU')}
+}
+
+/* ============================================================
+   DATOS DE EJEMPLO (claramente marcados)
+   ============================================================ */
+function loadSample(){
+  const D=new Date(Date.now()-DAY).toISOString().slice(0,10);const [y,m,dd]=D.split('-');const pD=dayKey(Date.parse(D)-DAY).split('-');
+  const ts=(h,mi,prev)=>`${prev?pD[2]:dd}/${prev?pD[1]:m}/${y} ${String(h).padStart(2,'0')}:${String(mi).padStart(2,'0')}:00`;
+  const rutas=[['MODELO','RUTA','Kms Lleno','Kms Vac','Tot Kms'],['ENTRADA','AMALUCAN - CU',18,13,31],['SALIDA','CU - AMALUCAN',16,0,16],['ENTRADA','CAPU - CU',14.2,15,29.2],['SALIDA','CU - CAPU',14.1,0,14.1],['ENTRADA','SAN RAMON - CU',11,11,22],['SALIDA','CU - SAN RAMON',10.5,0,10.5],['SALIDA','CU - HEROES',11.5,0,11.5],['ENTRADA','HEROES - CU',12.5,8,20.5]];
+  const R=rutas.slice(1).map(r=>[r[1],r[4]]);
+  const hor=[['LISTA','MODELO','TIPO DE RUTA','RUTA SIMPLIFICADA','RUTA','HR','UNIDAD','CLAVE','OPERADOR','Kms Lleno','Kms Vac','Tot Kms']];
+  const units=[8002,8003,8005,8016,8017,8018,8024,8025,8105,8106,8107,8108];const names=['Operador A','Operador B','Operador C','Operador D','Operador E','Operador F','Operador G','Operador H','Operador I','Operador J','Operador K','Operador L'];
+  const plan={};units.forEach((u,i)=>{plan[u]=0;for(let k=0;k<6;k++){const [r,km]=R[(i+k)%R.length];hor.push([k,'','CU','',r,`${6+k*2}:00`,u,1000+i,names[i],0,0,km]);plan[u]+=km}});
+  const ops=[[],['Unidad','CLAVE','NOMBRE OPERADOR','Estatus','Ruta Asignada']].concat(units.map((u,i)=>[u,1000+i,names[i],'Activo','CU']));
+  const wf=[['Informe de viajes · Webfleet (EJEMPLO)'],[],['Vehículo','Inicio','Lugar de inicio','Fin','Lugar de destino','Duración','Distancia (km)']];
+  const sm=[['Vehículo','Hora de inicio','Hora de fin','Ubicación de inicio','Ubicación final','Distancia (km)']];
+  const factor={8002:1.04,8003:1.31,8005:0.97,8016:1.0,8017:0.55,8018:1.02,8024:0,8025:1.08,8105:1.01,8106:0.95,8107:1.12,8108:0.99};
+  for(const u of units){
+    const total=plan[u]*factor[u];if(!total)continue;const W=u<8105;const parts=4;
+    for(let k=0;k<parts;k++){const km=+(total/parts).toFixed(1);const h=6+k*3;
+      if(W)wf.push([`${u} - STU${String(u-8000).padStart(2,'0')}`,ts(h,5),'Terminal STU, Puebla',ts(h+1,40),'Ciudad Universitaria, Puebla','01:35:00',km]);
+      else sm.push([`${u}`,ts(h,5),ts(h+1,30),'CU BUAP','Terminal STU',km]);}
+  }
+  wf.push(['8018 - STU18',ts(21,50,true),'Terminal STU — switch encendido',ts(6,10),'Terminal STU','08:20:00',3.4]);
+  wf.push(['8016 - STU16',ts(12,0),'Cuenta kilómetros corregidos',ts(12,0),'—','00:00:00',812.0]);
+  wf.push(['8110 - STU110',ts(9,0),'CU BUAP',ts(10,0),'CAPU','01:00:00',22.0]);
+  sm.push(['8050',ts(8,0),ts(9,0),'CU','CAPU',18.0]);
+  S.sample=true;
+  loadInto('stu',{name:'EJEMPLO STU Germán.xlsx',wb:wbFromAoa({'DATOS OP':ops,'RUTAS':rutas,'Horario':hor}),nameDate:D});
+  loadInto('W',{name:'EJEMPLO Webfleet Informe de Viajes.xlsx',wb:wbFromAoa({'Viajes':wf}),nameDate:D});
+  loadInto('S',{name:'EJEMPLO Samsara reporte_viajes.csv',wb:wbFromAoa({'Sheet1':sm}),nameDate:D});
+  $('#opDate').value=D;$('#opDate').dataset.user='';
+  run();
+}
+
+/* ============================================================
+   NAVEGACIÓN Y EVENTOS
+   ============================================================ */
+function show(v){for(const s of['cargar','dia','hist','reglas']){$('#v-'+s).hidden=s!==v;$('#tab-'+s).setAttribute('aria-selected',s===v)}
+  if(v==='hist')renderHist();window.scrollTo(0,0)}
+function run(){
+  let D=$('#opDate').value;
+  if(D&&!plausible(D)){const b=bestDate();if(b){toast(`La fecha ${dmy(D)} no es válida; se usa ${dmy(b)}`);D=b;$('#opDate').value=b;$('#opDate').dataset.user=''}else{toast(`La fecha ${dmy(D)} no es válida. Elige la fecha de la operación.`);return}}
+  if(!D){const b=bestDate();if(b){D=b;$('#opDate').value=b}else{toast('Elige la fecha operativa');return}}
+  if(!S.stu&&!S.files.plan&&!S.files.mon){toast('Carga primero las Corridas del día real (Monitor), Flota o Rutas y km');return}
+  processDay(D);S.open.clear();S.filter='all';S.unit='';renderDay();show('dia');
+}
+$$('nav.tabs button').forEach(b=>b.onclick=()=>{if(b.dataset.v==='dia'&&S.day)renderDay();show(b.dataset.v)});
+$('#btnProcess').onclick=run;
+$('#btnSample').onclick=loadSample;
+$('#opDate').onchange=e=>{if(plausible(e.target.value))e.target.dataset.user='1';else{const b=bestDate();toast(`${dmy(e.target.value)} no parece una fecha de operación${b?'; se usa '+dmy(b):''}`);e.target.value=b||'';e.target.dataset.user=''}renderLoadNotes()};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-setdate]');if(!b)return;
+  const el=$('#opDate');el.value=b.dataset.setdate;el.dataset.user='1';renderLoadNotes();
+  if(!$('#v-dia').hidden||S.day)run();else toast('Fecha cambiada a '+dmy(b.dataset.setdate))});
+$('#planSrc').onchange=renderLoadNotes;
+const drop=$('#drop');
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop',async e=>{S.sample=false;for(const f of e.dataTransfer.files)await ingest(f)});
+$('#f-any').onchange=async e=>{S.sample=false;for(const f of e.target.files)await ingest(f);e.target.value=''};
+$('#slots').addEventListener('change',async e=>{
+  const t=e.target;
+  if(t.type==='file'&&t.files[0]){S.sample=false;await ingest(t.files[0],t.dataset.kind);t.value='';return}
+  if(t.dataset.field){const f=S.files[t.dataset.slot];f.table.map[t.dataset.field]=t.value===''?undefined:+t.value;
+    if(t.value==='')delete f.table.map[t.dataset.field];
+    if(f.kind==='W'||f.kind==='S')buildTeleFile(f);else buildPlanFile(f);renderSlots();renderLoadNotes();toast('Columnas actualizadas')}
+});
+function kpiAct(e){
+  const x=e.target.closest('#kpis [data-act="ex"],#kpis [data-act="sw"]');
+  if(x){if(e.type==='keydown'&&e.key!=='Enter'&&e.key!==' ')return;e.preventDefault();const k=x.dataset.act;
+    if(k==='ex'&&S.day){for(const U of S.day.units.values())if((U.ex||[]).length)S.exOpen.add(U.u);renderDay()}
+    setSec(k,true);document.querySelector(`.sec[data-sec="${k}"]`).scrollIntoView({behavior:'smooth',block:'start'});return}
+  const k=e.target.closest('[data-act="why"]');if(!k)return;if(e.type==='keydown'&&e.key!=='Enter'&&e.key!==' ')return;e.preventDefault();S.whyOpen=!S.whyOpen;renderDay();if(S.whyOpen)$('#planWhy').scrollIntoView({behavior:'smooth',block:'nearest'})}
+// 4.9 · Copiar km real (total, Webfleet, Samsara o unidad por unidad) para pegar en Excel o en un mensaje
+function cpTexto(t,msg){
+  const fb=()=>{const ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;left:-9999px;top:0';document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy')}catch{}ta.remove();toast(ok?msg:'No se pudo copiar: '+t.split('\n')[0])};
+  try{navigator.clipboard.writeText(t).then(()=>toast(msg),fb)}catch{fb()}}
+$('#kpis').addEventListener('click',e=>{const b=e.target.closest('[data-cp]');if(!b)return;e.stopPropagation();const d=S.day;if(!d)return;
+  const U=[...d.units.values()].filter(x=>x.kr!=null),k=P=>U.filter(x=>!P||x.p===P).reduce((s,x)=>s+x.kr,0),n=v=>fNum(v,2);
+  const c=b.dataset.cp;let t,msg;
+  if(c==='U'){t=[['Unidad','GPS','Km real'].join('\t'),...U.sort((a,b)=>a.u-b.u).map(x=>[x.u,PROV[x.p]||'',n(x.kr)].join('\t'))].join('\n');msg=`Copiadas ${U.length} unidades. Pégalas en Excel.`}
+  else{const P=c==='T'?'':c;t=n(k(P));msg=`${c==='T'?'Total':PROV[c]} copiado: ${t} km`}
+  cpTexto(t,msg);b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1200)},true);
+$('#kpis').addEventListener('click',kpiAct);$('#kpis').addEventListener('keydown',kpiAct);$('#planWhy').addEventListener('click',kpiAct);
+$('#filters').onclick=e=>{const b=e.target.closest('[data-f]');if(!b)return;S.filter=b.dataset.f;renderDay()};
+$('#q').oninput=e=>{S.q=e.target.value;renderDay()};
+$('#fUnit').onchange=e=>{S.unit=e.target.value;if(S.unit){S.filter='all';S.open.add(+S.unit);setSec('units',true)}renderDay()};
+$('#tblDay').addEventListener('click',e=>{
+  const cs=e.target.closest('th[data-csort]');if(cs){const k=cs.dataset.csort;S.cmpSort=S.cmpSort.k===k?{k,d:-S.cmpSort.d}:{k,d:['i','hr','ruta','st'].includes(k)?1:-1};renderDay();return}
+  const nv=e.target.closest('[data-nav]');if(nv){if(!nv.dataset.nav)return;goUnit(+nv.dataset.nav);return}
+  const th=e.target.closest('th[data-sort]');if(th){const k=th.dataset.sort;if(k==='x')return;S.sort=S.sort.k===k?{k,d:-S.sort.d}:{k,d:['u','op','tags','npos'].includes(k)?1:-1};renderDay();return}
+  if(e.target.closest('label.toggle,input,textarea,a,button,details'))return;
+  const tr=e.target.closest('tr.unit');if(tr)toggleOpen(+tr.dataset.u);
+});
+$('#tblDay').addEventListener('keydown',e=>{const tr=e.target.closest&&e.target.closest('tr.unit');if(!tr||e.target!==tr)return;
+  if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleOpen(+tr.dataset.u);return}
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const all=[...document.querySelectorAll('#tblDay tr.unit')];const i=all.indexOf(tr)+(e.key==='ArrowDown'?1:-1);
+    if(all[i]){all[i].focus({preventScroll:true});all[i].scrollIntoView({block:'nearest'})}}});
+/* abre la unidad indicada y cierra las demás (navegación anterior/siguiente) */
+function goUnit(u){S.open.clear();S.open.add(u);renderDay();const r=document.querySelector(`tr.unit[data-u="${u}"]`);const w=document.querySelector('.tbl-wrap.fixed');
+  if(r&&w){const th=w.querySelector('thead');w.scrollTop=r.offsetTop-(th?th.offsetHeight:0);r.focus({preventScroll:true});const top=w.getBoundingClientRect().top;if(top<0||top>innerHeight*0.5)w.scrollIntoView({block:'start'})}}
+function toggleOpen(u){S.open.has(u)?S.open.delete(u):S.open.add(u);renderDay();const r=document.querySelector(`tr.unit[data-u="${u}"]`);if(r)r.focus({preventScroll:true})}
+$('#tblDay').addEventListener('change',e=>{
+  const t=e.target;if(!t.dataset.np)return;const D=S.day.D,u=+t.dataset.np;
+  S.np[D]=S.np[D]||{};if(t.checked)S.np[D][u]=true;else delete S.np[D][u];lsSet('kmstu.np',S.np);
+  const U=S.day.units.get(u);U.tags=tagsOf(U,D);renderDay();
+  toast(t.checked?`${u} marcada como No pos correctamente`:`${u} sin marca No pos`);
+});
+$('#tblDay').addEventListener('input',e=>{const t=e.target;if(!t.dataset.note)return;const D=S.day.D;S.notes[D]=S.notes[D]||{};S.notes[D][t.dataset.note]=t.value;lsSet('kmstu.notes',S.notes);
+  for(const o of document.querySelectorAll(`[data-note="${t.dataset.note}"]`))if(o!==t)o.value=t.value});
+$('#tblDay').addEventListener('keydown',e=>{if(e.target.classList&&e.target.classList.contains('cmt')&&e.key==='Enter')e.target.blur()});
+$('#dayCmt').addEventListener('input',e=>{if(!S.day)return;S.dayNotes[S.day.D]=e.target.value;lsSet('kmstu.daynotes',S.dayNotes)});
+$('#btnSaveDay').onclick=async()=>{if(!S.day)return;if(S.sample){toast('Los datos de ejemplo no se guardan en el histórico');return}
+  const where=await Store.put(dayRecord());toast(`Día ${dmy(S.day.D)} guardado${where==='nube'?' en la página y este navegador':' en este navegador'}`)};
+$('#btnXlsDay').onclick=exportDayXlsx;
+$('#histMonth').onchange=renderHist;
+$('#cxWeek').onchange=renderCx;
+document.addEventListener('click',e=>{const h=e.target.closest('.sec-h');if(!h)return;const k=h.parentElement.dataset.sec;setSec(k,!S.secOpen.has(k))});
+$('#opPanel').addEventListener('click',e=>{
+  if(e.target.closest('[data-rtfirst]')){S.rt.first=!S.rt.first;renderRoutes();return}
+  const th=e.target.closest('th[data-opsort]');if(th){const k=th.dataset.opsort;S.op.sort=S.op.sort.k===k?{k,d:-S.op.sort.d}:{k,d:['op','clave','units'].includes(k)?1:-1};renderRoutes();return}
+  const g=e.target.closest('[data-gou]');if(g){openUnitFromAnywhere(+g.dataset.gou);return}
+  const tr=e.target.closest('tr.srow');if(tr){const k=tr.dataset.opkey;S.opOpen.has(k)?S.opOpen.delete(k):S.opOpen.add(k);renderRoutes()}});
+$('#rtPanel').addEventListener('click',e=>{const m=e.target.closest('[data-rtmode]');if(m){S.rt.mode=m.dataset.rtmode;renderRoutes();return}
+  if(e.target.closest('[data-rtfirst]')){S.rt.first=!S.rt.first;renderRoutes();return}
+  const th=e.target.closest('th[data-rtsort]');if(th){const k=th.dataset.rtsort;S.rt.sort=S.rt.sort.k===k?{k,d:-S.rt.sort.d}:{k,d:['ruta','hr'].includes(k)?1:-1};renderRoutes();return}
+  const g=e.target.closest('[data-gou]');if(g){openUnitFromAnywhere(+g.dataset.gou);return}
+  const tr=e.target.closest('tr.srow');if(tr){const k=tr.dataset.rtkey;S.rtOpen.has(k)?S.rtOpen.delete(k):S.rtOpen.add(k);renderRoutes()}});
+function openUnitFromAnywhere(u){S.filter='all';S.unit='';S.q='';$('#q').value='';setSec('units',true);goUnit(u);document.querySelector('.sec[data-sec="units"]').scrollIntoView({block:'start'})}
+$('#lstEx').addEventListener('toggle',e=>{const d=e.target;if(!d.dataset||!d.dataset.exu)return;const u=+d.dataset.exu;d.open?S.exOpen.add(u):S.exOpen.delete(u)},true);
+$('#lstEx').addEventListener('click',e=>{const b=e.target.closest('[data-gou]');if(!b)return;openUnitFromAnywhere(+b.dataset.gou)});
+$('#btnCxCopy').onclick=()=>{const ta=$('#cxMail');const t=ta.value;if(!t)return;
+  const fb=()=>{ta.focus();ta.select();toast('Texto seleccionado: cópialo con Ctrl+C')};
+  try{navigator.clipboard.writeText(t).then(()=>toast('Correo copiado. Pégalo en Outlook o Gmail.'),fb)}catch{fb()}};
+$('#btnCxXls').onclick=()=>{const wk=$('#cxWeek').value;if(!wk)return;const rows=cxAgg(wk);
+  const a=[['Unidad','GPS','Correcciones','Días','Fechas','Km corregidos']].concat(rows.map(x=>[x.u,PROV[x.p],x.n,x.dias.length,x.dias.sort().map(dmy).join(', '),r1(x.km)]));
+  saveFile(`gps_por_revisar_${wk}.xlsx`,xlsxBlob({'GPS por revisar':a}))};
+$('#btnHistJson').onclick=exportHistJson;$('#btnHistCsv').onclick=exportHistCsv;$('#btnHistXls').onclick=exportHistXls;
+$('#f-hist').onchange=e=>{if(e.target.files[0])importHist(e.target.files[0]);e.target.value=''};
+$('#tblHistDays').addEventListener('click',async e=>{
+  const o=e.target.closest('[data-hopen]');if(o){openFromHist(o.dataset.hopen);return}
+  const d=e.target.closest('[data-hdel]');if(d){const f=d.dataset.hdel;$('#del-'+f).innerHTML=`¿Borrar ${dShort(f)}? <button class="btn ghost danger" data-hdelok="${f}">Sí, borrar</button><button class="btn ghost" data-hdelno="1">No</button>`;return}
+  const ok=e.target.closest('[data-hdelok]');if(ok){await Store.del(ok.dataset.hdelok);renderHist();toast('Día borrado del histórico');return}
+  if(e.target.closest('[data-hdelno]'))renderHist();
+});
+// Reglas
+const CF=[['cfgW0','W0'],['cfgW1','W1'],['cfgS0','S0'],['cfgS1','S1'],['cfgTol','tol'],['cfgSwMin','swMin'],['cfgSwMax','swMax']];
+for(const [id,k] of CF){const el=$('#'+id);el.value=S.cfg[k];el.onchange=()=>{const v=num(el.value);if(isFinite(v)){S.cfg[k]=v;cfgChanged()}}}
+$('#cfgCx').value=(S.cfg.cx||[]).join('\n');
+$('#cfgCx').onchange=e=>{S.cfg.cx=e.target.value.split('\n').map(s=>s.trim()).filter(Boolean);for(const k of['W','S'])if(S.files[k])buildTeleFile(S.files[k]);cfgChanged()};
+function cfgChanged(){lsSet('kmstu.cfg',S.cfg);for(const k of['W','S'])if(S.files[k])buildTeleFile(S.files[k]);renderSlots();
+  if(S.day&&!S.day.fromHist)processDay(S.day.D);else tagAll();toast('Reglas actualizadas')}
+
+hydrateIcons();
+// una fecha vieja que se quedó en la casilla (de una versión anterior) se descarta al abrir
+try{const od=$('#opDate');if(od.value&&!plausible(od.value))od.value=''}catch{}
+setTimeout(()=>{const od=$('#opDate');if(od.value&&!plausible(od.value))od.value=''},500);
+if(typeof XLSX==='undefined'){$('#loadNotes').innerHTML=noteHTML(['bad','No se pudo cargar el lector de Excel. Revisa tu conexión a internet y recarga la página.'])}
+/* ============================================================
+   GUARDIAS Y APOYOS TP (captura de imagen)
+   ============================================================ */
+const gdDay=()=>{const v=$('#opDate').value;return plausible(v)?v:(bestDate()||dayKey(Date.now()-6*3600e3))};
+const GD_COLS=[['name','Guardia / apoyo'],['hr','Hora'],['u','Unidad'],['clave','Clave'],['kl','Km lleno','n'],['kv','Km vacío','n'],['km','Km total','n']];
+function renderGuards(){
+  const D=gdDay(),G=S.guards[D]||[];
+  $('#gdDate').textContent=`Para el ${dmy(D)}`;
+  const tk=G.reduce((s,g)=>s+(+g.km||0),0);
+  const rows=[...G,{}];   // siempre una fila en blanco al final para seguir escribiendo o pegando
+  $('#tblGd').innerHTML=`<thead><tr><th></th>${GD_COLS.map(([k,l,c])=>`<th class="${c||''}">${l}</th>`).join('')}<th></th></tr></thead><tbody>${
+    rows.map((g,i)=>{const blank=i===G.length;const sumOk=blank||Math.abs((+g.kl||0)+(+g.kv||0)-(+g.km||0))<0.15,uOk=blank||!!provOf(+g.u);
+      return`<tr class="${blank?'blank':sumOk&&uOk?'':'bad'}" title="${!uOk?'Revisa el número de unidad':!sumOk?'Lleno + vacío no suma el total':''}"><td class="rn">${i+1}</td>${
+        GD_COLS.map(([k,,c])=>`<td><input class="gdi ${c||''}" data-gi="${i}" data-gk="${k}" id="gd-${i}-${k}" value="${esc(g[k]??'')}"${blank&&k==='name'?' placeholder="Pega aquí (Ctrl+V)"':''}></td>`).join('')
+      }<td>${blank?'':`<button class="btn ghost danger" data-gdel="${i}" title="Quitar fila">✕</button>`}</td></tr>`}).join('')}
+    <tr class="tot"><td></td><td colspan="6">Total · ${G.length} guardias y apoyos</td><td class="n">${f1(tk)}</td><td></td></tr></tbody>`;
+}
+function saveGuards(D,G,keep){S.guards[D]=G.filter(g=>Object.values(g).some(v=>String(v??'').trim()!==''));lsSet('kmstu.guards',S.guards);renderGuards();
+  if(keep){const el=document.getElementById(keep);if(el){el.focus();el.select&&el.select()}}
+  if(S.day&&!S.day.fromHist&&S.day.D===D){processDay(D);renderDay()}}
+function gdStatus(c,t){$('#gdStatus').innerHTML=t?noteHTML([c,t]):''}
+const gdVal=(k,v)=>{v=String(v??'').trim();if(['kl','kv','km'].includes(k))return v===''?'':(isFinite(num(v))?num(v):'');if(k==='u')return v.replace(/\D/g,'');if(k==='hr'){const p=parseDT(isFinite(+v)&&+v<1&&v!==''?+v:v);return p&&p.t?hhmm(p.ms).replace(/^0/,''):v}return v};
+/* Pegado desde Excel: renglones separados por salto de línea y celdas por tabulador.
+   Si el renglón trae las 7 columnas se toman en orden; si trae otra cantidad, las 4 primeras son guardia, hora, unidad y clave,
+   y las 3 últimas son km lleno, km vacío y km total. */
+function pasteRows(text,startRow,startCol){
+  let lines=String(text).replace(/\r/g,'').split('\n');while(lines.length&&lines[lines.length-1].trim()==='')lines.pop();
+  const cells=lines.map(l=>l.split('\t'));
+  const D=gdDay(),G=[...(S.guards[D]||[])].map(g=>({...g}));
+  const keys=GD_COLS.map(c=>c[0]);
+  cells.forEach((row,r)=>{
+    const i=startRow+r;const g=G[i]||{name:'',hr:'',u:'',clave:'',kl:'',kv:'',km:''};
+    if(startCol===0&&row.length!==7&&row.length>=4){
+      // filas completas con columnas de más o de menos
+      const head=row.slice(0,4),tail=row.slice(4);const t3=tail.slice(-3);while(t3.length<3)t3.unshift('');
+      [...head,...t3].forEach((v,k)=>g[keys[k]]=gdVal(keys[k],v));
+    }else row.forEach((v,c)=>{const k=keys[startCol+c];if(k)g[k]=gdVal(k,v)});
+    G[i]=g;
+  });
+  return{D,G,n:cells.length};
+}
+$('#tblGd').addEventListener('paste',e=>{
+  const t=e.target.closest&&e.target.closest('input.gdi');const text=e.clipboardData?.getData('text/plain')||'';
+  if(!t||!text)return;
+  if(!/[\t\n]/.test(text.trim())&&text.indexOf('\t')<0)return;   // un solo valor: pegado normal en la celda
+  e.preventDefault();
+  const i=+t.dataset.gi,col=GD_COLS.findIndex(c=>c[0]===t.dataset.gk);
+  const {D,G,n}=pasteRows(text,i,col);saveGuards(D,G);
+  const bad=(S.guards[D]||[]).filter(g=>!provOf(+g.u)||Math.abs((+g.kl||0)+(+g.kv||0)-(+g.km||0))>=0.15).length;
+  gdStatus(bad?'warn':'info',`Pegué ${n} ${n===1?'fila':'filas'}. Total del día: ${(S.guards[D]||[]).length} guardias y apoyos, ${f1((S.guards[D]||[]).reduce((s,g)=>s+(+g.km||0),0))} km.${bad?` Revisa ${bad} en naranja.`:''}`);
+});
+$('#gdSheet').addEventListener('paste',e=>{if(e.target.closest&&e.target.closest('input.gdi'))return;const text=e.clipboardData?.getData('text/plain')||'';if(!text)return;e.preventDefault();
+  const D=gdDay();const {G,n}=pasteRows(text,(S.guards[D]||[]).length,0);saveGuards(D,G);gdStatus('info',`Pegué ${n} ${n===1?'fila':'filas'}.`)});
+$('#tblGd').addEventListener('change',e=>{const t=e.target;if(!t.dataset.gk)return;const D=gdDay(),G=[...(S.guards[D]||[])].map(g=>({...g}));const i=+t.dataset.gi;
+  G[i]={...(G[i]||{name:'',hr:'',u:'',clave:'',kl:'',kv:'',km:''}),[t.dataset.gk]:gdVal(t.dataset.gk,t.value)};saveGuards(D,G)});
+$('#tblGd').addEventListener('keydown',e=>{const t=e.target;if(!t.dataset||!t.dataset.gk||e.key!=='Enter')return;e.preventDefault();
+  const next=`gd-${+t.dataset.gi+1}-${t.dataset.gk}`;t.blur();setTimeout(()=>{const el=document.getElementById(next);if(el){el.focus();el.select()}},0)});
+$('#tblGd').addEventListener('click',e=>{const b=e.target.closest('[data-gdel]');if(!b)return;const D=gdDay(),G=[...(S.guards[D]||[])];G.splice(+b.dataset.gdel,1);saveGuards(D,G)});
+$('#btnGdAdd').onclick=()=>{const D=gdDay();const G=S.guards[D]||[];const el=document.getElementById(`gd-${G.length}-name`);if(el){el.focus()}};
+$('#btnGdClear').onclick=()=>{const D=gdDay();if(!(S.guards[D]||[]).length)return;
+  if($('#btnGdClear').dataset.sure!=='1'){$('#btnGdClear').dataset.sure='1';$('#btnGdClear').innerHTML=ic('ban')+'Toca otra vez para borrar';setTimeout(()=>{const b=$('#btnGdClear');b.dataset.sure='';b.innerHTML=ic('ban')+'Borrar guardias de este día'},3000);return}
+  saveGuards(D,[]);gdStatus('','');toast('Guardias borradas para el '+dmy(D))};
+$('#opDate').addEventListener('change',()=>renderGuards());
+document.addEventListener('click',e=>{const b=e.target.closest('[data-unsave]');if(!b)return;e.preventDefault();forgetFile(b.dataset.unsave)});
+renderSlots();restoreFiles();renderSaved();renderHist();Store.init();renderGuards();
+</script>
+
+
+<script>
+/* =====================================================================
+   PUENTE CON LA APP ROL OPERATIVO (4.7)
+   - Rutas y km (hoja RUTAS), Horario y DATOS OP: del Excel "datos" que ya tiene la app.
+   - Monitor de Smart: el del día que elijas, si la app lo tiene en la nube.
+   - Aquí solo se cargan los GPS (Webfleet y Samsara) y las guardias/TP.
+   ===================================================================== */
+(function () {
+  let P = null;
+  try { if (window.parent && window.parent !== window && window.parent.STU_PUENTE) P = window.parent.STU_PUENTE; } catch (e) { P = null; }
+  if (!P) return;
+  const sinVacios = hojas => { const o = {}; Object.keys(hojas || {}).forEach(n => { o[n] = (hojas[n] || []).filter(r => (r || []).some(v => v !== null && v !== '')); }); return o; };
+  const isoDeTs = ts => { const d = new Date(Number(ts) || Date.now()); const p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
+  const barra = document.createElement('div');
+  barra.className = 'puente-app';
+  barra.innerHTML = '<span id="puenteTxt">Conectando con la app…</span> <select id="puenteDia" hidden></select> <button type="button" id="puenteBase" hidden>Descargar base</button>';
+  const st = document.createElement('style');
+  st.textContent = '.puente-app{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#E6ECF6;color:#1D3F94;font-size:12.5px;font-weight:600;padding:8px 14px;border-bottom:1px solid #C9D5EA}.puente-app select,.puente-app button{font:inherit;font-size:12.5px;border:1.5px solid #9DB1D6;border-radius:8px;padding:4px 8px;background:#fff;color:#1D3F94}.puente-app button{cursor:pointer;background:#1D3F94;color:#fff;border-color:#1D3F94}';
+  document.head.appendChild(st);
+  const hdr = document.querySelector('header');
+  if (hdr && hdr.parentNode) hdr.parentNode.insertBefore(barra, hdr.nextSibling); else document.body.prepend(barra);
+  const txt = document.getElementById('puenteTxt');
+  const partes = [];
+  const pintar = () => { txt.textContent = partes.filter(Boolean).join(' · ') + ' · Aquí solo carga los GPS y las guardias/TP.'; };
+
+  async function cargarBase(forzar) {
+    const b = await P.base(forzar);
+    const btn = document.getElementById('puenteBase');
+    if (b && b.necesitaWifi) {
+      btn.hidden = false;
+      btn.onclick = () => { btn.hidden = true; cargarBase(true).then(pintar); };
+      partes[0] = 'Rutas y km: estás con datos móviles, toca para descargar la base';
+      return;
+    }
+    if (b && b.hojas && Object.keys(b.hojas).length) {
+      try {
+        S.sample = false;
+        loadInto('stu', { name: 'De la app · ' + (b.nombre || 'datos'), wb: wbFromAoa(sinVacios(b.hojas)), nameDate: isoDeTs(b.ts), saved: true });
+        partes[0] = 'Rutas, km y Horario: de la app (' + (b.nombre || 'datos') + ')';
+      } catch (e) { console.error(e); partes[0] = 'No pude leer la base de la app'; }
+    } else partes[0] = 'La app todavía no tiene el Excel "datos" en la nube: súbelo aquí';
+  }
+  async function cargarMonitor(fecha) {
+    const m = fecha ? await P.monitor(fecha) : null;
+    if (m && m.hojas) {
+      try {
+        loadInto('mon', { name: 'De la app · ' + (m.nombre || 'Monitor') + ' (' + fecha + ')', wb: wbFromAoa(sinVacios(m.hojas)), nameDate: fecha, saved: true });
+        partes[1] = 'Monitor de Smart: ' + fecha.split('-').reverse().join('/');
+      } catch (e) { console.error(e); partes[1] = 'No pude leer el Monitor ' + fecha; }
+    } else if (fecha === undefined) partes[1] = 'Sin Monitor de Smart en la app: súbelo aquí';
+  }
+  (async function () {
+    await cargarBase(false);
+    const lista = await P.monitores();
+    const sel = document.getElementById('puenteDia');
+    if (lista.length) {
+      sel.innerHTML = lista.map(m => `<option value="${m.fecha}">Monitor ${m.fecha.split('-').reverse().join('/')}</option>`).join('');
+      sel.hidden = false;
+      sel.onchange = () => cargarMonitor(sel.value).then(pintar);
+      await cargarMonitor(lista[0].fecha);
+    } else await cargarMonitor(undefined);
+    pintar();
+  })();
+})();
+</script>
+</body></html>
