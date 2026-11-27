@@ -3947,7 +3947,24 @@ function getReasonForEntity(nameOrKey) {
     const delDia = stuEstadoDelDia(nameOrKey);
     if (delDia !== null) return delDia;
     if (!store.unassignedReasons) return "";
-    return store.unassignedReasons[fbKey(nameOrKey)] || store.unassignedReasons[nameOrKey] || "";
+    const gen = store.unassignedReasons[fbKey(nameOrKey)] || store.unassignedReasons[nameOrKey] || "";
+    if (gen && window._stuSoloRol && !stuEstadoGeneralDeApp(nameOrKey, gen)) return ""; // 5.1.1: en Flota no cuenta lo del Excel de flota
+    return gen;
+}
+// 5.1.1 · Flota y Headcount toman todo del rol del día: los estados de operador que vienen del Excel de flota
+// (letras V, I, P…, bajas o turismo de la hoja) no cuentan ahí. Sí cuentan los marcados en la app ese día,
+// los permisos con fechas, las bajas marcadas en la app (bajasFecha) y lo general marcado en la app (estadosGenApp).
+// Las unidades (taller) siguen igual.
+function stuEstadoGeneralDeApp(nameOrKey, gen) {
+    const k = fbKey(nameOrKey);
+    if (/^\d{3,5}$/.test(String(nameOrKey).trim()) || gen === "Taller") return true; // unidades
+    if (gen === "Baja" && (store.bajasFecha || {})[k]) return true;
+    return (store.estadosGenApp || {})[k] === gen;
+}
+function stuMarcarGeneralDeApp(nombre, estado) {
+    store.estadosGenApp = store.estadosGenApp || {};
+    const k = fbKey(nombre);
+    if (estado) store.estadosGenApp[k] = estado; else delete store.estadosGenApp[k];
 }
 
 // =========================================================================
@@ -5523,6 +5540,8 @@ function guardarFlotaDedicadoNucleo() {
         if (STU_ESTADOS_GENERALES.includes(stOp) || stOp === "Baja") {
             setReasonForEntity(kOp, stOp);
             if(opCode) setReasonForEntity(opCode, stOp);
+            stuMarcarGeneralDeApp(checkOp, stOp); // 5.1.1
+            if (stOp === "Baja") { store.bajasFecha = store.bajasFecha || {}; if (!store.bajasFecha[fbKey(checkOp)]) store.bajasFecha[fbKey(checkOp)] = stuIsoDia(); }
         } else {
             // 5.0: si no cambió el estado ni sus fechas, NO se toca (antes guardar la ficha borraba un préstamo con fechas)
             const f0 = window._fdFechas0 || {};
@@ -9618,7 +9637,7 @@ function stuResumenTallerHtml() {
 }
 
 // ----- Versión visible (para comprobar que el teléfono ya tiene el archivo nuevo) -----
-const STU_VERSION = "5.1 · Reportes en un solo apartado · Flota con Headcount y Entrega de turno · Colores de ruta · Activas tipo Excel en computadora · Avisos solo del día";
+const STU_VERSION = "5.1.1 · Archivos del día en Reportes · Flota solo del rol del día · Reportes en un solo apartado · Flota con Headcount y Entrega de turno · Colores de ruta · Activas tipo Excel en computadora · Avisos solo del día";
 
 // ----- Actualizar SOLO taller y unidades faltantes (sin tocar operadores ni los cambios del día) -----
 async function stuActualizarSoloTaller(input) {
@@ -9740,6 +9759,9 @@ function stuCamposExtra(raw, soloVacios) {
     poner("candadoAuto", !!raw.candadoAuto);
     poner("datosInfo", raw.datosInfo && typeof raw.datosInfo === "object" ? raw.datosInfo : null);
     poner("flotaTurno", raw.flotaTurno && typeof raw.flotaTurno === "object" ? raw.flotaTurno : null); // 5.0
+    poner("bajasFecha", raw.bajasFecha && typeof raw.bajasFecha === "object" ? raw.bajasFecha : {}); // 5.1.1: ahora sí se lee de la nube
+    poner("estadosGenApp", raw.estadosGenApp && typeof raw.estadosGenApp === "object" ? raw.estadosGenApp : {}); // 5.1.1
+    poner("config", raw.config && typeof raw.config === "object" ? raw.config : {}); // 5.1.1: colores de rutas guardados
     poner("rolSemana", raw.rolSemana && raw.rolSemana.trips ? Object.assign({}, raw.rolSemana, { trips: Array.isArray(raw.rolSemana.trips) ? raw.rolSemana.trips : Object.values(raw.rolSemana.trips) }) : null); // 4.9
     stuTiemposVer++;
     stuSincronizarEstadosCriticos();
@@ -10040,7 +10062,7 @@ function renderFlota() {
     if (flotaTab === "turno") {
         const l = document.getElementById("list");
         if (l.querySelector("#flTurno")) return;
-        l.innerHTML = `<div class="flota-pagina">${flotaTabsHtml()}<div class="fl-turno-nota">${stuPuede("turno") ? "Cambios y seguimiento del turno de hoy. El personal está en <b>Headcount</b>. Al empezar un día nuevo de rol te pregunta si copias lo del día pasado." : "Solo lectura: la Entrega de turno la llena Supervisión."}</div><iframe id="flTurno" class="fl-turno" title="Entrega de turno" allow="clipboard-write" src="modulos/entrega-turno.html?v=5.1&en=flota"></iframe></div>`;
+        l.innerHTML = `<div class="flota-pagina">${flotaTabsHtml()}<div class="fl-turno-nota">${stuPuede("turno") ? "Cambios y seguimiento del turno de hoy. El personal está en <b>Headcount</b>. Al empezar un día nuevo de rol te pregunta si copias lo del día pasado." : "Solo lectura: la Entrega de turno la llena Supervisión."}</div><iframe id="flTurno" class="fl-turno" title="Entrega de turno" allow="clipboard-write" src="modulos/entrega-turno.html?v=5.1.1&en=flota"></iframe></div>`;
         try { stuTurnosSinVer().forEach(t => stuTurnoEnterado(t.id)); } catch (e) {}
         flTurnoAjustar(); setTimeout(flTurnoAjustar, 300);
         return;
@@ -10123,7 +10145,7 @@ function renderFlota() {
         let opLow = (opReason || "").toLowerCase();
         let nLow = (r.n || "").toLowerCase();
         let isTurismo = opMeta.esTurismo;
-        let isBaja = opMeta.esBaja || (opMeta.puntualidad !== null && opMeta.puntualidad === 0);
+        let isBaja = window._stuSoloRol ? !!flBajaFecha(r.n) : (opMeta.esBaja || (opMeta.puntualidad !== null && opMeta.puntualidad === 0)); // 5.1.1: solo bajas marcadas en la app
         let isApoyo = !isTurismo && (opLow.includes("apoyo") || nLow.includes("apoyo"));
 
         if (isTurismo) {
@@ -10172,7 +10194,7 @@ function renderFlota() {
     let conflictos = 0;
     rows.forEach(r => {
         if (!r.n || !asig.ops[r.n]) return;
-        const e = getReasonForEntity(r.n) || getReasonForEntity(r.k) || (getOpMeta(r.n).esBaja ? "Baja" : "");
+        const e = getReasonForEntity(r.n) || getReasonForEntity(r.k) || (!window._stuSoloRol && getOpMeta(r.n).esBaja ? "Baja" : "");
         if (!FL_FUERA.includes(e)) return;
         const rg = stuRangoActivo(r.n);
         r.st = `❗ En el rol con ${e}${rg ? " (" + stuIsoCorta(rg.desde) + (rg.hasta && rg.hasta !== rg.desde ? " al " + stuIsoCorta(rg.hasta) : "") + ")" : ""} · ${asig.ops[r.n]} corrida${asig.ops[r.n] === 1 ? "" : "s"} por reasignar`;
@@ -10274,8 +10296,8 @@ function flAsignacionDelDia() {
             if (Object.keys(b).length && activeView === "flota") renderFlota();
         }).catch(() => { window._flMonitor[iso] = { base: {}, ops: {} }; });
     }
-    const g = {}; (store.globalFleet || []).forEach(x => { if (x && x.u && x.n) g[String(x.u)] = x.n; });
-    return { base: g, ops: {}, fuente: "Excel \"datos\" (todavía no hay plantilla ni monitor de este día)", sinRol: true };
+    // 5.1.1: ya no se usa el Excel de flota; sin rol del día no hay asignación
+    return { base: {}, ops: {}, fuente: "Sin rol de este día · sube la Plantilla o el Monitor en Reportes › Archivos", sinRol: true };
 }
 // Bajas: se quedan en la plantilla, marcadas como Baja, hasta fin del mes en que se dieron
 function flBajaFecha(nombre) { const f = store.bajasFecha || {}; return f[fbKey(nombre)] || ""; }
@@ -10285,6 +10307,11 @@ function flBajaVisible(nombre) {
 }
 function flFinDeMes(iso) { const d = new Date(+iso.slice(0, 4), +iso.slice(5, 7), 0); return String(d.getDate()).padStart(2, "0") + "/" + iso.slice(5, 7); }
 function flEsTurismo(n) { try { return getOpMeta(n).esTurismo; } catch (e) { return false; } }
+
+// 5.1.1 · Mientras se dibuja o copia Flota / Headcount, los estados salen solo del rol del día y de lo marcado en la app
+function stuConSoloRol(fn) {
+    return function () { const antes = window._stuSoloRol; window._stuSoloRol = true; try { return fn.apply(this, arguments); } finally { window._stuSoloRol = antes; } };
+}
 // ----- 5.1 · FLOTA › HEADCOUNT -----
 // Pestaña arriba en Flota. Sale de la plantilla (Excel "datos") y de los estados del día:
 // lo que marque la Entrega de turno, Flota, Estados del personal o un permiso con fechas se ve aquí al momento.
@@ -10356,7 +10383,7 @@ function renderHeadcount() {
     const edita = stuPuede("headcount");
     const fuera = p.hc - p.asistencia;
     const opUni = {};
-    try { (store.globalFleet || []).forEach(g => { if (g && g.u && g.n) opUni[g.n] = String(g.u); }); } catch (e) {}
+    try { const a = flAsignacionDelDia(); Object.keys(a.base || {}).forEach(u => { const n = a.base[u]; if (n && !opUni[n]) opUni[n] = String(u); }); } catch (e) {} // 5.1.1: del rol del día
     // 5.1: rol planeado = el operador que trae cada corrida en el rol del día (antes de cambios)
     const rolPlan = {};
     try { (store.days?.[store.currentDay]?.trips || []).slice().sort((a, b) => a.h.localeCompare(b.h)).forEach(t => { if (t.n && !rolPlan[t.n]) rolPlan[t.n] = formatRouteName(t.o, t.d) + " · " + t.h; }); } catch (e) {}
@@ -10952,6 +10979,7 @@ function stuGuardarEstadoOp(nombre, estado) {
         setReasonForEntity(fbKey(nombre), nuevo || null);
         store.bajasFecha = store.bajasFecha || {}; // 5.1: la baja se queda en la plantilla hasta fin de mes
         if (nuevo === "Baja") store.bajasFecha[fbKey(nombre)] = stuIsoDia(); else delete store.bajasFecha[fbKey(nombre)];
+        stuMarcarGeneralDeApp(nombre, nuevo); // 5.1.1
         stuMarcarEstadoDelDia([nombre], null);
         if (store.estadosDia && store.estadosDia[fbKey(store.currentDay)]) delete store.estadosDia[fbKey(store.currentDay)][fbKey(nombre)];
     } else {
@@ -11007,6 +11035,7 @@ function stuGuardarEstadoOp(nombre, estado) {
         estadosDia: store.estadosDia || {},
         estadosRango: store.estadosRango || {},
         bajasFecha: store.bajasFecha || {},
+        estadosGenApp: store.estadosGenApp || {},
         [`state/${fbKey(store.currentDay)}/unitChanges`]: ds.unitChanges,
         globalHistory: store.globalHistory
     });
@@ -18188,6 +18217,9 @@ function stuFirebaseListo() {
     return typeof firebase !== "undefined" && firebase.apps && firebase.apps.length > 0;
 }
 
+renderFlota = stuConSoloRol(renderFlota); // 5.1.1
+renderHeadcount = stuConSoloRol(renderHeadcount);
+hcCopiarWhatsApp = stuConSoloRol(hcCopiarWhatsApp);
 window.STU_PUENTE = {
     quien: () => stuQuienSoy(),
     puede: accion => stuPuede(accion),
@@ -18477,7 +18509,7 @@ function stuAbrirModulo(clave) {
     caja.className = "modulo-caja";
     caja.innerHTML = `<div class="modulo-barra"><button type="button" class="modulo-volver" onclick="stuCerrarModulo()">← Regresar</button><b>${escHtml(m.titulo)}</b><span class="modulo-quien">${escHtml(stuQuienSoy())}</span></div>
       <div class="modulo-cargando" id="moduloCargando">Abriendo ${escHtml(m.titulo)}…</div>
-      <iframe class="modulo-frame" title="${escHtml(m.titulo)}" allow="clipboard-write" src="${m.archivo}?v=5.1"></iframe>`;
+      <iframe class="modulo-frame" title="${escHtml(m.titulo)}" allow="clipboard-write" src="${m.archivo}?v=5.1.1"></iframe>`;
     document.body.appendChild(caja);
     document.body.classList.add("con-modulo");
     // 4.8: en computadora la barra lateral se queda visible

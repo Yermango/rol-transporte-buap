@@ -18,6 +18,7 @@
    - v20: 4.9 (Programación y Crear día, candados, historial de roles, Rol del día, Descargas,
      Velocidad: lámina para el grupo de operadores, Kilometraje: copiar km real).
    - v22: 5.1 (Reportes en un solo apartado, Flota con Headcount y Entrega de turno, colores de ruta,
+   - v23: 5.1.1 (Reportes › Archivos real: los archivos del día se suben una vez; Flota y Headcount solo del rol del día)
      Activas tipo hoja de Excel en computadora, avisos solo del día con Avisar / Sin aviso / Deshacer).
    - v21: 5.0 (estilo GER, usuarios por correo o usuario, Pendientes y agenda tipo Notion,
      Tablero compacto en celular, aviso sin internet, km como 17.973,40).
@@ -27,7 +28,7 @@
    ========================================================================== */
 
 const PREFIJO_CACHE = "stu-buap-pwa-";
-const CACHE_NAME = PREFIJO_CACHE + "v22";
+const CACHE_NAME = PREFIJO_CACHE + "v23";
 const ASSETS = [
   "./",
   "./index.html",

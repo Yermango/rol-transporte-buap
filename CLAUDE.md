@@ -77,3 +77,26 @@ ZIP con `subir-a-github/` (index.html, sw.js, modulos/, package.json, capacitor.
 - Palomita oculta a los 5 min (`OCULTAR_FORMADO_MIN`). Sin botón rojo flotante de cambio.
 - Cambios por confirmar: Avisar · Sin aviso · Deshacer por cambio; solo se avisa lo hecho hoy; `stuAvisoVigente` (2 h) filtra avisos viejos.
 - Catálogo de rutas = Hoja2 oficial; clave desconocida sale «Ruta ####» con aviso (sin «Acajete»).
+
+## Material de apoyo (noviembre 2026)
+- Presentaciones (Slides): «Cómo funciona la app» y «Mejora y crecimiento»; fuente en `presentaciones/`.
+- Videos: «Presentacion_STU_Android/Escritorio» (~5 min, tono gerencia + personal operativo, transiciones) y
+  «Guia_STU_*_vertical» (~1,5 min, formato teléfono). Voz gratis con Piper `es_MX-claude-high` (huggingface.co;
+  requiere acceso a internet en Capacidades). Scripts en `videos/`: `cap.js` captura pantallas reales de la vista previa,
+  `guion2.py`/`guionv.py` texto y voz, `capas*.js` dibujan, `clips*.py` animan, `final*.py` unen con transiciones.
+  Pronunciación: STU→«S T U», CU2→«C U dos», Headcount→«Jed caunt».
+- Infografías (Design, 1080×1350): La app en una imagen, Un día de operación, Por qué mejora, Quién ve qué, Así se ve.
+- Respaldo de necesidades y prompt para chat nuevo: documento «Respaldo · Rol Operativo STU» y `RESPALDO_LEEME.md`.
+
+## Novedades 5.1.1 (para no romperlas)
+- Reportes › Archivos ya es real (`modulos/reportes.html`, bloque «ARCHIVOS DEL DÍA»): se sueltan o eligen los archivos del día
+  una vez; se reconocen por nombre o contenido (PL Plantilla, MO Monitor, VE Velocidad, EV Eventos, KM Kilometraje, PU Puntualidad,
+  DI Diésel). VE/EV/MO → Excesos (iframe oculto, `handleFiles`, guarda en `stu_vel_raw`); KM/MO → Kilometraje al abrir su pestaña
+  (`KM_PEND`, `kmPendientes`); MO → nube `operaciones_v6_base/monitor` (Flota); DI → `dieLeerArchivo`; PU y PL con un toque
+  (abren Puntualidad o Crear día con el archivo). Los archivos se vuelven a crear dentro del módulo (`enModulo`) por el lector de Excel.
+  Permiso: `subirReportes` (solo Desarrollo). Bitácora local `rep_archivos_log`.
+- Flota y Headcount solo del rol del día (`stuConSoloRol`, `window._stuSoloRol`): no cuentan los estados de operador del Excel de flota
+  (letras, bajas, turismo de la hoja). Sí cuentan estadosDia, estadosRango, bajas marcadas en la app (`bajasFecha`) y lo general
+  marcado en la app (`estadosGenApp`). Asignación solo de Plantilla del día o Monitor (ya no del Excel «datos»).
+- `bajasFecha`, `estadosGenApp` y `config` (colores de ruta) ahora se leen de la nube en `stuCamposExtra`.
+- Versión: CACHE_NAME v23, módulos ?v=5.1.1.

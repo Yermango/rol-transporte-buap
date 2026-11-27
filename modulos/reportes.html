@@ -463,7 +463,11 @@ body.en-app header.app p{font-size:12.5px}
 .ej{font-style:normal;font-size:9.5px;font-weight:800;letter-spacing:.4px;background:#FFF3E0;color:#9A3412;border-radius:5px;padding:1px 5px;margin-left:6px}
 body.en-app .vc{display:none}
 /* 5.1 real: la subida a la nube llega en la siguiente versión */
-#drop,#btElegir,#btDesc,#dropBloq,#subida{display:none!important}
+#btDesc{display:none!important}
+@media (max-width:640px){header.app .sp{display:none}}
+.sf .bt{font-size:12.5px;padding:7px 12px}
+.sf select{font:600 12.5px Inter,sans-serif;border:1px solid #CBD5E1;border-radius:9px;padding:6px 8px;max-width:220px}
+.sf .e.mal{background:#FDE7EA;color:#B01229}
 .real-card{background:#fff;border:1px solid var(--linea,#E2E8F0);border-radius:16px;padding:22px;max-width:640px;margin:18px auto;text-align:center}
 .real-card h3{margin:0 0 6px;font:800 19px Montserrat,Inter,sans-serif}
 .real-card p{color:#5B6B80;font-size:14px;margin:0 0 14px;line-height:1.5}
@@ -1070,7 +1074,7 @@ function incrustarGps(k, vista, color, tit, sub, ar, extra) {
   const el = document.getElementById("r-" + k);
   if (REAL) {
     if (el.querySelector("iframe")) return;
-    el.innerHTML = cabRep(color, tit, "Tu módulo de Excesos · carga los archivos del día dentro del módulo", ar) + (extra && !/kpis|kp-/.test(extra) ? extra : "") + `<iframe class="km-mod gps-mod" id="${k}Mod" src="excesos.html?v=5.1" title="${tit}"></iframe>`;
+    el.innerHTML = cabRep(color, tit, "Tu módulo de Excesos · toma lo que subiste en Archivos (o cárgalos aquí)", ar) + (extra && !/kpis|kp-/.test(extra) ? extra : "") + `<iframe class="km-mod gps-mod" id="${k}Mod" src="excesos.html?v=5.1.1" title="${tit}"></iframe>`;
     const fr = document.getElementById(k + "Mod");
     fr.addEventListener("load", () => { try { if (vista === "conduccion" && fr.contentWindow.go) fr.contentWindow.go("conduccion"); } catch (e) {} const aj = () => { try { const h = Math.max(760, fr.contentDocument.documentElement.scrollHeight); fr.style.height = h + "px"; } catch (e) {} }; aj(); clearInterval(el._aj); el._aj = setInterval(aj, 1000); });
     const b = el.querySelector(".rp-ac .prim"); if (b) { b.textContent = "Descargar (CSV)"; b.onclick = () => { try { fr.contentWindow.document.getElementById("bCsv").click(); } catch (e) {} }; }
@@ -1133,7 +1137,7 @@ const REP_PINTA = {
   },
   km() {
     const el = document.getElementById("r-km");
-    if (REAL) { if (el.querySelector("iframe")) return; el.innerHTML = cabRep("#0052CC", "Kilometraje", "Tu módulo de Kilometraje · elige los archivos dentro del módulo", ["KW", "KS", "MO"]) + `<iframe class="km-mod" id="kmMod" src="kilometraje.html?v=5.1" title="Kilometraje"></iframe>`; const fr = document.getElementById("kmMod"), b = el.querySelector(".rp-ac .prim"); if (b) b.onclick = () => { try { fr.contentWindow.kmExportarExcel ? fr.contentWindow.kmExportarExcel() : fr.contentWindow.document.getElementById("btnXlsDay").click(); } catch (e) {} }; return; }
+    if (REAL) { if (el.querySelector("iframe")) return; el.innerHTML = cabRep("#0052CC", "Kilometraje", "Tu módulo de Kilometraje · toma lo que subiste en Archivos (o elígelos aquí)", ["KW", "KS", "MO"]) + `<iframe class="km-mod" id="kmMod" src="kilometraje.html?v=5.1.1" title="Kilometraje"></iframe>`; const fr = document.getElementById("kmMod"), b = el.querySelector(".rp-ac .prim"); fr.addEventListener("load", () => { try { window.kmPendientes && window.kmPendientes(fr); } catch (e) {} }); if (b) b.onclick = () => { try { fr.contentWindow.kmExportarExcel ? fr.contentWindow.kmExportarExcel() : fr.contentWindow.document.getElementById("btnXlsDay").click(); } catch (e) {} }; return; }
     if (el.querySelector("iframe")) { el.querySelectorAll(".sel-aviso").forEach(x => x.remove()); const h = el.querySelector(".rp-h"); if (h) h.outerHTML = cabRep("#0052CC", "Kilometraje", "Tu módulo de Kilometraje, ya dentro de la app · toma solo los archivos guardados del día", ["KW", "KS", "MO"]); if (el._conectar) el._conectar(); return; }
     el.innerHTML = cabRep("#0052CC", "Kilometraje", "Tu módulo de Kilometraje, ya dentro de la app · toma solo los archivos guardados del día", ["KW", "KS", "MO"]) +
       `<div class="km-src" id="kmSrc"><span>Cargando desde Archivos…</span></div>
@@ -1307,6 +1311,202 @@ pintarMtz(); pintarDet(); pintarUlt(); pintarCruce(); pintarInf(); pintarDesg();
     }
   } catch (e) {}
   sel.onchange = aplicar; aplicar();
+})();
+</script>
+
+<script>
+// 5.1.1 · ARCHIVOS DEL DÍA (real). Se suben una vez aquí y cada reporte toma lo suyo:
+//  Velocidad, Eventos y Monitor → Excesos/Eventos · Kilometraje y Monitor → Kilometraje · Monitor también a la nube (Flota)
+//  Diésel → Diésel · Puntualidad y Plantilla (rol del día) → un toque abre su pantalla con el archivo ya elegido.
+(function () {
+  const A = PAPP;
+  const $ = id => document.getElementById(id);
+  const TIPOS = {
+    PL: { t: "Rol del día · Plantilla de Órdenes de Servicio", c: "#1D3F94", va: "Crear el día del rol" },
+    MO: { t: "Monitor de servicio", c: "#C2610F", va: "Flota, Kilometraje y Excesos" },
+    VE: { t: "Excesos de velocidad", c: "#E31B23", va: "Excesos" },
+    EV: { t: "Eventos de conducción", c: "#C2410C", va: "Eventos" },
+    KM: { t: "Kilometraje", c: "#0052CC", va: "Kilometraje" },
+    PU: { t: "Puntualidad (geocercas)", c: "#0F1E4A", va: "Puntualidad" },
+    DI: { t: "Consumos de diésel", c: "#0E7490", va: "Diésel" }
+  };
+  const norm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const puede = a => { try { return !!(A && A.STU_PUENTE && A.STU_PUENTE.puede(a)); } catch (e) { return false; } };
+  const quien = () => { try { return A.STU_PUENTE.quien(); } catch (e) { return ""; } };
+  function porNombre(n) {
+    n = norm(n);
+    if (/plantilla|ordenes?[ _-]*(de[ _-]*)?servicio/.test(n)) return "PL";
+    if (/monitor/.test(n)) return "MO";
+    if (/puntualidad|indicador/.test(n)) return "PU";
+    if (/diesel|consumo|bomba/.test(n)) return "DI";
+    if (/evento|conduccion/.test(n)) return "EV";
+    if (/velocidad|excesiv|exceso/.test(n)) return "VE";
+    if (/kilometr|(^|[^a-z])km([^a-z]|$)/.test(n)) return "KM";
+    return "";
+  }
+  async function lector() { if (A && A.ensureXLSXLoaded) await A.ensureXLSXLoaded(); return (A && A.XLSX) || window.XLSX; }
+  async function porContenido(f) {
+    try {
+      const X = await lector(); if (!X) return "";
+      const wb = X.read(await f.arrayBuffer(), { type: "array", sheetRows: 30 });
+      const t = norm(wb.SheetNames.map(n => X.utils.sheet_to_csv(wb.Sheets[n])).join(" "));
+      if (/tipo de indicador|primera parada/.test(t)) return "PU";
+      if (/velocidad maxima/.test(t)) return "VE";
+      if (/evento/.test(t) && /vehiculo/.test(t)) return "EV";
+      if (/operador/.test(t) && /vehiculo/.test(t) && /fecha inicial/.test(t)) return "MO";
+      if (/marca/.test(t) && /cantidad/.test(t)) return "DI";
+      if (/kilometr|distancia recorrida/.test(t)) return "KM";
+      if (/orden|servicio/.test(t) && /ruta/.test(t)) return "PL";
+    } catch (e) {}
+    return "";
+  }
+  function fechaDe(n) { const m = String(n).match(/(\d{1,2})[-_.](\d{1,2})[-_.](\d{4})/); return m ? `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}` : ""; }
+  const fCorta = iso => iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) : "sin fecha";
+  // Bitácora de lo subido en este equipo
+  const LOG = "rep_archivos_log";
+  const leerLog = () => { try { return JSON.parse(localStorage.getItem(LOG) || "[]"); } catch (e) { return []; } };
+  const anotar = r => { const l = leerLog(); l.unshift(r); try { localStorage.setItem(LOG, JSON.stringify(l.slice(0, 80))); } catch (e) {} pintarLog(); };
+  const MEM = {}; // archivos de esta sesión (para los botones)
+  window.KM_PEND = window.KM_PEND || [];
+
+  // ----- destinos -----
+  let excFr = null;
+  function excesos() {
+    return new Promise((res, rej) => {
+      if (excFr && excFr._w) return res(excFr._w);
+      excFr = document.createElement("iframe");
+      excFr.src = "excesos.html?carga=1"; excFr.title = "Excesos (carga de archivos)"; excFr.setAttribute("aria-hidden", "true");
+      excFr.style.cssText = "position:fixed;left:-10000px;top:0;width:1200px;height:900px;border:0;visibility:hidden";
+      const t = setTimeout(() => rej(new Error("el módulo de Excesos no cargó")), 25000);
+      excFr.onload = async () => { const w = excFr.contentWindow; for (let i = 0; i < 150 && typeof w.handleFiles !== "function"; i++) await new Promise(r => setTimeout(r, 100)); clearTimeout(t); if (typeof w.handleFiles !== "function") return rej(new Error("Excesos no está listo")); excFr._w = w; res(w); };
+      document.body.appendChild(excFr);
+    });
+  }
+  async function monitorANube(f, iso) {
+    const X = await lector(); const wb = X.read(await f.arrayBuffer(), { type: "array" });
+    const grid = X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true, defval: null });
+    try { sessionStorage.setItem("stu_monitor_cache_" + iso, JSON.stringify({ fecha: iso, nombre: f.name, ts: Date.now(), hojas: { Monitor: grid } })); } catch (e) {}
+    try { if (A._flMonitor) delete A._flMonitor[iso]; } catch (e) {}
+    if (A && A.stuGuardarMonitor && puede("subirReportes")) A.stuGuardarMonitor(grid, f.name, iso);
+  }
+  window.kmPendientes = async function (fr) {
+    if (!window.KM_PEND.length) return;
+    try {
+      const w = fr.contentWindow;
+      for (let i = 0; i < 150 && typeof w.ingest !== "function"; i++) await new Promise(r => setTimeout(r, 100));
+      const lista = window.KM_PEND.splice(0);
+      for (const x of lista) await w.ingest(await enModulo(w, x.f));
+      const iso = (lista.find(x => x.iso) || {}).iso;
+      const op = w.document.getElementById("opDate"); if (op && iso) op.value = iso;
+      const b = w.document.getElementById("btnProcess"); if (b) b.click();
+    } catch (e) {}
+  };
+  // Los archivos se vuelven a crear dentro del módulo (si no, su lector de Excel no los reconoce)
+  async function enModulo(w, f) { const buf = await f.arrayBuffer(); return new w.File([new w.Uint8Array(buf)], f.name, { type: f.type || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }); }
+  const reabrir = k => { const el = $("r-" + k); if (el) el.innerHTML = ""; };
+
+  async function procesar(files) {
+    if (!puede("subirReportes")) { aviso("Por ahora solo Desarrollo sube archivos."); return; }
+    files = [...files].filter(f => f && f.size);
+    if (!files.length) return;
+    const s = $("subida");
+    const filas = files.map((f, i) => ({ f, i, id: "af" + Date.now() + i }));
+    s.innerHTML = filas.map(x => `<div class="sf" id="${x.id}"><span class="t" style="background:#94A3B8">…</span><div class="n"><b>${esc(x.f.name)}</b><small>Leyendo…</small></div><span class="e leyendo">Leyendo</span></div>`).join("") + s.innerHTML;
+    for (const x of filas) { x.k = porNombre(x.f.name) || await porContenido(x.f); x.iso = fechaDe(x.f.name); }
+    const pinta = (x, estado, txt, extra) => {
+      const el = $(x.id); if (!el) return; const T = TIPOS[x.k] || { t: "No reconocido", c: "#B45309" };
+      el.innerHTML = `<span class="t" style="background:${T.c}">${x.k || "?"}</span><div class="n"><b>${esc(x.f.name)}</b><small>${esc(T.t)} · ${fCorta(x.iso)}${txt ? " · " + esc(txt) : ""}</small></div>${extra || `<span class="e ${estado === "ok" ? "ok" : estado === "mal" ? "mal" : "leyendo"}">${estado === "ok" ? "Listo" : estado === "mal" ? "Revisar" : "Enviando"}</span>`}`;
+    };
+    // Excesos / Eventos (y el Monitor para cruzar operador)
+    const gps = filas.filter(x => ["VE", "EV", "MO"].includes(x.k));
+    if (gps.some(x => x.k !== "MO")) {
+      gps.forEach(x => pinta(x, "", "pasando a Excesos"));
+      try { const w = await excesos(); const fs = []; for (const x of gps) fs.push(await enModulo(w, x.f)); await w.handleFiles(fs); gps.forEach(x => { if (x.k !== "MO") { pinta(x, "ok", "ya está en " + TIPOS[x.k].va); anotar({ n: x.f.name, k: x.k, iso: x.iso, ok: 1, ts: Date.now(), por: quien() }); } }); reabrir("exc"); reabrir("ev"); }
+      catch (e) { gps.forEach(x => x.k !== "MO" && pinta(x, "mal", e.message)); }
+    }
+    // Kilometraje (se calcula al abrir su pestaña)
+    const km = filas.filter(x => x.k === "KM" || x.k === "MO");
+    if (km.some(x => x.k === "KM")) {
+      km.forEach(x => window.KM_PEND.push({ f: x.f, iso: x.iso }));
+      reabrir("km");
+      filas.filter(x => x.k === "KM").forEach(x => { pinta(x, "ok", "se calcula al abrir Kilometraje", `<button class="bt" type="button" data-ir="km">Ver Kilometraje</button>`); anotar({ n: x.f.name, k: "KM", iso: x.iso, ok: 1, ts: Date.now(), por: quien() }); });
+    }
+    // Monitor: a la nube para Flota (y ya pasó a Excesos y Kilometraje)
+    for (const x of filas.filter(x => x.k === "MO")) {
+      try { if (!x.iso) throw new Error("el nombre no trae la fecha (dd-mm-aaaa)"); await monitorANube(x.f, x.iso); pinta(x, "ok", "guardado para Flota, Kilometraje y Excesos"); anotar({ n: x.f.name, k: "MO", iso: x.iso, ok: 1, ts: Date.now(), por: quien() }); }
+      catch (e) { pinta(x, "mal", e.message); }
+    }
+    // Diésel
+    for (const x of filas.filter(x => x.k === "DI")) {
+      try { await A.dieLeerArchivo(x.f); pinta(x, "ok", "pasó a Diésel"); anotar({ n: x.f.name, k: "DI", iso: x.iso, ok: 1, ts: Date.now(), por: quien() }); }
+      catch (e) { pinta(x, "mal", e.message); }
+    }
+    // Puntualidad y rol del día: un toque abre su pantalla con el archivo
+    filas.filter(x => x.k === "PU" || x.k === "PL").forEach(x => {
+      MEM[x.id] = x;
+      const txt = x.k === "PU" ? "toca para revisar y guardar" : "toca para crear el día con este archivo";
+      const bt = x.k === "PU" ? "Abrir Puntualidad" : (puede("duplicar") ? "Crear día" : "");
+      pinta(x, "", txt, bt ? `<button class="bt prim" type="button" data-mem="${x.id}">${bt}</button>` : `<span class="e mal">Solo Supervisión, Jefatura o Desarrollo</span>`);
+    });
+    // No reconocidos: el usuario elige
+    filas.filter(x => !x.k).forEach(x => {
+      MEM[x.id] = x;
+      pinta(x, "", "no lo reconocí", `<select data-sel="${x.id}"><option value="">¿Qué archivo es?</option>${Object.keys(TIPOS).map(k => `<option value="${k}">${esc(TIPOS[k].t)}</option>`).join("")}</select>`);
+    });
+  }
+  function aviso(t) { try { A.STU_PUENTE.aviso(t); } catch (e) { alert(t); } }
+
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-mem],[data-ir]"); if (!b) return;
+    if (b.dataset.ir) { const t = document.querySelector(`#tabs button[data-t="${b.dataset.ir}"]`); if (t) t.click(); return; }
+    const x = MEM[b.dataset.mem]; if (!x) return;
+    anotar({ n: x.f.name, k: x.k, iso: x.iso, ok: 1, ts: Date.now(), por: quien() });
+    if (x.k === "PU") irApp(a => { a.punAbrir(x.iso || undefined); setTimeout(() => a.punLeerArchivo(x.f), 500); });
+    if (x.k === "PL") irApp(a => { a.cdAbrir(); setTimeout(() => a.cdLeerArchivo({ files: [x.f], value: "" }), 450); });
+  });
+  document.addEventListener("change", e => {
+    const s = e.target.closest("select[data-sel]"); if (!s || !s.value) return;
+    const x = MEM[s.dataset.sel]; if (!x) return;
+    const f = new File([x.f], x.f.name.replace(/(\.\w+)$/, "") + "_" + ({ PL: "Plantilla_Ordenes_Servicio", MO: "Monitor", VE: "Velocidad", EV: "Eventos_de_Conduccion", KM: "Kilometraje", PU: "Puntualidad", DI: "Diesel" }[s.value]) + (x.f.name.match(/\.\w+$/) || [".xlsx"])[0], { type: x.f.type });
+    $(s.dataset.sel).remove(); procesar([f]);
+  });
+
+  // ----- pantalla -----
+  function pintarLog() {
+    const c = $("archLog"); if (!c) return;
+    const l = leerLog();
+    c.innerHTML = l.length ? l.slice(0, 25).map(r => { const T = TIPOS[r.k] || { t: "Archivo", c: "#64748B" }; return `<div class="sf"><span class="t" style="background:${T.c}">${esc(r.k)}</span><div class="n"><b>${esc(r.n)}</b><small>${esc(T.t)} · día ${fCorta(r.iso)} · subido ${new Date(r.ts).toLocaleString("es-MX", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}${r.por ? " · " + esc(r.por) : ""}</small></div><span class="e ok">${esc(T.va || "")}</span></div>`; }).join("")
+      : `<p style="color:var(--sub);margin:6px 2px">Todavía no se ha subido nada desde este equipo.</p>`;
+  }
+  function montar() {
+    // quita lo de ejemplo del apartado Archivos
+    const tb = document.querySelector('#tabs button[data-t="dias"] .ej'); if (tb) tb.remove();
+    const nota = document.querySelector(".nota"); if (nota) nota.innerHTML = "<b>Reportes 5.1.1.</b> Sube aquí los archivos del día una sola vez: la app reconoce cada uno y lo pasa a su reporte. <b>Reportes del día, Periodo, Cómo se cruzan y Programado vs real</b> siguen con datos de ejemplo (marcados «Ejemplo»).";
+    const hp = document.querySelector("header.app p"); if (hp) hp.textContent = "Sube los archivos del día aquí, una sola vez: cada reporte toma lo suyo.";
+    const sim = $("btSim"); if (sim) sim.remove();
+    const dz = $("drop"); if (dz) { const n = dz.cloneNode(true); dz.replaceWith(n);
+      n.addEventListener("dragover", e => { e.preventDefault(); n.classList.add("on"); });
+      n.addEventListener("dragleave", () => n.classList.remove("on"));
+      n.addEventListener("drop", e => { e.preventDefault(); n.classList.remove("on"); procesar(e.dataTransfer.files); });
+      const t = n.querySelector(".txt p"); if (t) t.innerHTML = "Rol del día (Plantilla u Monitor), Velocidad y Eventos (Webfleet o Samsara), Kilometraje, Puntualidad y Diésel. La app reconoce cada uno por su nombre o su contenido.";
+      const b = document.createElement("button"); b.className = "bt prim"; b.type = "button"; b.textContent = "Elegir archivos"; b.onclick = elegir; n.appendChild(b);
+    }
+    const be = $("btElegir"); if (be) be.remove(); // el botón queda dentro de la zona de subida
+    const td = $("t-dias");
+    if (td) td.innerHTML = `<div class="card"><div class="lbl">Lo que se subió desde este equipo</div><div class="subida" id="archLog"></div></div>
+      <div class="card"><div class="lbl">A dónde va cada archivo</div><div class="subida">${Object.keys(TIPOS).map(k => `<div class="sf"><span class="t" style="background:${TIPOS[k].c}">${k}</span><div class="n"><b>${esc(TIPOS[k].t)}</b><small>Pasa a: ${esc(TIPOS[k].va)}</small></div></div>`).join("")}</div>
+      <p style="color:var(--sub);font-size:12.5px;margin:10px 2px 0">La fecha sale del nombre del archivo (dd-mm-aaaa). Los resultados de cada reporte se guardan como siempre; los archivos de Velocidad, Eventos y Kilometraje se quedan en este equipo.</p></div>`;
+    pintarLog();
+  }
+  let inp = null;
+  function elegir() {
+    if (!puede("subirReportes")) { aviso("Por ahora solo Desarrollo sube archivos."); return; }
+    if (!inp) { inp = document.createElement("input"); inp.type = "file"; inp.multiple = true; inp.accept = ".xlsx,.xls,.csv"; inp.style.cssText = "position:fixed;left:-9999px"; document.body.appendChild(inp); inp.addEventListener("change", () => { procesar(inp.files); setTimeout(() => { inp.value = ""; }, 0); }); }
+    inp.click();
+  }
+  window.repProcesarArchivos = procesar;
+  montar();
 })();
 </script>
 
