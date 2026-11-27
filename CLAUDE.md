@@ -100,3 +100,14 @@ ZIP con `subir-a-github/` (index.html, sw.js, modulos/, package.json, capacitor.
   marcado en la app (`estadosGenApp`). Asignación solo de Plantilla del día o Monitor (ya no del Excel «datos»).
 - `bajasFecha`, `estadosGenApp` y `config` (colores de ruta) ahora se leen de la nube en `stuCamposExtra`.
 - Versión: CACHE_NAME v23, módulos ?v=5.1.1.
+
+## Novedades 5.1.2 (para no romperlas)
+- Reportes solo con datos reales: se quitaron Periodo, Cómo se cruzan y Programado vs real (eran de ejemplo).
+- `modulos/reportes.html` pone `window.STU_PUENTE = PAPP.STU_PUENTE`: así Excesos y Kilometraje, abiertos dentro de Reportes,
+  le mandan sus resultados a la app (antes se perdían y «Reportes del día» no se llenaba).
+- Al subir en Archivos: Excesos/Eventos y Kilometraje se calculan en módulos ocultos; Puntualidad se guarda sola
+  (`punProcesarSilencio` en index.html); Diésel con `dieLeerArchivo`; la Plantilla sigue con un toque (Crear día).
+- «Reportes del día» = `renderReportesInd(true)` de la app pintado dentro del módulo (estilos .rp-/.ind- copiados y
+  acotados a `.rp-real`). Pestañas Puntualidad y Diésel muestran su parte de esa hoja.
+- Tabla «Archivos subidos por día»: nube `operaciones_v6/reportesArchivos/{día}/{tipo}` (regla $otro) + `rep_archivos_log` local.
+- Versión: CACHE_NAME v24, módulos ?v=5.1.2.

@@ -1074,7 +1074,7 @@ function incrustarGps(k, vista, color, tit, sub, ar, extra) {
   const el = document.getElementById("r-" + k);
   if (REAL) {
     if (el.querySelector("iframe")) return;
-    el.innerHTML = cabRep(color, tit, "Tu módulo de Excesos · toma lo que subiste en Archivos (o cárgalos aquí)", ar) + (extra && !/kpis|kp-/.test(extra) ? extra : "") + `<iframe class="km-mod gps-mod" id="${k}Mod" src="excesos.html?v=5.1.1" title="${tit}"></iframe>`;
+    el.innerHTML = cabRep(color, tit, "Tu módulo de Excesos · toma lo que subiste en Archivos (o cárgalos aquí)", ar) + (extra && !/kpis|kp-/.test(extra) ? extra : "") + `<iframe class="km-mod gps-mod" id="${k}Mod" src="excesos.html?v=5.1.2" title="${tit}"></iframe>`;
     const fr = document.getElementById(k + "Mod");
     fr.addEventListener("load", () => { try { if (vista === "conduccion" && fr.contentWindow.go) fr.contentWindow.go("conduccion"); } catch (e) {} const aj = () => { try { const h = Math.max(760, fr.contentDocument.documentElement.scrollHeight); fr.style.height = h + "px"; } catch (e) {} }; aj(); clearInterval(el._aj); el._aj = setInterval(aj, 1000); });
     const b = el.querySelector(".rp-ac .prim"); if (b) { b.textContent = "Descargar (CSV)"; b.onclick = () => { try { fr.contentWindow.document.getElementById("bCsv").click(); } catch (e) {} }; }
@@ -1116,7 +1116,8 @@ function pintarDieselReal() {
 // 5.1 · Versión real: lo que ya funciona usa tus módulos y la app; lo demás se queda como ejemplo
 const REAL = true;
 const PAPP = (() => { try { return window.parent !== window ? window.parent : null; } catch (e) { return null; } })();
-function irApp(fn) { try { if (PAPP && PAPP.stuCerrarModulo) PAPP.stuCerrarModulo(); setTimeout(() => { try { fn(PAPP); } catch (e) {} }, 120); } catch (e) {} }
+// 5.1.2: se cierra Reportes y se llama a la app en el mismo momento (un setTimeout de aquí se cancela al cerrar el módulo)
+function irApp(fn) { const P = PAPP; try { if (P && P.stuCerrarModulo) P.stuCerrarModulo(); } catch (e) {} try { if (P) fn(P); } catch (e) { try { P.showAggressiveToast("No se pudo abrir: " + e.message); } catch (er) {} } }
 const REP_PINTA = {
   pun() {
     if (REAL) { document.getElementById("r-pun").innerHTML = cabRep("#0F1E4A", "Puntualidad", "Geocercas · IDA y VUELTA punto inicial · meta 98 % · motivos y comentarios en la nube", ["PU"]) + `<div class="real-card"><h3>Puntualidad del día</h3><p>Se abre la pantalla de Puntualidad de la app: subes el archivo del día, ves por unidad, ruta y hora, y justificas cada impuntual con motivo y comentario.</p><button onclick="irApp(a => a.punAbrir())">Abrir Puntualidad</button></div>`; return; }
@@ -1137,7 +1138,7 @@ const REP_PINTA = {
   },
   km() {
     const el = document.getElementById("r-km");
-    if (REAL) { if (el.querySelector("iframe")) return; el.innerHTML = cabRep("#0052CC", "Kilometraje", "Tu módulo de Kilometraje · toma lo que subiste en Archivos (o elígelos aquí)", ["KW", "KS", "MO"]) + `<iframe class="km-mod" id="kmMod" src="kilometraje.html?v=5.1.1" title="Kilometraje"></iframe>`; const fr = document.getElementById("kmMod"), b = el.querySelector(".rp-ac .prim"); fr.addEventListener("load", () => { try { window.kmPendientes && window.kmPendientes(fr); } catch (e) {} }); if (b) b.onclick = () => { try { fr.contentWindow.kmExportarExcel ? fr.contentWindow.kmExportarExcel() : fr.contentWindow.document.getElementById("btnXlsDay").click(); } catch (e) {} }; return; }
+    if (REAL) { if (el.querySelector("iframe")) return; el.innerHTML = cabRep("#0052CC", "Kilometraje", "Tu módulo de Kilometraje · toma lo que subiste en Archivos (o elígelos aquí)", ["KW", "KS", "MO"]) + `<iframe class="km-mod" id="kmMod" src="kilometraje.html?v=5.1.2" title="Kilometraje"></iframe>`; const fr = document.getElementById("kmMod"), b = el.querySelector(".rp-ac .prim"); fr.addEventListener("load", () => { try { window.kmPendientes && window.kmPendientes(fr); } catch (e) {} }); if (b) b.onclick = () => { try { fr.contentWindow.kmExportarExcel ? fr.contentWindow.kmExportarExcel() : fr.contentWindow.document.getElementById("btnXlsDay").click(); } catch (e) {} }; return; }
     if (el.querySelector("iframe")) { el.querySelectorAll(".sel-aviso").forEach(x => x.remove()); const h = el.querySelector(".rp-h"); if (h) h.outerHTML = cabRep("#0052CC", "Kilometraje", "Tu módulo de Kilometraje, ya dentro de la app · toma solo los archivos guardados del día", ["KW", "KS", "MO"]); if (el._conectar) el._conectar(); return; }
     el.innerHTML = cabRep("#0052CC", "Kilometraje", "Tu módulo de Kilometraje, ya dentro de la app · toma solo los archivos guardados del día", ["KW", "KS", "MO"]) +
       `<div class="km-src" id="kmSrc"><span>Cargando desde Archivos…</span></div>
@@ -1315,25 +1316,33 @@ pintarMtz(); pintarDet(); pintarUlt(); pintarCruce(); pintarInf(); pintarDesg();
 </script>
 
 <script>
-// 5.1.1 · ARCHIVOS DEL DÍA (real). Se suben una vez aquí y cada reporte toma lo suyo:
-//  Velocidad, Eventos y Monitor → Excesos/Eventos · Kilometraje y Monitor → Kilometraje · Monitor también a la nube (Flota)
-//  Diésel → Diésel · Puntualidad y Plantilla (rol del día) → un toque abre su pantalla con el archivo ya elegido.
+// 5.1.1 · REPORTES CON DATOS REALES
+//  - Archivos: se suben una vez; cada uno pasa solo a su reporte y queda en la tabla por día (nube + este equipo).
+//  - Los módulos (Excesos, Kilometraje) ven a la app por STU_PUENTE y le mandan sus resultados.
+//  - «Reportes del día» es la hoja real de la app (Indicadores › Reportes). Se quitaron las vistas de ejemplo.
 (function () {
   const A = PAPP;
+  try { if (A && A.STU_PUENTE) window.STU_PUENTE = A.STU_PUENTE; } catch (e) {}
   const $ = id => document.getElementById(id);
   const TIPOS = {
-    PL: { t: "Rol del día · Plantilla de Órdenes de Servicio", c: "#1D3F94", va: "Crear el día del rol" },
+    PL: { t: "Rol del día · Plantilla", c: "#1D3F94", va: "Crear el día del rol" },
     MO: { t: "Monitor de servicio", c: "#C2610F", va: "Flota, Kilometraje y Excesos" },
     VE: { t: "Excesos de velocidad", c: "#E31B23", va: "Excesos" },
     EV: { t: "Eventos de conducción", c: "#C2410C", va: "Eventos" },
     KM: { t: "Kilometraje", c: "#0052CC", va: "Kilometraje" },
-    PU: { t: "Puntualidad (geocercas)", c: "#0F1E4A", va: "Puntualidad" },
+    PU: { t: "Puntualidad", c: "#0F1E4A", va: "Puntualidad" },
     DI: { t: "Consumos de diésel", c: "#0E7490", va: "Diésel" }
   };
+  const ORDEN = ["PL", "MO", "PU", "KM", "VE", "EV", "DI"];
   const norm = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const puede = a => { try { return !!(A && A.STU_PUENTE && A.STU_PUENTE.puede(a)); } catch (e) { return false; } };
   const quien = () => { try { return A.STU_PUENTE.quien(); } catch (e) { return ""; } };
+  const nube = () => { try { return !!(A && A.stuNubeLista && A.stuNubeLista()); } catch (e) { return false; } };
+  const hoyIso = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+  const fCorta = iso => iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) : "sin fecha";
+  const DIAS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+  const fDia = iso => { const p = iso.split("-"); const d = new Date(+p[0], +p[1] - 1, +p[2]); return DIAS[d.getDay()] + " " + p[2] + "/" + p[1]; };
   function porNombre(n) {
     n = norm(n);
     if (/plantilla|ordenes?[ _-]*(de[ _-]*)?servicio/.test(n)) return "PL";
@@ -1362,27 +1371,68 @@ pintarMtz(); pintarDet(); pintarUlt(); pintarCruce(); pintarInf(); pintarDesg();
     return "";
   }
   function fechaDe(n) { const m = String(n).match(/(\d{1,2})[-_.](\d{1,2})[-_.](\d{4})/); return m ? `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}` : ""; }
-  const fCorta = iso => iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) : "sin fecha";
-  // Bitácora de lo subido en este equipo
+
+  // ----- Registro de archivos: en la nube (operaciones_v6/reportesArchivos/{día}/{tipo}) y en este equipo -----
   const LOG = "rep_archivos_log";
   const leerLog = () => { try { return JSON.parse(localStorage.getItem(LOG) || "[]"); } catch (e) { return []; } };
-  const anotar = r => { const l = leerLog(); l.unshift(r); try { localStorage.setItem(LOG, JSON.stringify(l.slice(0, 80))); } catch (e) {} pintarLog(); };
-  const MEM = {}; // archivos de esta sesión (para los botones)
-  window.KM_PEND = window.KM_PEND || [];
+  let NUBE = {};
+  function registrar(k, iso, nombre, extra) {
+    const r = { n: nombre, k, iso: iso || hoyIso(), ts: Date.now(), por: quien(), x: extra || "" };
+    const l = leerLog(); l.unshift(r); try { localStorage.setItem(LOG, JSON.stringify(l.slice(0, 120))); } catch (e) {}
+    NUBE[r.iso] = NUBE[r.iso] || {}; NUBE[r.iso][k] = r;
+    try { if (nube() && puede("subirReportes")) A.firebase.database().ref("operaciones_v6/reportesArchivos/" + r.iso + "/" + k).set({ n: r.n, ts: r.ts, por: r.por, x: r.x }).catch(() => {}); } catch (e) {}
+    pintarTabla();
+  }
+  async function leerNube() {
+    leerLog().slice().reverse().forEach(r => { NUBE[r.iso] = NUBE[r.iso] || {}; if (!NUBE[r.iso][r.k] || NUBE[r.iso][r.k].ts < r.ts) NUBE[r.iso][r.k] = r; });
+    if (nube()) { try { const v = (await A.firebase.database().ref("operaciones_v6/reportesArchivos").orderByKey().limitToLast(45).once("value")).val() || {}; Object.keys(v).forEach(d => { NUBE[d] = NUBE[d] || {}; Object.keys(v[d] || {}).forEach(k => { const x = v[d][k]; if (x && (!NUBE[d][k] || NUBE[d][k].ts <= x.ts)) NUBE[d][k] = Object.assign({ k, iso: d }, x); }); }); } catch (e) {} }
+    pintarTabla();
+  }
+  function pintarTabla() {
+    const c = $("archTabla"); if (!c) return;
+    const dias = Object.keys(NUBE).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort().reverse().slice(0, 31);
+    if (!dias.length) { c.innerHTML = `<p style="color:var(--sub);margin:8px 2px">Todavía no se ha subido ningún archivo.</p>`; return; }
+    c.innerHTML = `<table class="mtz"><thead><tr><th style="text-align:left">Día</th>${ORDEN.map(k => `<th title="${esc(TIPOS[k].t)}"><span class="t" style="background:${TIPOS[k].c};color:#fff;border-radius:6px;padding:2px 6px;font:800 11px Inter">${k}</span></th>`).join("")}</tr></thead><tbody>${dias.map(d => `<tr><td style="text-align:left;font-weight:700;white-space:nowrap">${fDia(d)}</td>${ORDEN.map(k => { const x = (NUBE[d] || {})[k]; return x ? `<td title="${esc(x.n)} · ${esc(x.por || "")} · ${new Date(x.ts).toLocaleString("es-MX", { hour12: false })}" style="color:#0E6B3A;font-weight:800">✓</td>` : `<td style="color:#CBD5E1">·</td>`; }).join("")}</tr>`).join("")}</tbody></table>
+      <p style="color:var(--sub);font-size:12px;margin:8px 2px 0">✓ = se subió ese día (pasa el mouse para ver el archivo y quién lo subió). ${ORDEN.map(k => `<b>${k}</b> ${esc(TIPOS[k].t)}`).join(" · ")}</p>`;
+  }
 
-  // ----- destinos -----
-  let excFr = null;
-  function excesos() {
+  // ----- Destinos -----
+  const MEM = {};
+  window.KM_PEND = window.KM_PEND || [];
+  async function enModulo(w, f) { const buf = await f.arrayBuffer(); return new w.File([new w.Uint8Array(buf)], f.name, { type: f.type || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }); }
+  const frames = {};
+  function modulo(nombre, listo) {
     return new Promise((res, rej) => {
-      if (excFr && excFr._w) return res(excFr._w);
-      excFr = document.createElement("iframe");
-      excFr.src = "excesos.html?carga=1"; excFr.title = "Excesos (carga de archivos)"; excFr.setAttribute("aria-hidden", "true");
-      excFr.style.cssText = "position:fixed;left:-10000px;top:0;width:1200px;height:900px;border:0;visibility:hidden";
-      const t = setTimeout(() => rej(new Error("el módulo de Excesos no cargó")), 25000);
-      excFr.onload = async () => { const w = excFr.contentWindow; for (let i = 0; i < 150 && typeof w.handleFiles !== "function"; i++) await new Promise(r => setTimeout(r, 100)); clearTimeout(t); if (typeof w.handleFiles !== "function") return rej(new Error("Excesos no está listo")); excFr._w = w; res(w); };
-      document.body.appendChild(excFr);
+      if (frames[nombre] && frames[nombre]._w) return res(frames[nombre]._w);
+      const fr = document.createElement("iframe");
+      fr.src = nombre + ".html?carga=1"; fr.title = nombre + " (carga)"; fr.setAttribute("aria-hidden", "true");
+      fr.style.cssText = "position:fixed;left:-10000px;top:0;width:1300px;height:900px;border:0;visibility:hidden";
+      const t = setTimeout(() => rej(new Error("el módulo no cargó")), 30000);
+      fr.onload = async () => { const w = fr.contentWindow; for (let i = 0; i < 150 && !listo(w); i++) await new Promise(r => setTimeout(r, 100)); clearTimeout(t); if (!listo(w)) return rej(new Error("el módulo no está listo")); fr._w = w; res(w); };
+      frames[nombre] = fr; document.body.appendChild(fr);
     });
   }
+  async function calcularKm(lista) {
+    // Se calcula en un Kilometraje oculto; el resultado llega a la app (Reportes del día) solo
+    const w = await modulo("kilometraje", w => typeof w.ingest === "function");
+    for (const x of lista) await w.ingest(await enModulo(w, x.f));
+    const iso = (lista.find(x => x.iso && x.k === "KM") || lista.find(x => x.iso) || {}).iso;
+    const op = w.document.getElementById("opDate"); if (op && iso) op.value = iso;
+    const b = w.document.getElementById("btnProcess"); if (b) b.click();
+    await new Promise(r => setTimeout(r, 900));
+  }
+  window.kmPendientes = async function (fr) {
+    if (!window.KM_PEND.length) return;
+    try {
+      const w = fr.contentWindow;
+      for (let i = 0; i < 150 && typeof w.ingest !== "function"; i++) await new Promise(r => setTimeout(r, 100));
+      const lista = window.KM_PEND.slice();
+      for (const x of lista) await w.ingest(await enModulo(w, x.f));
+      const iso = (lista.find(x => x.iso && x.k === "KM") || lista.find(x => x.iso) || {}).iso;
+      const op = w.document.getElementById("opDate"); if (op && iso) op.value = iso;
+      const b = w.document.getElementById("btnProcess"); if (b) b.click();
+    } catch (e) {}
+  };
   async function monitorANube(f, iso) {
     const X = await lector(); const wb = X.read(await f.arrayBuffer(), { type: "array" });
     const grid = X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true, defval: null });
@@ -1390,21 +1440,8 @@ pintarMtz(); pintarDet(); pintarUlt(); pintarCruce(); pintarInf(); pintarDesg();
     try { if (A._flMonitor) delete A._flMonitor[iso]; } catch (e) {}
     if (A && A.stuGuardarMonitor && puede("subirReportes")) A.stuGuardarMonitor(grid, f.name, iso);
   }
-  window.kmPendientes = async function (fr) {
-    if (!window.KM_PEND.length) return;
-    try {
-      const w = fr.contentWindow;
-      for (let i = 0; i < 150 && typeof w.ingest !== "function"; i++) await new Promise(r => setTimeout(r, 100));
-      const lista = window.KM_PEND.splice(0);
-      for (const x of lista) await w.ingest(await enModulo(w, x.f));
-      const iso = (lista.find(x => x.iso) || {}).iso;
-      const op = w.document.getElementById("opDate"); if (op && iso) op.value = iso;
-      const b = w.document.getElementById("btnProcess"); if (b) b.click();
-    } catch (e) {}
-  };
-  // Los archivos se vuelven a crear dentro del módulo (si no, su lector de Excel no los reconoce)
-  async function enModulo(w, f) { const buf = await f.arrayBuffer(); return new w.File([new w.Uint8Array(buf)], f.name, { type: f.type || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }); }
   const reabrir = k => { const el = $("r-" + k); if (el) el.innerHTML = ""; };
+  function aviso(t) { try { A.STU_PUENTE.aviso(t); } catch (e) {} }
 
   async function procesar(files) {
     if (!puede("subirReportes")) { aviso("Por ahora solo Desarrollo sube archivos."); return; }
@@ -1416,94 +1453,164 @@ pintarMtz(); pintarDet(); pintarUlt(); pintarCruce(); pintarInf(); pintarDesg();
     for (const x of filas) { x.k = porNombre(x.f.name) || await porContenido(x.f); x.iso = fechaDe(x.f.name); }
     const pinta = (x, estado, txt, extra) => {
       const el = $(x.id); if (!el) return; const T = TIPOS[x.k] || { t: "No reconocido", c: "#B45309" };
-      el.innerHTML = `<span class="t" style="background:${T.c}">${x.k || "?"}</span><div class="n"><b>${esc(x.f.name)}</b><small>${esc(T.t)} · ${fCorta(x.iso)}${txt ? " · " + esc(txt) : ""}</small></div>${extra || `<span class="e ${estado === "ok" ? "ok" : estado === "mal" ? "mal" : "leyendo"}">${estado === "ok" ? "Listo" : estado === "mal" ? "Revisar" : "Enviando"}</span>`}`;
+      el.innerHTML = `<span class="t" style="background:${T.c}">${x.k || "?"}</span><div class="n"><b>${esc(x.f.name)}</b><small>${esc(T.t)} · ${fCorta(x.iso)}${txt ? " · " + esc(txt) : ""}</small></div>${extra || `<span class="e ${estado === "ok" ? "ok" : estado === "mal" ? "mal" : "leyendo"}">${estado === "ok" ? "Listo" : estado === "mal" ? "Revisar" : "Procesando"}</span>`}`;
     };
-    // Excesos / Eventos (y el Monitor para cruzar operador)
+    // 5.1.2: todo en paralelo; Puntualidad y Diésel primero (son rápidos) y cada renglón se marca en cuanto termina
+    const tareas = [];
+    for (const x of filas.filter(x => x.k === "PU")) {
+      pinta(x, "", "calculando");
+      MEM[x.id] = x;
+      const falla = msg => pinta(x, "mal", msg, `<button class="bt" type="button" data-pun="${x.id}">Abrir en Puntualidad</button>`);
+      tareas.push((async () => {
+        // el archivo se vuelve a crear del lado de la app (en algunos navegadores, como Safari, si no se queda trabado)
+        const fApp = await enModulo(A, x.f);
+        const limite = new Promise((_, mal) => setTimeout(() => mal(new Error("tardó más de 1 minuto")), 60000));
+        const r = await Promise.race([A.punProcesarSilencio(fApp, t => pinta(x, "", t)), limite]);
+        x.iso = r.fecha; pinta(x, "ok", `${r.n} corridas · ${r.tarde} tarde · ${A.punPctTxt(r.pct)}`); registrar("PU", r.fecha, x.f.name);
+      })().catch(e => falla(e.message)));
+    }
+    for (const x of filas.filter(x => x.k === "DI")) {
+      pinta(x, "", "calculando");
+      tareas.push(Promise.resolve(A.dieLeerArchivo(x.f)).then(() => { pinta(x, "ok", "reporte generado"); registrar("DI", x.iso || hoyIso(), x.f.name); }).catch(e => pinta(x, "mal", e.message)));
+    }
+    // Monitor: a la nube para Flota
+    for (const x of filas.filter(x => x.k === "MO")) {
+      tareas.push((async () => { try { if (!x.iso) throw new Error("el nombre no trae la fecha (dd-mm-aaaa)"); await monitorANube(x.f, x.iso); pinta(x, "ok", "guardado para Flota, Kilometraje y Excesos"); registrar("MO", x.iso, x.f.name); } catch (e) { pinta(x, "mal", e.message); } })());
+    }
+    // Excesos y Eventos (el Monitor ayuda a poner operador)
     const gps = filas.filter(x => ["VE", "EV", "MO"].includes(x.k));
     if (gps.some(x => x.k !== "MO")) {
-      gps.forEach(x => pinta(x, "", "pasando a Excesos"));
-      try { const w = await excesos(); const fs = []; for (const x of gps) fs.push(await enModulo(w, x.f)); await w.handleFiles(fs); gps.forEach(x => { if (x.k !== "MO") { pinta(x, "ok", "ya está en " + TIPOS[x.k].va); anotar({ n: x.f.name, k: x.k, iso: x.iso, ok: 1, ts: Date.now(), por: quien() }); } }); reabrir("exc"); reabrir("ev"); }
-      catch (e) { gps.forEach(x => x.k !== "MO" && pinta(x, "mal", e.message)); }
+      gps.filter(x => x.k !== "MO").forEach(x => pinta(x, "", "calculando"));
+      tareas.push((async () => { try { const w = await modulo("excesos", w => typeof w.handleFiles === "function"); const fs = []; for (const x of gps) fs.push(await enModulo(w, x.f)); await w.handleFiles(fs); gps.forEach(x => { if (x.k !== "MO") { pinta(x, "ok", "reporte generado"); registrar(x.k, x.iso, x.f.name); } }); reabrir("exc"); reabrir("ev"); }
+        catch (e) { gps.forEach(x => x.k !== "MO" && pinta(x, "mal", e.message)); } })());
     }
-    // Kilometraje (se calcula al abrir su pestaña)
+    // Kilometraje (con el Monitor como plan si no hay otro)
     const km = filas.filter(x => x.k === "KM" || x.k === "MO");
     if (km.some(x => x.k === "KM")) {
-      km.forEach(x => window.KM_PEND.push({ f: x.f, iso: x.iso }));
-      reabrir("km");
-      filas.filter(x => x.k === "KM").forEach(x => { pinta(x, "ok", "se calcula al abrir Kilometraje", `<button class="bt" type="button" data-ir="km">Ver Kilometraje</button>`); anotar({ n: x.f.name, k: "KM", iso: x.iso, ok: 1, ts: Date.now(), por: quien() }); });
+      filas.filter(x => x.k === "KM").forEach(x => pinta(x, "", "calculando"));
+      tareas.push((async () => { try { await calcularKm(km); window.KM_PEND = km.map(x => ({ f: x.f, iso: x.iso, k: x.k })); reabrir("km"); filas.filter(x => x.k === "KM").forEach(x => { pinta(x, "ok", "reporte generado"); registrar("KM", x.iso, x.f.name); }); }
+        catch (e) { filas.filter(x => x.k === "KM").forEach(x => pinta(x, "mal", e.message)); } })());
     }
-    // Monitor: a la nube para Flota (y ya pasó a Excesos y Kilometraje)
-    for (const x of filas.filter(x => x.k === "MO")) {
-      try { if (!x.iso) throw new Error("el nombre no trae la fecha (dd-mm-aaaa)"); await monitorANube(x.f, x.iso); pinta(x, "ok", "guardado para Flota, Kilometraje y Excesos"); anotar({ n: x.f.name, k: "MO", iso: x.iso, ok: 1, ts: Date.now(), por: quien() }); }
-      catch (e) { pinta(x, "mal", e.message); }
-    }
-    // Diésel
-    for (const x of filas.filter(x => x.k === "DI")) {
-      try { await A.dieLeerArchivo(x.f); pinta(x, "ok", "pasó a Diésel"); anotar({ n: x.f.name, k: "DI", iso: x.iso, ok: 1, ts: Date.now(), por: quien() }); }
-      catch (e) { pinta(x, "mal", e.message); }
-    }
-    // Puntualidad y rol del día: un toque abre su pantalla con el archivo
-    filas.filter(x => x.k === "PU" || x.k === "PL").forEach(x => {
+    // Rol del día: un toque (se eligen fecha y detalles en Crear día)
+    filas.filter(x => x.k === "PL").forEach(x => {
       MEM[x.id] = x;
-      const txt = x.k === "PU" ? "toca para revisar y guardar" : "toca para crear el día con este archivo";
-      const bt = x.k === "PU" ? "Abrir Puntualidad" : (puede("duplicar") ? "Crear día" : "");
-      pinta(x, "", txt, bt ? `<button class="bt prim" type="button" data-mem="${x.id}">${bt}</button>` : `<span class="e mal">Solo Supervisión, Jefatura o Desarrollo</span>`);
+      pinta(x, "", "toca para crear el día con este archivo", puede("duplicar") ? `<button class="bt prim" type="button" data-mem="${x.id}">Crear día</button>` : `<span class="e mal">Solo Supervisión, Jefatura o Desarrollo</span>`);
     });
-    // No reconocidos: el usuario elige
+    // No reconocidos
     filas.filter(x => !x.k).forEach(x => {
       MEM[x.id] = x;
-      pinta(x, "", "no lo reconocí", `<select data-sel="${x.id}"><option value="">¿Qué archivo es?</option>${Object.keys(TIPOS).map(k => `<option value="${k}">${esc(TIPOS[k].t)}</option>`).join("")}</select>`);
+      pinta(x, "", "no lo reconocí", `<select data-sel="${x.id}"><option value="">¿Qué archivo es?</option>${ORDEN.map(k => `<option value="${k}">${esc(TIPOS[k].t)}</option>`).join("")}</select>`);
     });
+    await Promise.all(tareas);
+    // Al terminar: la hoja del día con lo que se subió
+    const dias = filas.filter(x => x.k && x.k !== "PL" && x.iso).map(x => x.iso).sort();
+    if (dias.length) { try { A.stuRepDia = dias[dias.length - 1]; } catch (e) {} try { A.eval("stuRepDia = " + JSON.stringify(dias[dias.length - 1])); } catch (e) {} }
+    const bt = document.createElement("div"); bt.className = "sf"; bt.innerHTML = `<span class="t" style="background:#0E6B3A">✓</span><div class="n"><b>Listo. Los reportes ya se generaron.</b><small>Abre «Reportes del día» para ver el resumen.</small></div><button class="bt prim" type="button" data-ir="reportes">Ver reporte del día</button>`;
+    s.prepend(bt);
   }
-  function aviso(t) { try { A.STU_PUENTE.aviso(t); } catch (e) { alert(t); } }
 
   document.addEventListener("click", e => {
+    const bp = e.target.closest("[data-pun]");
+    if (bp) { const x = MEM[bp.dataset.pun]; if (x) enModulo(A, x.f).then(fA => irApp(a => { a.punAbrir(x.iso || undefined); a.setTimeout(() => a.punLeerArchivo(fA), 500); })); return; }
     const b = e.target.closest("[data-mem],[data-ir]"); if (!b) return;
     if (b.dataset.ir) { const t = document.querySelector(`#tabs button[data-t="${b.dataset.ir}"]`); if (t) t.click(); return; }
     const x = MEM[b.dataset.mem]; if (!x) return;
-    anotar({ n: x.f.name, k: x.k, iso: x.iso, ok: 1, ts: Date.now(), por: quien() });
-    if (x.k === "PU") irApp(a => { a.punAbrir(x.iso || undefined); setTimeout(() => a.punLeerArchivo(x.f), 500); });
-    if (x.k === "PL") irApp(a => { a.cdAbrir(); setTimeout(() => a.cdLeerArchivo({ files: [x.f], value: "" }), 450); });
+    registrar("PL", x.iso, x.f.name);
+    enModulo(A, x.f).then(fA => irApp(a => { a.cdAbrir(); a.setTimeout(() => a.cdLeerArchivo({ files: [fA], value: "" }), 450); }));
   });
   document.addEventListener("change", e => {
     const s = e.target.closest("select[data-sel]"); if (!s || !s.value) return;
     const x = MEM[s.dataset.sel]; if (!x) return;
-    const f = new File([x.f], x.f.name.replace(/(\.\w+)$/, "") + "_" + ({ PL: "Plantilla_Ordenes_Servicio", MO: "Monitor", VE: "Velocidad", EV: "Eventos_de_Conduccion", KM: "Kilometraje", PU: "Puntualidad", DI: "Diesel" }[s.value]) + (x.f.name.match(/\.\w+$/) || [".xlsx"])[0], { type: x.f.type });
+    const ext = (x.f.name.match(/\.\w+$/) || [".xlsx"])[0];
+    const f = new File([x.f], x.f.name.replace(/\.\w+$/, "") + "_" + ({ PL: "Plantilla_Ordenes_Servicio", MO: "Monitor", VE: "Velocidad", EV: "Eventos_de_Conduccion", KM: "Kilometraje", PU: "Puntualidad", DI: "Diesel" }[s.value]) + ext, { type: x.f.type });
     $(s.dataset.sel).remove(); procesar([f]);
   });
 
-  // ----- pantalla -----
-  function pintarLog() {
-    const c = $("archLog"); if (!c) return;
-    const l = leerLog();
-    c.innerHTML = l.length ? l.slice(0, 25).map(r => { const T = TIPOS[r.k] || { t: "Archivo", c: "#64748B" }; return `<div class="sf"><span class="t" style="background:${T.c}">${esc(r.k)}</span><div class="n"><b>${esc(r.n)}</b><small>${esc(T.t)} · día ${fCorta(r.iso)} · subido ${new Date(r.ts).toLocaleString("es-MX", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}${r.por ? " · " + esc(r.por) : ""}</small></div><span class="e ok">${esc(T.va || "")}</span></div>`; }).join("")
-      : `<p style="color:var(--sub);margin:6px 2px">Todavía no se ha subido nada desde este equipo.</p>`;
+  // ----- Hoja real del día (la misma de la app) -----
+  let cssListo = false;
+  function copiarEstilos() {
+    if (cssListo || !A) return; cssListo = true;
+    const usados = new Set(); const out = [];
+    const scope = sel => sel.split(",").map(x => ".rp-real " + x.trim()).join(", ");
+    const tomar = (reglas, envolver) => {
+      for (const r of reglas) {
+        if (r.cssRules && r.media) { const dentro = []; tomar(r.cssRules, dentro); if (dentro.length) out.push(`@media ${r.media.mediaText}{${dentro.join("")}}`); continue; }
+        if (!r.selectorText || !/\.(rp-|ind-)/.test(r.selectorText)) continue;
+        (r.style.cssText.match(/--[\w-]+/g) || []).forEach(v => usados.add(v));
+        (envolver || out).push(`${scope(r.selectorText)}{${r.style.cssText}}`);
+      }
+    };
+    for (const sh of A.document.styleSheets) { try { tomar(sh.cssRules); } catch (e) {} }
+    const cs = A.getComputedStyle(A.document.documentElement);
+    const vars = [...usados].map(v => `${v}:${cs.getPropertyValue(v)}`).join(";");
+    const st = document.createElement("style"); st.textContent = `.rp-real{${vars};font-family:Inter,sans-serif}` + out.join("\n"); document.head.appendChild(st);
   }
-  function montar() {
-    // quita lo de ejemplo del apartado Archivos
-    const tb = document.querySelector('#tabs button[data-t="dias"] .ej'); if (tb) tb.remove();
-    const nota = document.querySelector(".nota"); if (nota) nota.innerHTML = "<b>Reportes 5.1.1.</b> Sube aquí los archivos del día una sola vez: la app reconoce cada uno y lo pasa a su reporte. <b>Reportes del día, Periodo, Cómo se cruzan y Programado vs real</b> siguen con datos de ejemplo (marcados «Ejemplo»).";
-    const hp = document.querySelector("header.app p"); if (hp) hp.textContent = "Sube los archivos del día aquí, una sola vez: cada reporte toma lo suyo.";
-    const sim = $("btSim"); if (sim) sim.remove();
-    const dz = $("drop"); if (dz) { const n = dz.cloneNode(true); dz.replaceWith(n);
-      n.addEventListener("dragover", e => { e.preventDefault(); n.classList.add("on"); });
-      n.addEventListener("dragleave", () => n.classList.remove("on"));
-      n.addEventListener("drop", e => { e.preventDefault(); n.classList.remove("on"); procesar(e.dataTransfer.files); });
-      const t = n.querySelector(".txt p"); if (t) t.innerHTML = "Rol del día (Plantilla u Monitor), Velocidad y Eventos (Webfleet o Samsara), Kilometraje, Puntualidad y Diésel. La app reconoce cada uno por su nombre o su contenido.";
-      const b = document.createElement("button"); b.className = "bt prim"; b.type = "button"; b.textContent = "Elegir archivos"; b.onclick = elegir; n.appendChild(b);
-    }
-    const be = $("btElegir"); if (be) be.remove(); // el botón queda dentro de la zona de subida
-    const td = $("t-dias");
-    if (td) td.innerHTML = `<div class="card"><div class="lbl">Lo que se subió desde este equipo</div><div class="subida" id="archLog"></div></div>
-      <div class="card"><div class="lbl">A dónde va cada archivo</div><div class="subida">${Object.keys(TIPOS).map(k => `<div class="sf"><span class="t" style="background:${TIPOS[k].c}">${k}</span><div class="n"><b>${esc(TIPOS[k].t)}</b><small>Pasa a: ${esc(TIPOS[k].va)}</small></div></div>`).join("")}</div>
-      <p style="color:var(--sub);font-size:12.5px;margin:10px 2px 0">La fecha sale del nombre del archivo (dd-mm-aaaa). Los resultados de cada reporte se guardan como siempre; los archivos de Velocidad, Eventos y Kilometraje se quedan en este equipo.</p></div>`;
-    pintarLog();
+  function hojaDelDia() {
+    try { if (A.repCargarNube && !A._repNubeReportes) { A._repNubeReportes = true; A.repCargarNube().then(() => { if (!$("t-reportes").hidden) pintarDia(); }); } } catch (e) {}
+    try { return A.renderReportesInd(true) || ""; } catch (e) { return `<div class="real-card"><h3>No se pudo armar la hoja</h3><p>${esc(e.message)}</p></div>`; }
   }
+  function conectar(cont) {
+    cont.querySelectorAll("[onclick]").forEach(el => { el.dataset.acc = el.getAttribute("onclick"); el.removeAttribute("onclick"); });
+    cont.onclick = e => {
+      const el = e.target.closest("[data-acc]"); if (!el) return;
+      const c = el.dataset.acc, m = c.match(/stuRepDia='([\d-]+)'/);
+      if (m) { try { A.eval("stuRepDia = '" + m[1] + "'"); } catch (er) {} pintarDia(); pintarSeccion("pun"); pintarSeccion("diesel"); return; }
+      const ir = t => { const b = document.querySelector(`#tabs button[data-t="${t}"]`); if (b) b.click(); };
+      if (/kilometraje/.test(c)) return ir("km");
+      if (/velocidad|excesos/.test(c)) return ir("exc");
+      if (/dieElegirArchivo/.test(c)) return ir("dias");
+      if (/punAbrir/.test(c)) { const d = (c.match(/'([\d-]+)'/) || [])[1]; return irApp(a => a.punAbrir(d)); }
+      if (/repCompartir/.test(c)) { try { A.repCompartir(); } catch (er) {} return; }
+      try { new Function(c).call(el); } catch (er) {}
+    };
+  }
+  function pintarDia() {
+    const t = $("t-reportes"); if (!t) return;
+    copiarEstilos();
+    t.innerHTML = `<div class="rp-real">${hojaDelDia()}</div>`;
+    conectar(t);
+  }
+  // Puntualidad y Diésel: su parte de la hoja real, con botón a su pantalla completa
+  function pintarSeccion(k) {
+    const id = k === "pun" ? "r-pun" : "t-diesel", c = $(id); if (!c) return;
+    copiarEstilos();
+    const tmp = document.createElement("div"); tmp.innerHTML = hojaDelDia();
+    const quiere = k === "pun" ? /^Puntualidad/ : /di[eé]sel/i;
+    const sec = [...tmp.querySelectorAll("section")].find(s => quiere.test((s.querySelector(".rp-cab b") || {}).textContent || ""));
+    const chips = tmp.querySelector(".rp-dias");
+    const boton = k === "pun" ? `<div class="real-card" style="margin:10px auto"><button type="button" data-acc="punAbrir()">Abrir Puntualidad completa (motivos y comentarios)</button></div>` : "";
+    c.innerHTML = `<div class="rp-real">${chips ? chips.outerHTML : ""}${sec ? sec.outerHTML : `<div class="real-card"><h3>${k === "pun" ? "Sin Puntualidad" : "Sin consumos de diésel"} en este día</h3><p>Súbelo en la pestaña Archivos y aquí aparece su reporte.</p></div>`}${boton}</div>`;
+    conectar(c);
+  }
+  try { REP_PINTA.reportes = pintarDia; REP_PINTA.pun = () => pintarSeccion("pun"); } catch (e) {}
+  try { pintarDieselReal = () => pintarSeccion("diesel"); } catch (e) {}
+
+  // ----- Pantalla -----
   let inp = null;
   function elegir() {
     if (!puede("subirReportes")) { aviso("Por ahora solo Desarrollo sube archivos."); return; }
     if (!inp) { inp = document.createElement("input"); inp.type = "file"; inp.multiple = true; inp.accept = ".xlsx,.xls,.csv"; inp.style.cssText = "position:fixed;left:-9999px"; document.body.appendChild(inp); inp.addEventListener("change", () => { procesar(inp.files); setTimeout(() => { inp.value = ""; }, 0); }); }
     inp.click();
+  }
+  function montar() {
+    // Fuera todo lo de ejemplo
+    document.querySelectorAll(".ej").forEach(x => x.remove());
+    ["periodo", "apart", "rol"].forEach(t => { const b = document.querySelector(`#tabs button[data-t="${t}"]`); if (b) b.remove(); const s = $("t-" + t); if (s) s.innerHTML = ""; });
+    const nota = document.querySelector(".nota"); if (nota) nota.innerHTML = "<b>Reportes 5.1.2.</b> Sube los archivos del día en <b>Archivos</b>: cada reporte se genera solo y el resumen sale en <b>Reportes del día</b>. Todo con tus datos reales.";
+    const hp = document.querySelector("header.app p"); if (hp) hp.textContent = "Sube los archivos del día aquí, una sola vez: cada reporte se genera solo.";
+    const sim = $("btSim"); if (sim) sim.remove();
+    const be = $("btElegir"); if (be) be.remove();
+    const dz = $("drop"); if (dz) { const n = dz.cloneNode(true); dz.replaceWith(n);
+      n.addEventListener("dragover", e => { e.preventDefault(); n.classList.add("on"); });
+      n.addEventListener("dragleave", () => n.classList.remove("on"));
+      n.addEventListener("drop", e => { e.preventDefault(); n.classList.remove("on"); procesar(e.dataTransfer.files); });
+      const t = n.querySelector(".txt p"); if (t) t.innerHTML = "Rol del día (Plantilla o Monitor), Velocidad y Eventos (Webfleet o Samsara), Kilometraje, Puntualidad y Diésel. La app reconoce cada uno por su nombre o su contenido y genera su reporte.";
+      const b = document.createElement("button"); b.className = "bt prim"; b.type = "button"; b.textContent = "Elegir archivos"; b.onclick = elegir; n.appendChild(b);
+    }
+    const td = $("t-dias");
+    if (td) td.innerHTML = `<div class="card"><div class="lbl">Archivos subidos por día</div><div class="mtz-caja" id="archTabla"><p style="color:var(--sub);margin:8px 2px">Cargando…</p></div></div>`;
+    const ld = document.querySelector(".lado"); if (ld) ld.remove();
+    leerNube();
   }
   window.repProcesarArchivos = procesar;
   montar();

@@ -9637,7 +9637,7 @@ function stuResumenTallerHtml() {
 }
 
 // ----- Versión visible (para comprobar que el teléfono ya tiene el archivo nuevo) -----
-const STU_VERSION = "5.1.1 · Archivos del día en Reportes · Flota solo del rol del día · Reportes en un solo apartado · Flota con Headcount y Entrega de turno · Colores de ruta · Activas tipo Excel en computadora · Avisos solo del día";
+const STU_VERSION = "5.1.2 · Reportes con datos reales · Archivos del día en Reportes · Flota solo del rol del día · Reportes en un solo apartado · Flota con Headcount y Entrega de turno · Colores de ruta · Activas tipo Excel en computadora · Avisos solo del día";
 
 // ----- Actualizar SOLO taller y unidades faltantes (sin tocar operadores ni los cambios del día) -----
 async function stuActualizarSoloTaller(input) {
@@ -10062,7 +10062,7 @@ function renderFlota() {
     if (flotaTab === "turno") {
         const l = document.getElementById("list");
         if (l.querySelector("#flTurno")) return;
-        l.innerHTML = `<div class="flota-pagina">${flotaTabsHtml()}<div class="fl-turno-nota">${stuPuede("turno") ? "Cambios y seguimiento del turno de hoy. El personal está en <b>Headcount</b>. Al empezar un día nuevo de rol te pregunta si copias lo del día pasado." : "Solo lectura: la Entrega de turno la llena Supervisión."}</div><iframe id="flTurno" class="fl-turno" title="Entrega de turno" allow="clipboard-write" src="modulos/entrega-turno.html?v=5.1.1&en=flota"></iframe></div>`;
+        l.innerHTML = `<div class="flota-pagina">${flotaTabsHtml()}<div class="fl-turno-nota">${stuPuede("turno") ? "Cambios y seguimiento del turno de hoy. El personal está en <b>Headcount</b>. Al empezar un día nuevo de rol te pregunta si copias lo del día pasado." : "Solo lectura: la Entrega de turno la llena Supervisión."}</div><iframe id="flTurno" class="fl-turno" title="Entrega de turno" allow="clipboard-write" src="modulos/entrega-turno.html?v=5.1.2&en=flota"></iframe></div>`;
         try { stuTurnosSinVer().forEach(t => stuTurnoEnterado(t.id)); } catch (e) {}
         flTurnoAjustar(); setTimeout(flTurnoAjustar, 300);
         return;
@@ -18509,7 +18509,7 @@ function stuAbrirModulo(clave) {
     caja.className = "modulo-caja";
     caja.innerHTML = `<div class="modulo-barra"><button type="button" class="modulo-volver" onclick="stuCerrarModulo()">← Regresar</button><b>${escHtml(m.titulo)}</b><span class="modulo-quien">${escHtml(stuQuienSoy())}</span></div>
       <div class="modulo-cargando" id="moduloCargando">Abriendo ${escHtml(m.titulo)}…</div>
-      <iframe class="modulo-frame" title="${escHtml(m.titulo)}" allow="clipboard-write" src="${m.archivo}?v=5.1.1"></iframe>`;
+      <iframe class="modulo-frame" title="${escHtml(m.titulo)}" allow="clipboard-write" src="${m.archivo}?v=5.1.2"></iframe>`;
     document.body.appendChild(caja);
     document.body.classList.add("con-modulo");
     // 4.8: en computadora la barra lateral se queda visible
@@ -21158,6 +21158,33 @@ async function punLeerArchivo(archivo) {
     } catch (e) {
         decir("No se pudo leer el archivo: " + escHtml(e && e.message || e), "mal");
     }
+}
+
+// 5.1.1 · Puntualidad desde Reportes › Archivos: se lee y se guarda sin abrir su pantalla
+async function punProcesarSilencio(archivo, aviso) {
+    const paso = async t => { try { if (aviso) aviso(t); } catch (e) {} await new Promise(r => setTimeout(r, 30)); };
+    if (archivo.size > 15 * 1024 * 1024) throw new Error("pesa más de 15 MB");
+    await paso("abriendo el archivo");
+    const bytes = await punBytes(archivo);
+    let hojas = null;
+    // 5.1.2: primero el lector propio (el mismo de la pantalla de Puntualidad); si falla, el lector de Excel
+    if (typeof DecompressionStream !== "undefined" && bytes[0] === 0x50 && bytes[1] === 0x4b) {
+        await paso("leyendo el Excel");
+        try { hojas = await Promise.race([punLeerXlsxPropio(bytes), new Promise((_, mal) => setTimeout(() => mal(new Error("lento")), 25000))]); } catch (e) { hojas = null; }
+    }
+    if (!hojas) { await paso("leyendo el Excel (otro lector)"); const X = await punLectorInternet(); const wb = X.read(bytes, { type: "array" }); hojas = wb.SheetNames.map(n => X.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: null })); }
+    await paso("leyendo las corridas");
+    let r = null;
+    for (const hoja of hojas) { r = punLeerFilas(hoja); if (r) break; }
+    if (!r) throw new Error("no parece el Indicador de puntualidad del servicio (Fecha inicial, FH. Primera parada, Tipo de indicador, Puntualidad)");
+    if (!r.filas.length) throw new Error("no trae corridas de IDA ni VUELTA punto inicial");
+    await paso("guardando " + r.filas.length + " corridas");
+    const previo = punNube() ? await Promise.race([firebase.database().ref(PUN_RAIZ + "/" + r.fecha + "/puntualidad").once("value").then(s => s.val()), new Promise(ok => setTimeout(() => ok(null), 8000))]).catch(() => null) : null;
+    await Promise.race([punGuardarDia(r.fecha, r.filas, archivo.name, previo, r.lleg), new Promise(ok => setTimeout(ok, 15000))]);
+    stuRepDia = r.fecha;
+    try { punCargarDia(r.fecha); } catch (e) {}
+    const tarde = r.filas.filter(f => f[PI.p] === 0).length;
+    return { fecha: r.fecha, n: r.filas.length, tarde, pct: punPct(r.filas.length - tarde, r.filas.length) };
 }
 
 // ---------- Pantalla ----------
