@@ -889,7 +889,7 @@ function reindex(){
   $('#dlOps').innerHTML=opts;
   $('#dlOpsEnt').innerHTML='<option value="Pendiente" label="Aún no se sabe quién cubre"></option>'+opts;
   $('#dlRutas').innerHTML=DB.master.routes.map(r=>`<option value="${esc(r.nombre)}" label="${esc(r.codigo)}"></option>`).join('');
-  $('#dlMotivos').innerHTML=MOTIVOS.map(m=>`<option value="${esc(m)}"></option>`).join('');
+  $('#dlMotivos').innerHTML=MOTIVOS.filter(m=>!(typeof EN_FLOTA!=='undefined' && EN_FLOTA && norm(m).includes('prestamo'))).map(m=>`<option value="${esc(m)}"></option>`).join('');
   $('#dlComent').innerHTML=COMENTARIOS.map(m=>`<option value="${esc(m)}"></option>`).join('');
   $('#dlHoras').innerHTML=HORAS_TAG.map(m=>`<option value="${esc(m)}"></option>`).join('');
   const units=new Set(); DB.master.fleet.forEach(f=>{const u=str(f.Unidad); if(u) units.add(u);}); DB.master.ops.forEach(o=>{const u=opUnidad(o); if(u) units.add(u);});
@@ -946,7 +946,12 @@ function renderDayStrip(){
   const days=sortedDays();
   $('#dayStrip').innerHTML = days.map(d=>`<button class="daychip ${d.id===DB.currentDayId?'on':''}" data-day="${d.id}" title="${esc(fmtLong(d.fecha)+' · '+d.turno)}"><b>${esc(fmtShort(d.fecha))}</b> · ${esc(TURNO_CORTO[d.turno]||d.turno||'')}</button>`).join('');
 }
+// 5.1: dentro de Flota el Personal vive en Headcount; aquí quedan Cambios del día y Seguimiento (sin novedades/incidencias)
+const EN_FLOTA = /(^|[?&])en=flota/.test(location.search);
+if (EN_FLOTA) { document.documentElement.classList.add('en-flota'); TAB = 'cb'; }
+if (EN_FLOTA) document.querySelectorAll('#tabs .tab').forEach(t => t.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.trim()) { const x = n.textContent.trim().toLowerCase(); n.textContent = ' ' + x.charAt(0).toUpperCase() + x.slice(1) + ' '; } }));
 function renderTab(){
+  if (EN_FLOTA && (TAB==='hc' || TAB==='in')) TAB='cb'; // 5.1: en Flota quedan Cambios del día y Seguimiento
   $$('.tab').forEach(t=>t.classList.toggle('on', t.dataset.tab===TAB));
   $$('main > section.panel').forEach(p=>p.hidden = p.id!=='p-'+TAB);
   ({hc:renderHC, cb:renderCB, in:renderIN, bm:renderBM, rt:renderRT, sg:renderSG})[TAB]();
@@ -1099,6 +1104,7 @@ function renderCB(){
     if(UI.cbFilter==='pend' && !isPendCambio(r)) return false;
     if(UI.cbFilter==='real' && !isRealCambio(r)) return false;
     if(UI.cbFilter==='prest' && !isPrestCambio(r)) return false;
+    if(typeof EN_FLOTA!=='undefined' && EN_FLOTA && isPrestCambio(r)) return false; // 5.1: préstamos a turismo → Headcount
     if(UI.cbFilter==='sinaviso' && (isAvisado(r)||isEmptyCambio(r))) return false;
     if(q){ const t=norm([r.unidad,r.opSal,r.clave,r.motivo,r.cambioUnidad,r.opEnt,r.clave2,r.comentario,...r.rutas.map(x=>x.ruta+' '+x.hora)].join(' ')); if(!q.split(' ').every(w=>t.includes(w))) return false; }
     return true;
@@ -1113,7 +1119,7 @@ function renderCB(){
     </div>
   </div>
   <div class="fchips">
-    ${fc('todos','Todos los cambios')}${fc('pend','⏳ Pendientes','amber')}${fc('real','✅ Realizados','green')}${fc('prest','🤝 Préstamos a turismo','blue')}${fc('sinaviso','📵 Sin avisar al operador','gray')}
+    ${fc('todos','Todos los cambios')}${fc('pend','⏳ Pendientes','amber')}${fc('real','✅ Realizados','green')}${EN_FLOTA ? '' : fc('prest','🤝 Préstamos a turismo','blue')}${fc('sinaviso','📵 Sin avisar al operador','gray')}
   </div>
   <div class="howto">
     <span><b>1.</b> Escribe la <b>unidad</b>: se llenan solos el operador y su clave.</span>
@@ -2100,6 +2106,9 @@ const reRenderKeepFocus=debounce((fn,id)=>{ const el=$('#'+id); const pos=el?el.
   body.solo-lectura #menuMore [data-m="jsonIn"], body.solo-lectura #menuMore [data-m="reset"] { display:none !important; }
   #menuMore [data-m="reset"] { display:none !important; }
   /* Sin pestaña RUTAS dentro de la app */
+  html.en-flota .tab[data-tab="hc"], html.en-flota #p-hc { display:none !important; }
+  /* 5.1: dentro de Flota sobra el encabezado GER (la app ya tiene su barra) y el cambio de vista */
+  html.en-flota .brandbar, html.en-flota #btnView { display:none !important; }
   .tab[data-tab="rt"], #p-rt, .tab[data-tab="bm"], #p-bm { display:none !important; } /* Rutas y Base maestra: ya están en Flota de la app */
   /* Sin adornos de Excel: barra "A1 ƒx", letras de columna y números de fila */
   .fxbar, table.grid tr.xl-letters, table.grid .rn { display:none !important; }
@@ -2107,6 +2116,49 @@ const reRenderKeepFocus=debounce((fn,id)=>{ const el=$('#'+id); const pos=el?el.
   table.grid th { top:0 !important; }
   #tCB thead tr.grp th { top:0 !important; }
   #tCB thead tr.cols th { top:27px !important; }
+
+/* ===== 5.1 · Dentro de Flota: mismo estilo que la app (pestañas tipo pastilla, botones redondos, sin adornos GER) ===== */
+html.en-flota body{background:#F4F6FA;font-family:Inter,system-ui,sans-serif}
+html.en-flota .topbar{background:#F4F6FA;box-shadow:none;border:0}
+html.en-flota .navwrap{background:transparent;border:0;padding:12px 14px 4px}
+html.en-flota .navwrap::after{display:none}
+html.en-flota .navwrap .tabs{background:#E6EBF3;clip-path:none;height:auto;padding:4px;border-radius:12px;gap:4px}
+html.en-flota .navwrap .tab{height:auto;padding:9px 18px;border-radius:9px;color:#5B6B80;text-transform:none!important;letter-spacing:0!important;font:700 13.5px Inter,system-ui,sans-serif}
+html.en-flota .navwrap .tab:hover{background:rgba(255,255,255,.6)}
+html.en-flota .navwrap .tab, html.en-flota .navwrap .tab *{text-transform:none!important;letter-spacing:0!important}
+html.en-flota .navwrap .tab.on{background:#fff;color:#0B1A30;box-shadow:0 1px 3px rgba(11,26,48,.14)}
+html.en-flota .navwrap .tab .badge{background:#E31B23;color:#fff;border-radius:999px}
+html.en-flota .navwrap .tab.on .badge{background:#E31B23;color:#fff}
+html.en-flota .meta{background:transparent;border:0;padding:6px 14px 10px;align-items:flex-end}
+html.en-flota .meta .field{font:700 11px Inter,system-ui,sans-serif;color:#5B6B80;letter-spacing:.4px;text-transform:uppercase}
+html.en-flota .meta input, html.en-flota .meta select{border-radius:10px;border:1.5px solid #E2E8F0;height:40px;font:600 13.5px Inter,system-ui,sans-serif;background:#fff}
+html.en-flota .btn{height:40px;border-radius:10px;border:1.5px solid #E2E8F0;background:#fff;color:#0B1A30;font:700 13px Inter,system-ui,sans-serif;padding:0 14px;box-shadow:none}
+html.en-flota .btn:hover{background:#F1F5F9}
+html.en-flota .btn.primary, html.en-flota .btn.entrega{background:#1D3F94;border-color:#1D3F94;color:#fff}
+html.en-flota .btn.entrega{background:#E31B23;border-color:#E31B23}
+html.en-flota .btn.green{background:#fff;border-color:#25A35A;color:#1E7D45}
+html.en-flota .btn.sm{height:34px}
+html.en-flota .sec-h h2{background:none;color:#0B1A30;text-transform:none;font:800 17px Montserrat,Inter,sans-serif;padding:0;clip-path:none;letter-spacing:-.2px}
+html.en-flota .sec-h h2::after, html.en-flota .sec-h h2::before{display:none}
+html.en-flota .aviso-app{border-radius:12px;background:#EEF2FF;border-color:#C7D2FE;color:#1E3A8A}
+html.en-flota .daystrip, html.en-flota #btnHist, html.en-flota #btnFeed, html.en-flota #btnNew, html.en-flota .meta .field:has(#fFecha){display:none!important}
+html.en-flota .tab[data-tab="in"], html.en-flota #p-in{display:none!important}
+/* 5.1: dentro de Flota la tabla usa el alto disponible y la barra de estado no tapa nada */
+html.en-flota .panel{min-height:0}
+html.en-flota .tablewrap{max-height:calc(100vh - 320px);min-height:180px}
+html.en-flota main{padding-bottom:44px}
+html.en-flota body{overflow-x:hidden}
+@media (max-width:700px){
+  html.en-flota .meta{gap:8px}
+  html.en-flota .meta .actions{display:grid!important;grid-template-columns:1fr 1fr;gap:6px;width:100%}
+  html.en-flota .meta .actions .btn{width:100%;height:38px;font-size:12px;padding:0 8px;justify-content:center}
+  html.en-flota .meta .actions #btnEntregar{grid-column:1/-1}
+  html.en-flota .meta .actions .dropdown, html.en-flota .meta .actions .dropdown .btn{width:100%}
+  html.en-flota .aviso-app{font-size:12px}
+}
+.cp-pasado{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 14px 0;padding:10px 14px;border-radius:12px;background:#FFF7E6;border:1px solid #F6D58E;color:#7A5310;font:500 13px Inter,system-ui,sans-serif}
+.cp-pasado b{color:#0B1A30}
+.cp-pasado .btn{margin-left:auto}
 </style>
 <script>
 /* =====================================================================
@@ -2241,6 +2293,9 @@ const reRenderKeepFocus=debounce((fn,id)=>{ const el=$('#'+id); const pos=el?el.
       });
       if (nu) { touch(); renderAll(); if (!silencioso) toast(`${nu} unidad(es) actualizadas en Flota.`); }
     }
+    // 5.1: lo que se anota en la Entrega de turno (faltas, retardos, permisos…) ya NO cambia el headcount ni los estados de la app.
+    // El headcount se edita solo en Flota › Headcount (Supervisión). La entrega queda como registro del turno.
+    return;
     const filas = d.headcount.filter(r => !r.appId && !r.enApp && str(r.tipo) && (str(r.nombre) || str(r.clave)));
     if (!filas.length) { if (!silencioso) toast('No hay registros nuevos para pasar a la app.'); return; }
     let ok = 0; const fallas = [];
@@ -2283,13 +2338,14 @@ const reRenderKeepFocus=debounce((fn,id)=>{ const el=$('#'+id); const pos=el?el.
       const bT = document.createElement('button'); bT.className = 'btn traer'; bT.id = 'btnTraer'; bT.textContent = '📥 Traer de la app'; bT.onclick = () => traerDeLaApp(false);
       const bE = document.createElement('button'); bE.className = 'btn entrega'; bE.id = 'btnEntregar'; bE.textContent = '✅ Entregar turno y avisar'; bE.onclick = entregar;
       const bP = document.createElement('button'); bP.className = 'btn traer'; bP.id = 'btnPasar'; bP.textContent = '📤 Pasar a la app'; bP.title = 'Manda faltas, retardos y permisos al headcount de la app'; bP.onclick = () => pasarALaApp(false);
-      acc.insertBefore(bE, acc.firstChild); acc.insertBefore(bT, bE); acc.insertBefore(bP, bE);
+      acc.insertBefore(bE, acc.firstChild); acc.insertBefore(bT, bE); // 5.1: sin «Pasar a la app»
       if (!str(D().responsable)) D().responsable = P.quien();
-      aviso(`<b>${esc(P.quien())}</b> · Toca <b>📥 Traer de la app</b> para llenar personal, cambios e incidencias del día. Al terminar, <b>✅ Entregar turno y avisar</b>.`);
+      aviso(`<b>${esc(P.quien())}</b> · Toca <b>📥 Traer de la app</b> para llenar ${typeof EN_FLOTA !== 'undefined' && EN_FLOTA ? 'los cambios' : 'personal, cambios e incidencias'} del día. Al terminar, <b>✅ Entregar turno y avisar</b>.`);
     } else {
-      aviso(`<b>Solo lectura.</b> La entrega de turno y el headcount solo los cambian Supervisión y Jefatura. Aquí ves las últimas entregas${n ? '' : ' (todavía no hay entregas en la nube)'}.`);
+      aviso(`<b>Solo lectura.</b> La entrega de turno solo la llena Supervisión. Aquí ves las últimas entregas${n ? '' : ' (todavía no hay entregas en la nube)'}.`);
       const nota = document.getElementById('notaGuardado'); if (nota) nota.textContent = 'Estas son las entregas guardadas en la nube.';
     }
+    if (EN_FLOTA) enFlotaDia(editar);
     syncTipos(); reindex(); renderAll();
     if (editar) scheduleSave();
     // 4.8: al abrir y mientras esté abierta, la entrega se mantiene al día con la app
@@ -2301,6 +2357,41 @@ const reRenderKeepFocus=debounce((fn,id)=>{ const el=$('#'+id); const pos=el?el.
     }
   });
 })();
+
+/* 5.1 · Dentro de Flota: la entrega es la del día que tiene abierto la app. No se ven los días;
+   al crearse un día nuevo de rol se puede copiar lo del día pasado (cambios pendientes y préstamos). */
+function enFlotaDia(editar){
+  const P = window.STU_APP;
+  if (!EN_FLOTA || !P) return;
+  let iso = '';
+  try { iso = P.diaIso ? P.diaIso() : ''; } catch(e){}
+  if (!iso) { const t=new Date(); iso=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0'); }
+  const dias = Object.values(DB.days);
+  const cur = D() || {};
+  const ex = dias.filter(d=>d.fecha===iso).sort((a,b)=>(b.updated||0)-(a.updated||0))[0];
+  if (ex) { DB.currentDayId = ex.id; return; }
+  if (!editar) return;
+  const prev = dias.filter(d=>d.fecha<iso).sort((a,b)=>a.fecha<b.fecha?1:a.fecha>b.fecha?-1:(b.updated||0)-(a.updated||0))[0];
+  const d = newDay(iso, cur.turno || (TURNOS && TURNOS[0]) || '', P.quien());
+  DB.days[d.id] = d; DB.currentDayId = d.id; scheduleSave();
+  if (prev) setTimeout(()=>avisoCopiar(prev.id), 300);
+}
+function avisoCopiar(prevId){
+  const prev = DB.days[prevId]; if (!prev) return;
+  const pend = prev.cambios.filter(r=>isPendCambio(r)&&!isPrestCambio(r)); // 5.1: los préstamos a turismo ya viven en Headcount
+  let box = document.getElementById('cpPasado');
+  if (!box) { box = document.createElement('div'); box.id='cpPasado'; box.className='cp-pasado'; const m=document.querySelector('main'); m.parentNode.insertBefore(box, m); }
+  box.innerHTML = `<span>📅 <b>Día nuevo de rol.</b> ¿Copio lo del día pasado (${esc(fmtShort(prev.fecha))} · ${esc(prev.turno)})? Son ${pend.length} cambio(s) pendientes, más el seguimiento abierto.</span>
+    <button class="btn primary sm" id="cpSi">📋 Copiar lo del día pasado</button><button class="btn sm" id="cpNo">Empezar en limpio</button>`;
+  box.querySelector('#cpNo').onclick = ()=>box.remove();
+  box.querySelector('#cpSi').onclick = ()=>{
+    const d = D();
+    d.cambios = d.cambios.concat(pend.map(r=>({...clone(r),id:uid()})));
+    d.incidencias = d.incidencias.concat(prev.incidencias.filter(r=>isOpenInc(r)||r.carry).map(r=>({...clone(r),id:uid(),carry:false})));
+    touch(); renderAll(); box.remove();
+    toast(`✅ Copiado del ${fmtShort(prev.fecha)}: ${pend.length} cambio(s) y el seguimiento abierto.`);
+  };
+}
 </script>
 </body>
 </html>

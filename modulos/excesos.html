@@ -1487,5 +1487,26 @@ RAW = loadRaw(); rebuild();
   })();
 })();
 </script>
+<style>
+/* 5.1 · Modo integrado (dentro de Archivos › Reportes): los archivos ya se subieron una sola vez en la app */
+body.integrado > header, body.integrado #bLoad, body.integrado #bCsv, body.integrado #mLoad, body.integrado .chiprow,
+body.integrado .ctrl .fld:has(#fDate) { display: none !important; }
+body.integrado nav#tabs { position: static; top: auto; }
+body.integrado.solo-cond nav#tabs, body.integrado.solo-cond .ctrl .fld:has(#fSev) { display: none !important; }
+body.integrado.solo-vel nav#tabs button[data-v="conduccion"] { display: none !important; }
+</style>
+<script>
+// 5.1 · Modo integrado: Excesos (velocidad) o Eventos (manejo brusco) dentro de Reportes, sin volver a subir archivos
+(function () {
+  const q = new URLSearchParams(location.search);
+  if (!q.has('integrado')) return;
+  document.body.classList.add('integrado');
+  const vista = q.get('vista') === 'conduccion' ? 'conduccion' : 'resumen';
+  document.body.classList.add(vista === 'conduccion' ? 'solo-cond' : 'solo-vel');
+  window.excVista = () => { try { go(vista); } catch (e) {} };
+  window.excExportar = () => { try { document.getElementById('bCsv').click(); } catch (e) {} };
+  window.excVista();
+})();
+</script>
 </body>
 </html>

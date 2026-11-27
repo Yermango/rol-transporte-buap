@@ -1,0 +1,1314 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reportes STU</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@700;800&display=swap">
+</head>
+<body>
+<style>
+:root{--bg:#F4F6FA;--card:#fff;--ink:#0B1A30;--sub:#5B6B80;--ter:#94A3B8;--linea:#E3E8EF;--marca:#1D3F94;--azul:#0052CC;--rojo:#E31B23;--verde:#1F8A4C;--verde-s:#E3F4EA;--ambar:#C98A1B;--ambar-s:#FBF1DA;--rojo-s:#FDE7E8;--azul-s:#E8EEFA;--mor:#6B4FBB;color-scheme:light}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 14px/1.45 Inter,system-ui,sans-serif;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px}
+.wrap{max-width:none;margin:0 auto}
+.nota{background:#0B1A30;color:#C9D4E5;border-radius:12px;padding:10px 14px;font-size:12.5px;margin-bottom:14px}
+.nota b{color:#fff}
+header.app{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+header.app h1{font:800 26px Montserrat,Inter,sans-serif;margin:0;letter-spacing:-.5px}
+header.app p{margin:0;color:var(--sub);font-size:13px}
+header.app .sp{flex:1}
+.bt{border:1px solid var(--linea);background:#fff;color:var(--ink);border-radius:10px;padding:8px 14px;font:600 13px Inter,sans-serif;cursor:pointer;min-height:38px}
+.bt:hover{background:var(--azul-s);color:var(--marca)}
+.bt.prim{background:var(--marca);border-color:var(--marca);color:#fff}
+.bt.prim:hover{background:#17327A;color:#fff}
+.grid{display:block}
+.card{background:var(--card);border:1px solid var(--linea);border-radius:16px;padding:14px 16px;min-width:0}
+.lbl{font-size:10.5px;font-weight:700;letter-spacing:1.6px;color:var(--sub);text-transform:uppercase;margin-bottom:8px}
+/* zona para soltar */
+.drop{border:2px dashed #B6C4DC;background:#FAFBFE;border-radius:16px;padding:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;transition:.15s}
+.drop.on{border-color:var(--marca);background:var(--azul-s)}
+.drop .ico{width:52px;height:52px;border-radius:14px;background:var(--marca);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.drop b{font-size:15px}
+.drop p{margin:2px 0 0;color:var(--sub);font-size:12.5px}
+.drop .txt{flex:1;min-width:200px}
+.subida{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.sf{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--linea);border-radius:12px;padding:8px 10px}
+.sf .t{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font:800 11px Inter;color:#fff}
+.sf .n{min-width:0}
+.sf .n b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sf .n small{color:var(--sub);font-size:12px}
+.sf .e{font-size:12px;font-weight:700;white-space:nowrap}
+.e.ok{color:var(--verde)} .e.pend{color:var(--ambar)} .e.leyendo{color:var(--sub)}
+.sf select{max-width:100%;border:1px solid var(--ambar);background:var(--ambar-s);border-radius:8px;padding:4px 6px;font:600 12px Inter;color:#7A5310}
+/* matriz por día */
+.tabs{display:flex;gap:6px;margin:16px 0 10px;flex-wrap:wrap}
+.tabs button{border:0;background:#E9EDF3;color:var(--sub);border-radius:10px;padding:8px 14px;font:700 13px Inter;cursor:pointer}
+.tabs button.on{background:var(--ink);color:#fff}
+.mtz-caja{overflow-x:auto;border:1px solid var(--linea);border-radius:14px;background:#fff}
+table.mtz{border-collapse:separate;border-spacing:0;width:100%;min-width:780px;font-size:13px}
+.mtz th{position:sticky;top:0;background:#F3F5F9;color:var(--sub);font-size:11px;font-weight:700;text-align:center;padding:8px 3px;border-bottom:1px solid var(--linea);white-space:nowrap}
+.mtz th small{display:block;font-weight:600;color:var(--ter);font-size:10px}
+.mtz th:first-child,.mtz td:first-child{text-align:left;position:sticky;left:0;background:#fff;z-index:1;border-right:1px solid var(--linea)}
+.mtz th:first-child{background:#F3F5F9;z-index:2}
+.mtz td{padding:7px 3px;border-bottom:1px solid #EEF1F5;text-align:center;white-space:nowrap}
+.mtz tr:hover td{background:#F8FAFD}
+.mtz tr.sel td{background:var(--azul-s)}
+.mtz td.dia{font-weight:700;cursor:pointer;padding-left:12px}
+.mtz td.dia small{display:block;color:var(--ter);font-weight:600;font-size:11px}
+.c{display:inline-flex;width:24px;height:24px;border-radius:7px;align-items:center;justify-content:center;font-size:13px;font-weight:800}
+.c.si{background:var(--verde-s);color:var(--verde)}
+.c.no{background:#F1F4F8;color:#C3CCD8}
+.c.v2{background:var(--azul-s);color:var(--marca)}
+.est{font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 9px}
+.est.comp{background:var(--verde-s);color:var(--verde)} .est.falta{background:var(--ambar-s);color:#7A5310}
+/* lado derecho */
+.uso b{font:800 22px Montserrat,Inter;display:block}
+.uso .barra{height:10px;border-radius:6px;background:#EEF1F6;overflow:hidden;margin:8px 0 6px}
+.uso .barra i{display:block;height:100%;width:22%;background:linear-gradient(90deg,var(--marca),var(--azul))}
+.uso small{color:var(--sub);font-size:12px}
+.lado{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:12px;margin-bottom:12px}
+.lado .ult #ult{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));column-gap:18px}
+@media (max-width:700px){.lado{grid-template-columns:minmax(0,1fr)}}
+.det h3{margin:0 0 2px;font:800 17px Montserrat,Inter}
+.det p.s{margin:0 0 10px;color:var(--sub);font-size:12.5px}
+.fa{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:9px;align-items:center;padding:8px 0;border-bottom:1px solid #F1F4F8}
+.fa:last-child{border-bottom:0}
+.fa .t{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font:800 10px Inter;color:#fff}
+.fa b{display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fa small{color:var(--sub);font-size:11.5px}
+.fa button{border:1px solid var(--linea);background:#fff;border-radius:8px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.fa button:hover{background:var(--azul-s)}
+.alim{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
+.alim span{font-size:10.5px;font-weight:700;background:#F1F4F8;color:var(--sub);border-radius:6px;padding:2px 6px}
+.faltan{background:var(--ambar-s);color:#7A5310;border-radius:10px;padding:8px 10px;font-size:12.5px;margin-top:10px}
+/* periodo */
+.per{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.per label{font-size:12px;font-weight:600;color:var(--sub);display:flex;flex-direction:column;gap:4px}
+.per input,.per select{border:1px solid var(--linea);border-radius:9px;padding:8px 10px;font:500 13px Inter;color:var(--ink);background:#fff;min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chips button{border:1.5px solid var(--linea);background:#fff;border-radius:999px;padding:5px 11px;font:600 12.5px Inter;color:var(--sub);cursor:pointer}
+.chips button.on{border-color:var(--marca);background:var(--azul-s);color:var(--marca)}
+.res{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.k{background:#F8FAFD;border:1px solid var(--linea);border-radius:12px;padding:10px 12px}
+.k small{display:block;font-size:11px;color:var(--sub);font-weight:600}
+.k b{display:block;font:800 22px Montserrat,Inter}
+.k span{font-size:11.5px;color:var(--sub)}
+.salidas{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+/* apartados */
+.ap{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.ap .card{padding:12px 14px}
+.ap b{display:block;font-size:14px}
+.ap small{color:var(--sub);font-size:12px}
+.ap .ya{display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:11.5px;font-weight:700;color:var(--verde);background:var(--verde-s);border-radius:999px;padding:3px 9px}
+.pasos{counter-reset:p;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.pasos div{counter-increment:p;background:#fff;border:1px solid var(--linea);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--sub)}
+.pasos div::before{content:counter(p);display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--marca);color:#fff;font:800 11px Inter;align-items:center;justify-content:center;margin-bottom:6px}
+.pasos b{display:block;color:var(--ink);font-size:13px}
+h2.sec{font:800 16px Montserrat,Inter;margin:22px 0 10px}
+.dd{margin-top:12px;background:#fff;border:1px solid var(--linea);border-radius:16px;padding:14px 16px}
+.dd-cab{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.dd-cab h3{margin:0;font:800 18px Montserrat,Inter}
+.dd-cab small{display:block;color:var(--sub);font-size:12.5px}
+.dd-cab .sp{flex:1}
+.anillo{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:800 12px Inter;color:var(--ink);background:conic-gradient(var(--c) calc(var(--p)*1%),#EEF1F6 0)}
+.anillo span{width:36px;height:36px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center}
+.grupos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.gr{border:1px solid var(--linea);border-radius:12px;overflow:hidden;min-width:0}
+.gr-t{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#F7F9FC;border-bottom:1px solid var(--linea);font-weight:700;font-size:13px}
+.gr-t i{width:10px;height:10px;border-radius:3px;background:var(--c)}
+.gr-t em{margin-left:auto;font-style:normal;font-size:11px;color:var(--ter);font-weight:600}
+.ar{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #F1F4F8}
+.ar:last-child{border-bottom:0}
+.ar div{flex:1;min-width:0}
+.ar b{display:block;font-size:12.5px}
+.ar small{display:block;color:var(--sub);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ar .v{font-size:10px;font-weight:800;color:var(--marca);background:var(--azul-s);border-radius:5px;padding:1px 5px;margin-left:4px}
+.ar button{border:1px solid var(--linea);background:#fff;border-radius:8px;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ar button:hover{background:var(--azul-s)}
+.ar.falta{background:repeating-linear-gradient(135deg,#FBFCFE 0 8px,#F5F7FB 8px 16px)}
+.ar.falta b{color:var(--ter)}
+.ar.falta button{width:auto;padding:0 9px;font:700 11.5px Inter;color:var(--marca)}
+.ult .it{display:flex;gap:9px;align-items:center;padding:7px 0;border-bottom:1px solid #F1F4F8;font-size:12.5px}
+.ult .it:last-child{border-bottom:0}
+.ult .it i{width:8px;height:8px;border-radius:50%;background:var(--c);flex-shrink:0}
+.ult .it span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ult .it small{color:var(--ter);font-size:11.5px}
+.rk{margin-top:14px;border-top:1px solid var(--linea);padding-top:14px}
+.rk-bts{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.rk-bts>button{border:1.5px solid var(--linea);background:#fff;border-radius:10px;padding:6px 12px;font:700 12.5px Inter;color:var(--sub);cursor:pointer}
+.rk-bts>button.on{border-color:var(--ink);background:var(--ink);color:#fff}
+.rk-bts .sp{flex:1}
+.rk-bts .seg{display:flex;background:#EEF1F6;border-radius:9px;padding:2px}
+.rk-bts .seg button{border:0;background:none;padding:5px 10px;border-radius:7px;font:700 12.5px Inter;color:var(--sub);cursor:pointer}
+.rk-bts .seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.xls-caja{overflow-x:auto;border:1px solid #D5DCE6;border-radius:10px}
+table.xls{border-collapse:separate;border-spacing:0;width:100%;min-width:720px;font-size:13px;font-variant-numeric:tabular-nums}
+.xls th{background:#F3F5F9;color:#4A5873;font-size:12px;font-weight:600;text-align:right;padding:0;border-bottom:1px solid #D5DCE6;border-right:1px solid #E4E9F0;white-space:nowrap}
+.xls th button{all:unset;box-sizing:border-box;display:flex;justify-content:flex-end;align-items:center;gap:5px;width:100%;height:32px;padding:0 10px;cursor:pointer}
+.xls th:nth-child(-n+3) button{justify-content:flex-start}
+.xls th.ord{background:#E8EDF6;color:var(--ink);box-shadow:inset 0 -2px 0 var(--marca)}
+.xls td{height:34px;padding:0 10px;border-bottom:1px solid #EDF0F4;border-right:1px solid #F1F3F7;text-align:right;white-space:nowrap}
+.xls td:nth-child(-n+3){text-align:left}
+.xls tr:hover td{background:#F7F9FD}
+.xls td.pos{color:var(--ter);font-weight:700;width:40px}
+.xls td.col{background:#FAFBFE;font-weight:800}
+.xls .mini{display:inline-block;height:6px;border-radius:4px;vertical-align:middle;margin-left:8px;background:var(--c)}
+.xls small{color:var(--ter);font-size:11px;margin-left:4px}
+.rojo{color:var(--rojo)}
+td.edc{cursor:cell;outline:none;position:relative}
+td.edc:hover{box-shadow:inset 0 0 0 1px #B6C4DC}
+td.edc:focus{box-shadow:inset 0 0 0 2px #1F8A4C;background:#fff!important;cursor:text}
+td.ed{background:#FFFBEA!important}
+td.ed::after{content:"";position:absolute;top:0;right:0;border-style:solid;border-width:0 7px 7px 0;border-color:transparent #1F8A4C transparent transparent}
+.edbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--sub);background:#F7F9FC;border:1px solid var(--linea);border-bottom:0;border-radius:10px 10px 0 0;padding:6px 10px}
+.edbar+.xls-caja{border-top-left-radius:0;border-top-right-radius:0}
+.edbar b{color:var(--ink)}
+.edbar em{font-style:normal;font-weight:700;color:#1F8A4C;background:#E3F4EA;border-radius:999px;padding:2px 8px}
+.edbar button{margin-left:auto;border:1px solid var(--linea);background:#fff;border-radius:7px;padding:3px 9px;font:600 11.5px Inter;cursor:pointer;color:var(--sub)}
+.nav{display:flex;gap:10px;margin:16px 0 12px;flex-wrap:wrap}
+.ng{background:#fff;border:1px solid var(--linea);border-radius:14px;padding:6px 8px 8px;min-width:0;flex:1 1 100%}
+.ng .nb{flex-wrap:wrap}
+.ng.rep{flex:1}
+.ngt{display:block;font-size:9.5px;font-weight:800;letter-spacing:1.6px;color:var(--ter);text-transform:uppercase;margin:2px 4px 6px}
+.nb{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.nb button{flex-shrink:0;display:flex;align-items:center;gap:7px;border:0;background:none;color:var(--sub);border-radius:10px;padding:7px 11px;font:700 12.5px Inter;cursor:pointer;position:relative;white-space:nowrap}
+.nb button svg{width:16px;height:16px}
+.nb button:hover{background:#F3F5F9;color:var(--ink)}
+.nb button.on{background:var(--ink);color:#fff}
+.ng.rep .nb button i{font-style:normal;width:22px;height:22px;border-radius:7px;background:var(--c);color:#fff;font:800 8.5px Inter;display:flex;align-items:center;justify-content:center}
+.ng.rep .nb button.on{background:color-mix(in srgb,var(--c) 10%,#fff);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--c)}
+.ng.rep .nb button.on::after{content:"";position:absolute;left:12px;right:12px;bottom:-8px;height:3px;border-radius:3px;background:var(--c)}
+@media (max-width:700px){.ng,.ng.rep{flex:1 1 100%}}
+.rp-h{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:0 0 12px;margin-bottom:12px;border-bottom:3px solid var(--c)}
+.rp-ic{display:flex;gap:4px}
+.rp-tt{min-width:0}
+.rp-fe{display:flex;align-items:center;gap:4px;background:#F3F5F9;border-radius:10px;padding:3px}
+.rp-fe span{display:inline-flex;align-items:center;gap:6px;font:700 12.5px Inter;padding:5px 10px;white-space:nowrap;cursor:pointer;border-radius:7px}
+.rp-fe span:hover{background:#fff}
+.rp-fe span em{font-style:normal;color:var(--ter);font-size:10px}
+.rp-fe span::first-letter{text-transform:uppercase}
+.sel-aviso{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:#1D3F94;background:var(--azul-s);border-radius:10px;padding:7px 12px;margin:-4px 0 12px}
+.sel-aviso button{border:0;background:#fff;border-radius:7px;padding:3px 9px;font:700 11.5px Inter;color:var(--marca);cursor:pointer}
+.sel-aviso span{color:var(--sub);margin-left:auto;font-size:11px}
+.selpop{display:none;position:absolute;z-index:50;width:320px;background:#fff;border:1px solid var(--linea);border-radius:16px;box-shadow:0 18px 50px rgba(11,26,48,.22);padding:12px}
+.sp-seg{display:grid;grid-template-columns:repeat(4,1fr);background:#EEF1F6;border-radius:10px;padding:3px;gap:2px}
+.sp-seg button{border:0;background:none;border-radius:8px;padding:6px 2px;font:700 11.5px Inter;color:var(--sub);cursor:pointer}
+.sp-seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.sp-at{display:flex;gap:5px;flex-wrap:wrap;margin:10px 0}
+.sp-at button{border:1px solid var(--linea);background:#fff;border-radius:999px;padding:3px 10px;font:600 11.5px Inter;color:var(--sub);cursor:pointer}
+.sp-at button:hover{border-color:var(--marca);color:var(--marca)}
+.sp-mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.sp-mh b{font:800 14px Montserrat,Inter;text-transform:capitalize}
+.sp-mh button{border:0;background:#F3F5F9;border-radius:8px;width:28px;height:28px;cursor:pointer;font-weight:800}
+.sp-ds,.sw{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.sp-ds span{text-align:center;font-size:10.5px;font-weight:700;color:var(--ter);padding:3px 0}
+.sw{border-radius:10px;margin-bottom:2px}
+.sw.on{background:var(--azul-s)}
+.sw button{border:0;background:none;height:34px;border-radius:9px;font:600 13px Inter;color:var(--ink);cursor:pointer;position:relative}
+.sw button:hover{background:#F3F5F9}
+.sw button.fu{color:#C3CCD8}
+.sw button.dt::after{content:"";position:absolute;left:50%;bottom:4px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:#1F8A4C}
+.sw button.on{background:var(--ink);color:#fff}
+.sw button.on::after{background:#fff}
+.sw.on button{color:var(--marca);font-weight:800}
+.sp-meses{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.sp-meses button{border:1.5px solid var(--linea);background:#fff;border-radius:12px;padding:10px 4px;font:800 13px Inter;color:var(--ink);cursor:pointer;text-transform:capitalize}
+.sp-meses button small{display:block;font-weight:600;color:var(--ter);font-size:11px}
+.sp-meses button.on{border-color:var(--ink);background:var(--ink);color:#fff}
+.sp-info{font-size:11.5px;color:var(--sub);margin:8px 0 10px}.sp-info span{color:#1F8A4C;margin-left:4px}
+.sp-bt{display:flex;justify-content:flex-end;gap:6px}
+.rp-fe button{border:0;background:#fff;border-radius:7px;width:28px;height:28px;cursor:pointer;font-weight:800;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.rp-ac{display:flex;gap:6px}
+@media (max-width:800px){.rp-h{grid-template-columns:auto minmax(0,1fr)}.rp-fe,.rp-ac{grid-column:1/-1}.rp-fe{justify-self:start}}
+.rp-h i{width:32px;height:32px;border-radius:9px;color:#fff;font:800 10px Inter;font-style:normal;display:flex;align-items:center;justify-content:center}
+.rp-h h3{margin:0;font:800 18px Montserrat,Inter}.rp-h small{color:var(--sub);font-size:12px}.rp-h .sp{flex:1}
+.rp-k{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px}
+.rp-k div{background:#F8FAFD;border:1px solid var(--linea);border-radius:12px;padding:9px 12px;min-width:0}
+.rp-k small{display:block;font-size:10.5px;font-weight:700;letter-spacing:.8px;color:var(--sub);text-transform:uppercase}
+.rp-k b{display:block;font:800 22px Montserrat,Inter;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rp-k span{display:block;font-size:11px;color:var(--ter);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rp-2{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+.vertodo{margin-top:8px}
+.inf-svg{max-height:260px}
+@media (min-width:1280px){.rp-2{grid-template-columns:minmax(0,1fr) minmax(0,2fr);align-items:start}}
+.tord{min-width:520px}
+.pn-sel{width:100%;min-width:170px;border:1px solid var(--linea);border-radius:7px;padding:4px 6px;font:600 12px Inter;color:var(--ink);background:#fff;cursor:pointer}
+.pn-sel:not(.gps):not(.op){color:var(--ter);border-style:dashed}
+.pn-sel.gps{background:#F1EDFA;border-color:#C9BBEB;color:#5B3FA8}
+.pn-sel.op{background:#FDE7E8;border-color:#F3B9BC;color:#B42318}
+.pn-com{min-width:200px;max-width:320px;white-space:normal;text-align:left;font-size:12.5px;padding:4px 6px;border-radius:6px;outline:none;cursor:text;line-height:1.35}
+.pn-com:empty::before{content:attr(data-ph);color:var(--ter);font-style:italic}
+.pn-com:hover{background:#F3F6FB}.pn-com:focus{background:#fff;box-shadow:inset 0 0 0 2px #1F8A4C}
+.pn-por{display:block;text-align:left;font-size:10.5px;color:var(--ter);padding:0 6px}
+td.noed{text-align:left!important;white-space:normal}
+.xls td.txt{text-align:left;max-width:160px;overflow:hidden;text-overflow:ellipsis}
+.pn-ind{display:block;font-size:10px;color:var(--ter);font-weight:700;letter-spacing:.5px}
+#r-pun .pn-sel{min-width:150px}
+#r-pun .pn-com{min-width:180px}
+.km-src{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--sub);background:#F7F9FC;border:1px solid var(--linea);border-radius:12px;padding:8px 12px;margin-bottom:10px}
+.km-src b{color:var(--ink)}
+.kf{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--linea);border-radius:999px;padding:3px 10px 3px 4px;font-weight:600;color:var(--ink)}
+.kf i{font-style:normal;width:20px;height:20px;border-radius:6px;color:#fff;font:800 8px Inter;display:flex;align-items:center;justify-content:center}
+.kf.falta{color:var(--ter);border-style:dashed}
+.km-src em{font-style:normal;margin-left:auto;color:#1F8A4C;font-weight:600}
+.km-mod{width:100%;height:1000px;border:1px solid var(--linea);border-radius:14px;background:#fff;display:block}
+@media (max-width:900px){.rp-2{grid-template-columns:minmax(0,1fr)}}
+.inf{display:flex;flex-direction:column;gap:12px;margin-bottom:14px}
+.inf-hero{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:linear-gradient(120deg,#0B1A30 0%,#1D3F94 100%);color:#fff;border-radius:16px;padding:18px 22px;position:relative;overflow:hidden}
+.inf-hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:#E31B23}
+.inf-hero small{font-size:10.5px;letter-spacing:2px;font-weight:700;color:#9AABC2}
+.inf-hero h3{margin:4px 0 2px;font:800 24px Montserrat,Inter;letter-spacing:-.5px}
+.inf-hero span{font-size:12.5px;color:#C9D4E5}
+.inf-meta{margin-left:auto;display:flex;align-items:center;gap:10px}
+.inf-meta b{font:800 40px Montserrat,Inter;letter-spacing:-1px;white-space:nowrap}
+.inf-meta span{font-size:12px;line-height:1.3}
+.inf-meta i{font-style:normal;font-size:11px;font-weight:800;letter-spacing:1px;background:#E31B23;border-radius:999px;padding:5px 11px}
+.inf-meta i.ok{background:#1F8A4C}
+.inf-k{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.inf-k>div{background:#fff;border:1px solid var(--linea);border-top:4px solid var(--c);border-radius:14px;padding:10px 12px 6px;min-width:0}
+.inf-k small{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;letter-spacing:1px;color:var(--sub);text-transform:uppercase}
+.inf-k small i{font-style:normal;width:20px;height:20px;border-radius:6px;background:var(--c);color:#fff;font-size:8.5px;display:flex;align-items:center;justify-content:center;letter-spacing:0}
+.inf-k b{display:block;font:800 24px Montserrat,Inter;color:var(--c);margin:6px 0 2px;white-space:nowrap}
+.inf-k b u{text-decoration:none;font-size:12px;color:var(--sub)}
+.dl{font-size:11.5px;font-weight:800;margin-right:5px}.dl.b{color:var(--verde)}.dl.m{color:var(--rojo)}
+.dl-t{font-size:10.5px;color:var(--ter)}
+.sp{display:block;width:100%;height:38px;margin-top:6px}.sp.grande{height:110px}
+.inf-2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:10px}
+.inf-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.inf-c{background:#fff;border:1px solid var(--linea);border-radius:14px;padding:12px 14px;min-width:0}
+.inf-t{font-size:10.5px;font-weight:700;letter-spacing:1.4px;color:var(--sub);text-transform:uppercase;margin-bottom:8px}
+.inf-t em{font-style:normal;text-transform:none;letter-spacing:0;color:var(--ter);font-weight:600;margin-left:6px}
+.inf-svg{width:100%;height:auto;display:block}
+.inf-svg .tv{font:800 11px Inter;fill:#0B1A30}.inf-svg .tx{font:600 10.5px Inter;fill:#94A3B8}.inf-svg .tm{font:800 9.5px Inter;fill:#0B1A30;letter-spacing:1px}
+.inf-l{margin:0;padding:0;list-style:none;counter-reset:n;display:flex;flex-direction:column;gap:8px}
+.inf-l li{counter-increment:n;display:grid;grid-template-columns:24px minmax(0,1fr);gap:10px;font-size:12.5px;color:var(--sub);line-height:1.4}
+.inf-l li::before{content:counter(n);width:24px;height:24px;border-radius:50%;background:var(--c);color:#fff;font:800 11px Inter;display:flex;align-items:center;justify-content:center}
+.inf-l b{color:var(--ink)}
+.dona{display:flex;align-items:center;gap:12px}.dona svg{width:120px;height:120px;flex-shrink:0}
+.dona .dn{font:800 18px Montserrat,Inter;fill:#0B1A30}.dona .dt{font:600 10px Inter;fill:#64748B}
+.dona ul{list-style:none;margin:0;padding:0;flex:1;font-size:12.5px;color:var(--sub)}
+.dona li{display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid #F1F4F8}.dona li i{width:10px;height:10px;border-radius:3px}.dona li b{margin-left:auto;color:var(--ink)}
+.hb{display:grid;grid-template-columns:100px minmax(0,1fr) 44px;gap:8px;align-items:center;font-size:12px;color:var(--sub);margin-bottom:9px}
+.hb i{height:12px;background:#F1F4F8;border-radius:6px;overflow:hidden}.hb i b{display:block;height:100%;background:#C2410C;border-radius:6px}
+.hb em{font-style:normal;font-weight:800;color:var(--ink);text-align:right}
+.inf-n{font-size:11.5px;color:var(--ter);margin:6px 0 0}
+.inf-pie{display:flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:11px;color:var(--sub)}
+.inf-pie i{font-style:normal;width:22px;height:22px;border-radius:6px;color:#fff;font:800 8.5px Inter;display:flex;align-items:center;justify-content:center}
+.inf-pie em{margin-left:auto;font-style:normal;color:var(--ter)}
+@media (max-width:1100px){.inf-k{grid-template-columns:repeat(3,minmax(0,1fr))}.inf-3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:700px){.inf-meta b{font-size:30px}.inf-hero h3{font-size:20px}.inf-k{grid-template-columns:repeat(2,minmax(0,1fr))}.inf-k>div:last-child{grid-column:1/-1}.inf-2,.inf-3{grid-template-columns:minmax(0,1fr)}.inf-meta{margin-left:0}}
+.llave{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.llave span{background:var(--ink);color:#fff;border-radius:9px;padding:6px 12px;font:800 14px Montserrat,Inter}
+.llave i{font-style:normal;font-weight:800;color:var(--ter)}
+.llave em{font-style:normal;color:var(--sub);font-size:13px;flex:1;min-width:220px}
+.llave em b{color:var(--ink)}
+table.cruce{border-collapse:separate;border-spacing:0;width:100%;min-width:760px;font-size:12.5px}
+.cruce th{background:#F3F5F9;color:var(--sub);font-size:11px;font-weight:700;padding:8px 6px;border-bottom:1px solid var(--linea);text-align:center;white-space:normal;line-height:1.2}
+.cruce th:first-child{text-align:left;padding-left:12px}
+.cruce td{padding:7px 6px;border-bottom:1px solid #EEF1F5;text-align:center}
+.cruce td:first-child{text-align:left;white-space:nowrap;padding-left:10px}
+.cruce td small{color:var(--ter)}
+.cruce .ti{display:inline-flex;width:24px;height:24px;border-radius:7px;color:#fff;font:800 9px Inter;align-items:center;justify-content:center;margin-right:8px;vertical-align:middle}
+.pt{display:inline-block;width:12px;height:12px;border-radius:50%}
+.pt.c{border:2px solid;background:#fff}
+.cruces{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.cx{background:#fff;border:1px solid var(--linea);border-radius:14px;padding:12px 14px}
+.cx-f{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.cx-f span{width:28px;height:28px;border-radius:8px;color:#fff;font:800 9.5px Inter;display:flex;align-items:center;justify-content:center}
+.cx-f b{color:var(--ter);font-size:15px;margin:0 2px}
+.cx-f em{font-style:normal;font-weight:800;font-size:12px;background:var(--azul-s);color:var(--marca);border-radius:999px;padding:4px 10px}
+.cx h4{margin:10px 0 4px;font-size:14px}
+.cx p{margin:0;font-size:12.5px;color:var(--sub);line-height:1.45}
+.cx p b{color:var(--ink)}
+.ficha{background:#fff;border:1px solid var(--linea);border-radius:16px;padding:14px 16px}
+.fi-cab{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.fi-cab .sp{flex:1}
+.fi-u{background:var(--ink);color:#fff;border-radius:12px;padding:8px 12px;font:800 22px Montserrat,Inter}
+.fi-cab b{display:block;font-size:15px}.fi-cab small{color:var(--sub);font-size:12px}.fi-cab small u{text-decoration:none;font-style:italic}
+.fi-k{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.fi-k div{background:#F8FAFD;border:1px solid var(--linea);border-radius:12px;padding:8px 10px;min-width:0}
+.fi-k div.az{background:#E3F3F6;border-color:#9ED3DE}
+.fi-k small{display:block;font-size:10.5px;color:var(--sub);font-weight:600}
+.fi-k b{display:block;font:800 19px Montserrat,Inter;white-space:nowrap}
+.fi-k b.ok{color:var(--verde)}.fi-k b.mal{color:var(--rojo)}.fi-k div.az b{color:#0E7490}
+.fi-k span{font-size:10.5px;color:var(--ter)}
+.fi-t{font-size:10.5px;font-weight:700;letter-spacing:1.4px;color:var(--sub);text-transform:uppercase;margin-bottom:6px}
+.fi-dias{overflow-x:auto}
+@media (max-width:1100px){.cruces{grid-template-columns:repeat(2,minmax(0,1fr))}.fi-k{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:620px){.cruces{grid-template-columns:minmax(0,1fr)}.fi-k{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.rpx{display:flex;flex-direction:column;gap:12px}
+.rpx-dias{display:flex;gap:6px;overflow-x:auto}
+.rpx-dias button{flex-shrink:0;border:1.5px solid var(--linea);background:#fff;border-radius:10px;padding:5px 11px;font:700 12px Inter;color:var(--ink);display:flex;flex-direction:column;align-items:center;cursor:pointer}
+.rpx-dias button i{font-style:normal;font-size:8px;letter-spacing:1px;color:var(--azul)}
+.rpx-dias button.on{background:#0B1A30;border-color:#0B1A30;color:#fff}.rpx-dias button.on i{color:#9AABC2}
+.rpx-banda{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#0B1A30;color:#fff;border-radius:12px;padding:9px 14px;font-size:11.5px;font-weight:700;letter-spacing:1px}
+.rpx-banda span{font-weight:500;letter-spacing:0;color:#9AABC2}
+.rpx-banda button{margin-left:auto;border:0;background:#E31B23;color:#fff;border-radius:8px;padding:6px 12px;font:700 12px Inter;cursor:pointer}
+.rpx-gen{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.rg{position:relative;background:#fff;border:1.5px solid var(--linea);border-radius:16px;padding:12px 14px 14px;min-width:0}
+.rg small{display:block;font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--sub);text-transform:uppercase;padding-right:40px}
+.rg b{display:block;font:800 30px Montserrat,Inter;letter-spacing:-1px;margin:4px 0 6px;white-space:nowrap}
+.rg b u{text-decoration:none;font-size:14px;color:var(--sub);letter-spacing:0}
+.rg .p{display:inline-block;font-style:normal;font-size:10px;font-weight:700;border-radius:999px;padding:3px 9px}
+.p.rojo{background:#FDE2E2;color:#B42318}.p.gris{background:#EEF1F6;color:#5E6C84}.p.nar{background:#FFEDD5;color:#9A3412}.p.azv{background:#DDF0F4;color:#0E5566}
+.rg span{display:block;font-size:11.5px;color:var(--sub);margin-top:7px;line-height:1.35}
+.rg span strong{color:var(--rojo)}
+.rg i{position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:8px;color:#fff;font:800 9.5px Inter;font-style:normal;display:flex;align-items:center;justify-content:center}
+.rg.die{border-color:#9ED3DE;box-shadow:0 0 0 3px #E3F3F6}
+.rb{background:#fff;border:1.5px solid var(--linea);border-left:5px solid var(--c);border-radius:16px;padding:12px 16px}
+.rb-cab{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.rb-cab b{font:800 16px Montserrat,Inter}.rb-cab span{font-size:12px;color:var(--sub)}.rb-cab span u{text-decoration:none;color:#0E5566;font-weight:600}
+.rb-cab a{margin-left:auto;color:var(--azul);font-weight:700;font-size:12.5px;cursor:pointer}
+.rb-cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.rt{font-size:10px;font-weight:700;letter-spacing:1.4px;color:var(--sub);text-transform:uppercase;margin-bottom:8px}
+.mb{display:flex;gap:10px;align-items:flex-end;height:80px}
+.mb div{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px}
+.mb span{width:60%;max-width:34px;border-radius:5px 5px 2px 2px}.mb small{font-size:10px;color:var(--ter)}
+.r3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.r3 b{display:block;font:800 22px Montserrat,Inter}.r3 small{font-size:11px;color:var(--sub);font-weight:600}
+.rl{margin:0;padding:0;list-style:none;counter-reset:r}
+.rl li{counter-increment:r;display:grid;grid-template-columns:20px minmax(0,1fr) auto;column-gap:8px;padding:5px 0;border-bottom:1px solid #F1F5F9;align-items:center}
+.rl li::before{content:counter(r);grid-row:span 2;width:20px;height:20px;border-radius:50%;background:#F1F5F9;color:var(--sub);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.rl b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rl span{grid-column:2;font-size:11px;color:var(--ter)}.rl span:empty{display:none}
+.rl em{grid-column:3;grid-row:1/span 2;font-style:normal;font-weight:800;font-size:13px}
+.rn{font-size:12px;color:var(--sub);margin:8px 0 0;line-height:1.4}
+.sev{display:flex;gap:3px;height:12px;margin-bottom:4px}.sev span{border-radius:4px}
+@media (max-width:1100px){.rpx-gen{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:700px){.rpx-gen{grid-template-columns:repeat(2,minmax(0,1fr))}.rpx-gen .die{grid-column:1/-1}.rb-cols{grid-template-columns:minmax(0,1fr)}}
+.vista{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.seg2{display:flex;background:#E9EDF3;border-radius:10px;padding:3px}
+.seg2 button{border:0;background:none;border-radius:8px;padding:6px 12px;font:700 12.5px Inter;color:var(--sub);cursor:pointer}
+.seg2 button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.meses{display:flex;gap:6px}
+.meses button{border:1.5px solid var(--linea);background:#fff;border-radius:999px;padding:5px 12px;font:600 12.5px Inter;color:var(--sub);cursor:pointer}
+.meses button.on{border-color:var(--marca);background:var(--azul-s);color:var(--marca)}
+.mtz tr.sem td{background:#F7F9FC;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--sub);text-transform:uppercase;padding:6px 12px;text-align:left;cursor:default}
+.mtz tr.sem td:first-child{background:#F7F9FC}
+.sem-die{float:right;letter-spacing:0;text-transform:none;font-weight:700;font-size:11px;color:#9A6B0F;background:var(--ambar-s);border-radius:999px;padding:1px 8px}
+.sem-die.ok{color:#0E5566;background:#DDF0F4}
+.c.sem-si{background:#DDF0F4;color:#0E7490;font-size:11px}
+.cob{display:inline-flex;flex-direction:column;align-items:center;gap:3px;min-width:44px}
+.cob b{font-size:12px}
+.cob i{display:block;width:40px;height:5px;border-radius:3px;background:#EEF1F6;overflow:hidden}
+.cob i span{display:block;height:100%}
+.cob.full b{color:var(--verde)} .cob.full i span{background:var(--verde)}
+.cob.parc b{color:#9A6B0F} .cob.parc i span{background:var(--ambar)}
+.cob.cero b{color:#C3CCD8}
+.mtz td.dia.grupo{cursor:pointer}
+.dz-cab{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
+.dz-barras{display:flex;gap:8px;align-items:flex-end;height:120px;padding:6px 0 0}
+.dz-barras div{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.dz-barras span{width:100%;max-width:46px;border-radius:6px 6px 2px 2px;background:#0E7490}
+.dz-barras b{font-size:11px} .dz-barras small{font-size:11px;color:var(--sub)}
+.conf{font-size:10.5px;font-weight:700;border-radius:5px;padding:1px 6px;margin-left:6px}
+.conf.baja{background:var(--ambar-s);color:#7A5310}
+.formula{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.formula div{flex:1 1 180px;background:#F8FAFD;border:1px solid var(--linea);border-radius:12px;padding:10px 14px}
+.formula div.r{background:#E3F3F6;border-color:#9ED3DE}
+.formula small{display:block;font-size:11px;color:var(--sub);font-weight:600}.formula b{display:block;font:800 26px Montserrat,Inter}.formula div.r b{color:#0E7490}.formula span{font-size:11.5px;color:var(--sub)}
+.formula i{align-self:center;font:800 26px Inter;font-style:normal;color:var(--ter)}
+@media (min-width:1500px){.grupos{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media (max-width:620px){.grupos{grid-template-columns:minmax(0,1fr)}}
+[hidden]{display:none!important}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}.res,.ap,.pasos{grid-template-columns:repeat(2,minmax(0,1fr))}.per{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:480px){header.app h1{font-size:22px}.sf{grid-template-columns:34px minmax(0,1fr)}.sf .e,.sf select{grid-column:2}}
+
+/* 5.1 · Desglose: una infografía por reporte, todas con el mismo estilo que Periodo */
+.ifx-lista{display:flex;flex-direction:column;gap:14px}
+.ifx{background:#F7F9FC;border:1px solid var(--linea);border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.ifx-hero{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:linear-gradient(120deg,#0B1A30 0%,#1D3F94 100%);color:#fff;border-radius:14px;padding:14px 18px;position:relative;overflow:hidden}
+.ifx-hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:var(--c)}
+.ifx-ic{display:flex;gap:4px}.ifx-ic i{font-style:normal;width:30px;height:30px;border-radius:8px;background:var(--c);color:#fff;font:800 10px Inter;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px rgba(255,255,255,.15)}
+.ifx-hero small{display:block;font-size:10.5px;letter-spacing:2px;font-weight:700;color:#9AABC2}
+.ifx-hero h3{margin:3px 0 1px;font:800 21px Montserrat,Inter;letter-spacing:-.4px}
+.ifx-hero span{font-size:12px;color:#C9D4E5}
+.ifx-num{margin-left:auto;display:flex;align-items:center;gap:10px}
+.ifx-num b{font:800 34px Montserrat,Inter;letter-spacing:-1px;white-space:nowrap}.ifx-num b u{text-decoration:none;font-size:15px;opacity:.75;margin-left:3px}
+.ifx-num em{font-style:normal;font-size:12px;line-height:1.3;color:#C9D4E5}
+.ifx-num i{font-style:normal;font-size:10.5px;font-weight:800;letter-spacing:1px;background:var(--p,#E31B23);border-radius:999px;padding:5px 11px;white-space:nowrap}
+.ifx-ab{border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;border-radius:9px;padding:7px 12px;font:700 12px Inter;cursor:pointer}
+.ifx-ab:hover{background:rgba(255,255,255,.12)}
+.ifx .inf-k>div{border-top-color:var(--c)}
+.ifx .inf-k b{color:var(--kc,var(--c))}
+.ifx .inf-k span{display:block;font-size:11px;color:var(--ter);padding-bottom:6px}
+.ifx .hb i b{background:var(--c)}
+.ifx .hb{grid-template-columns:110px minmax(0,1fr) 54px}
+.ifx .dona{display:flex;align-items:center;gap:14px}.ifx .dona svg{width:120px;flex-shrink:0}
+.ifx .dona ul{list-style:none;margin:0;padding:0;font-size:12.5px;color:var(--sub);flex:1}.ifx .dona li{display:flex;align-items:center;gap:7px;padding:3px 0}.ifx .dona li i{width:10px;height:10px;border-radius:3px}.ifx .dona li b{margin-left:auto;color:var(--ink)}
+.ifx-num{flex-wrap:wrap}
+@media (max-width:700px){.ifx-num{margin-left:0;width:100%}.ifx-ab{width:100%}.ifx-num em{flex:1}.ifx-num b{font-size:28px}.ifx-hero h3{font-size:18px}}
+
+/* 5.1 · Accesos del apartado Reportes */
+.acc{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.acc span{font-size:11.5px;color:var(--sub);background:#F1F5F9;border-radius:999px;padding:3px 10px}
+.acc .acc-s{background:#FDECEC;color:#9B1C22}
+.vc{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--sub)}
+.vc select{font:600 12.5px Inter;border:1px solid var(--linea);border-radius:9px;padding:7px 8px;background:#fff;color:var(--ink)}
+.bloq{display:none;align-items:center;gap:10px;border:1.5px dashed var(--linea);border-radius:14px;padding:12px 16px;color:var(--sub);font-size:13px;margin-bottom:12px;background:#fff}
+.bloq b{color:var(--ink)}
+body.no-sube #drop, body.no-sube #btElegir, body.no-sube #subida{display:none!important}
+body.no-sube .bloq{display:flex}
+.sin-acc{max-width:560px;margin:40px auto;text-align:center;background:#fff;border:1px solid var(--linea);border-radius:18px;padding:28px}
+.sin-acc h2{font:800 20px Montserrat,Inter;margin:8px 0}
+.sin-acc p{color:var(--sub);font-size:13.5px;margin:0}
+body.sin-acceso .grid, body.sin-acceso #btDesc{display:none!important}
+
+/* Dentro de la app: la barra de la app ya dice "Reportes" */
+body{margin:0}
+body.en-app header.app h1{display:none}
+body.en-app header.app p{font-size:12.5px}
+
+.ej{font-style:normal;font-size:9.5px;font-weight:800;letter-spacing:.4px;background:#FFF3E0;color:#9A3412;border-radius:5px;padding:1px 5px;margin-left:6px}
+body.en-app .vc{display:none}
+/* 5.1 real: la subida a la nube llega en la siguiente versión */
+#drop,#btElegir,#btDesc,#dropBloq,#subida{display:none!important}
+.real-card{background:#fff;border:1px solid var(--linea,#E2E8F0);border-radius:16px;padding:22px;max-width:640px;margin:18px auto;text-align:center}
+.real-card h3{margin:0 0 6px;font:800 19px Montserrat,Inter,sans-serif}
+.real-card p{color:#5B6B80;font-size:14px;margin:0 0 14px;line-height:1.5}
+.real-card button{border:0;background:#1D3F94;color:#fff;font:700 14px Inter,sans-serif;border-radius:12px;padding:12px 20px;cursor:pointer;margin:4px}
+.real-card button.sec{background:#fff;color:#1D3F94;border:1.5px solid #CBD5E1}
+</style>
+
+<div class="wrap">
+  <div class="nota"><b>Reportes 5.1 · primera versión.</b> Kilometraje, Excesos, Eventos, Puntualidad, Diésel y Cambios programados ya funcionan con tus archivos y con la app. <b>Archivos, Reportes del día, Periodo, Cómo se cruzan y Programado vs real</b> todavía muestran datos de ejemplo (marcados «Ejemplo»): se conectan a la nube en la siguiente versión.</div>
+
+  <header class="app">
+    <div><h1>Reportes</h1><p>Los archivos se suben una vez, se guardan en la nube y cada reporte los toma solo.</p>
+      <div class="acc"><span><b>Acceso:</b> Supervisión · Torre de Control · Jefatura · Desarrollo</span><span class="acc-s"><b>Subir archivos:</b> solo Desarrollo</span></div></div>
+    <span class="sp"></span>
+    <label class="vc">Ver como <select id="verComo"><option>Desarrollo</option><option>Supervisión</option><option>Torre de Control</option><option>Jefatura</option><option>Despacho</option><option>Consulta</option></select></label>
+    <button class="bt" id="btDesc">Descargar día completo</button>
+    <button class="bt prim" id="btElegir">Elegir archivos</button>
+  </header>
+
+  <div class="sin-acc" id="sinAcc" hidden><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#B3262D" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><h2>Reportes no está disponible para tu área</h2><p>Solo Supervisión, Torre de Control, Jefatura y Desarrollo pueden entrar. En el menú de la app este apartado ni siquiera aparece para las demás áreas.</p></div>
+  <div class="grid">
+    <div>
+      <div class="drop" id="drop">
+        <div class="ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></div>
+        <div class="txt"><b>Arrastra aquí los archivos del día (puedes soltar varios a la vez)</b><p>La app lee cada uno, reconoce qué reporte es, de qué día y de qué proveedor, y lo acomoda. Si no lo reconoce, te pregunta.</p></div>
+        <button class="bt" id="btSim">Ver ejemplo de subida</button>
+      </div>
+      <div class="bloq" id="dropBloq"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><div><b>Por ahora solo Desarrollo sube archivos.</b> Tú ves todos los reportes, eliges fechas, descargas y escribes motivos y comentarios.</div></div>
+      <div class="subida" id="subida"></div>
+
+      <nav class="nav" id="tabs">
+        <div class="ng"><span class="ngt">General</span><div class="nb">
+          <button class="on" data-t="dias"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6l2 2h8v14H4z"/></svg>Archivos<em class="ej">Ejemplo</em></button>
+          <button data-t="reportes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 16v-4M12 16V8M16 16v-6"/></svg>Reportes del día<em class="ej">Ejemplo</em></button>
+          <button data-t="periodo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Periodo<em class="ej">Ejemplo</em></button>
+          <button data-t="apart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.3 11 15.7 7M8.3 13l7.4 4"/></svg>Cómo se cruzan<em class="ej">Ejemplo</em></button>
+        </div></div>
+        <div class="ng rep"><span class="ngt">Reportes</span><div class="nb">
+          <button data-t="rol" style="--c:#1D3F94"><i>PL</i>Programado vs real<em class="ej">Ejemplo</em></button>
+          <button data-t="cp" style="--c:#7C3AED"><i>CP</i>Cambios programados</button>
+          <button data-t="pun" style="--c:#0F1E4A"><i>PU</i>Puntualidad</button>
+          <button data-t="km" style="--c:#0052CC"><i>KM</i>Kilometraje</button>
+          <button data-t="exc" style="--c:#E31B23"><i>VE</i>Excesos</button>
+          <button data-t="ev" style="--c:#C2410C"><i>EV</i>Eventos</button>
+          <button data-t="diesel" style="--c:#0E7490"><i>DI</i>Diésel</button>
+        </div></div>
+      </nav>
+
+      <section id="t-dias">
+    <div class="lado">
+      <div class="card uso">
+        <div class="lbl">Espacio en la nube (gratis)</div>
+        <b>214 MB <small style="font:600 13px Inter;color:var(--sub)">de 1 GB</small></b>
+        <div class="barra"><i></i></div>
+        <small>Comprimidos, un día completo pesa ~0,15 MB: alcanza para muchos años.</small>
+      </div>
+      <div class="card ult"><div class="lbl">Lo último que se subió</div><div id="ult"></div></div>
+    </div>
+
+        <div class="vista"><div class="seg2" id="vista"><button data-v="dia" class="on">Por día</button><button data-v="sem">Por semana</button><button data-v="mes">Por mes</button></div><div class="meses" id="meses"></div></div>
+        <div class="mtz-caja"><table class="mtz" id="mtz"></table></div>
+        <p style="color:var(--sub);font-size:12px;margin:8px 2px 0">✓ = guardado · <span style="color:var(--marca);font-weight:700">2</span> = se subió más de una vez (se guardan las versiones) · <span id="leyenda">toca un día para ver sus archivos</span></p>
+        <div class="dd" id="dd"></div>
+      </section>
+
+      <section id="t-periodo" hidden>
+        <div class="card">
+          <div class="lbl">Reporte de un periodo</div>
+          <div class="per">
+            <label>Desde<input type="date" value="2026-11-16"></label>
+            <label>Hasta<input type="date" value="2026-11-25"></label>
+            <label>Atajo<select><option>Semana pasada</option><option>Este mes</option><option>Mes pasado</option><option>Elegir fechas</option></select></label>
+          </div>
+          <div class="chips" id="chipsP"><button class="on">Puntualidad</button><button class="on">Kilometraje</button><button class="on">Excesos de velocidad</button><button class="on">Eventos de conducción</button><button class="on">Rendimiento de diésel</button></div>
+          <div class="inf" id="inf"></div>
+          <div class="salidas"><button class="bt prim" id="btDet">Mostrar detalles ▾</button><button class="bt">Ver reporte del periodo</button><button class="bt">Infografía del periodo</button><button class="bt">Descargar archivos del periodo (.zip)</button><button class="bt">Copiar tabla para Excel</button></div>
+          <div class="rk" id="rk" hidden>
+            <div class="rk-bts" id="rkBts">
+              <button data-k="exc" class="on">Más excesos</button><button data-k="ev">Más eventos de conducción</button><button data-k="tar">Más impuntuales</button><button data-k="km">Más kilómetros</button><button data-k="lt">Más diésel</button>
+              <span class="sp"></span>
+              <div class="seg" id="rkPor"><button data-p="u" class="on">Por unidad</button><button data-p="o">Por operador</button></div>
+            </div>
+            <div class="xls-caja"><table class="xls" id="rkT"></table></div>
+            <p style="color:var(--sub);font-size:12px;margin:8px 2px 0">De mayor a menor. Toca cualquier encabezado para ordenar por esa columna; tócalo otra vez para invertir. Números de ejemplo.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="t-diesel" hidden>
+        <div class="card">
+          <div class="dz-cab"><div><div class="lbl">Rendimiento de diésel · semanal · para el bono</div><h3 style="margin:0;font:800 18px Montserrat,Inter">Semana del lunes 5 al domingo 11 de octubre</h3><small style="color:var(--sub)">Litros: Diesel_Octubre_1-11.xls (reales) · Km: Kilometraje GPS Webfleet + Samsara de los 7 días (de ejemplo)</small></div></div>
+          <div class="formula"><div><small>Km GPS de la semana</small><b id="fKm"></b><span>Webfleet + Samsara · lun a dom</span></div><i>÷</i><div><small>Litros cargados en la semana</small><b id="fLt"></b><span>cargas de lun a vie</span></div><i>=</i><div class="r"><small>Rendimiento</small><b id="fRd"></b><span>km por litro</span></div></div>
+          <div class="faltan" style="background:#E8F4F8;color:#0E5566">El diésel se sube <b>una vez por semana</b> (puede ser el archivo de varios días, la app toma solo de lunes a domingo). El bono es <b>por operador</b> pero se calcula <b>por unidad</b>: a cada unidad le toca su operador asignado en el rol; si esa semana la manejó otro por falta o unidad en taller, sale marcado para que decidas. La tabla del bono queda pendiente.</div>
+          <div class="rk-bts" style="margin-top:14px"><span class="lbl" style="margin:0">Por unidad · de mayor a menor</span><span class="sp"></span><div class="seg" id="dzOrd"><button data-k="rd" class="on">Mejor rendimiento</button><button data-k="peor">Peor rendimiento</button><button data-k="lt">Más litros</button><button data-k="km">Más km</button></div></div>
+          <div class="xls-caja"><table class="xls" id="dzT"></table></div>
+        </div>
+      </section>
+
+      <section id="t-reportes" hidden>
+        <div class="rpx">
+          <div class="rpx-dias"><button>Mié 25<i>●●○○○</i></button><button class="on">Mar 24<i>●●●●●</i></button><button>Lun 23<i>●●●●●</i></button><button>Sáb 21<i>●●●○○</i></button><button>Vie 20<i>●●●●○</i></button><button>Jue 19<i>●●●●●</i></button></div>
+          <div class="rpx-banda">RESUMEN GENERAL · MARTES 24/11/2026<span>Sale solo de los archivos de ese día</span><button>Compartir infografía</button></div>
+          <div class="rpx-gen">
+            <div class="rg"><small>Puntualidad</small><b style="color:#D52B2B">97,3 %</b><em class="p rojo">META 98 % · NO CUMPLE</em><span>19 impuntuales de 714 · IDA 98,2 % · VUELTA 96,5 % · archivo del 25/11</span><i style="background:#0F1E4A">PU</i></div>
+            <div class="rg"><small>Kilometraje</small><b style="color:#0052CC">14.018 <u>km</u></b><em class="p gris">SIN PLAN DE KM</em><span>79 unidades con GPS · Webfleet</span><i style="background:#0052CC">KW</i></div>
+            <div class="rg"><small>Excesos de velocidad</small><b style="color:#D52B2B">452</b><em class="p rojo">32 CRÍTICOS</em><span>86 unidades · máx. 107 km/h · 8067</span><i style="background:#E31B23">VW</i><i style="background:#B8141B;right:44px">VS</i></div>
+            <div class="rg"><small>Eventos de conducción</small><b style="color:#9A3412">197</b><em class="p nar">8 DE SEVERIDAD ALTA</em><span>Frenadas 56 · giros 141 · 47 unidades</span><i style="background:#C2410C">EW</i><i style="background:#9A3412;right:44px">ES</i></div>
+            <div class="rg die"><small>Rendimiento de diésel</small><b style="color:#0E7490">3,60 <u>km/L</u></b><em class="p azv">24.852 L EN LA SEMANA</em><span>108 unidades · km GPS ÷ litros · semana del 5 al 11 de octubre</span><i style="background:#0E7490">DI</i></div>
+          </div>
+          <div class="rpx-banda">DESGLOSE POR REPORTE<span>Misma infografía para cada reporte · toca «Abrir reporte» para ver tablas y detalle</span></div>
+          <div id="desg" class="ifx-lista"></div>
+        </div>
+      </section>
+
+      <section id="t-rol" hidden><div class="card" id="r-rol"></div></section>
+      <section id="t-pun" hidden><div class="card" id="r-pun"></div></section>
+      <section id="t-km" hidden><div class="card" id="r-km"></div></section>
+      <section id="t-exc" hidden><div class="card" id="r-exc"></div></section>
+      <section id="t-ev" hidden><div class="card" id="r-ev"></div></section>
+      <section id="t-cp" hidden><div class="card" id="r-cp"></div></section>
+
+      <section id="t-apart" hidden>
+        <div class="card">
+          <div class="lbl">La llave que une todo</div>
+          <div class="llave"><span>Unidad</span><i>+</i><span>Fecha</span><i>+</i><span>Hora</span><em>→ con eso cualquier reporte encuentra en el rol qué <b>operador</b> y qué <b>ruta</b> eran, y se cruza con los demás.</em></div>
+          <div class="lbl" style="margin-top:16px">Qué archivo alimenta qué reporte</div>
+          <div class="xls-caja"><table class="cruce" id="cruce"></table></div>
+          <p class="rn">● se usa directo · ○ lo usa para cruzar (operador, ruta o verificación)</p>
+        </div>
+
+        <h2 class="sec">Cruces automáticos (con tus datos)</h2>
+        <div class="cruces">
+          <div class="cx"><div class="cx-f"><span style="background:#1D3F94">PL</span><b>+</b><span style="background:#2E55B8">MO</span><b>→</b><em>Rol del día</em></div><h4>Programado contra real</h4><p>La Plantilla dice qué corridas tocaban; el Monitor dice cuáles se hicieron y con qué unidad y operador. Salen solos los cambios, las corridas no hechas y las vueltas extra.</p></div>
+          <div class="cx"><div class="cx-f"><span style="background:#0052CC">KW</span><span style="background:#2563EB">KS</span><b>+</b><span style="background:#0F1E4A">PU</span><b>→</b><em>Puntualidad</em></div><h4>Sin posicionamiento = impuntual con motivo</h4><p>Si Kilometraje marca una unidad "Sin GPS", sus corridas sin registro en la geocerca cuentan tarde con el motivo puesto. Ej. real del 25/11: <b>8098</b>, 7 corridas.</p></div>
+          <div class="cx"><div class="cx-f"><span style="background:#0052CC">KW</span><span style="background:#2563EB">KS</span><b>÷</b><span style="background:#0E7490">DI</span><b>→</b><em>Bono</em></div><h4>Rendimiento semanal para el bono</h4><p>Km GPS de lunes a domingo ÷ litros cargados en la semana, por unidad. El rol dice de qué operador es la unidad; si faltó o la unidad entró a taller, lo marca.</p></div>
+          <div class="cx"><div class="cx-f"><span style="background:#E31B23">VW</span><span style="background:#C2410C">EW</span><b>+</b><span style="background:#2E55B8">MO</span><b>→</b><em>Operador</em></div><h4>A quién le toca cada exceso</h4><p>Con la unidad y la hora del exceso o evento, el Monitor dice qué operador iba en esa corrida (no solo el asignado del día). Ej. real del 24/11: 452 excesos repartidos en 86 unidades.</p></div>
+          <div class="cx"><div class="cx-f"><span style="background:#0F1E4A">PU</span><b>+</b><span style="background:#1D3F94">PL</span><b>→</b><em>Ruta</em></div><h4>Tardes por ruta y por operador</h4><p>La puntualidad trae unidad y hora; la Plantilla agrega la ruta y el operador programado para comparar contra quien la hizo.</p></div>
+          <div class="cx"><div class="cx-f"><span style="background:#0052CC">KW</span><b>+</b><span style="background:#2E55B8">MO</span><b>→</b><em>Km plan</em></div><h4>Km programados contra recorridos</h4><p>Las corridas del Monitor por su km de ruta dan el plan; el GPS da lo real. Diferencias grandes = desvío, vuelta extra o GPS fallando.</p></div>
+        </div>
+
+        <h2 class="sec">Así se ve todo junto: ficha de la unidad</h2>
+        <div class="ficha">
+          <div class="fi-cab"><div class="fi-u">8073</div><div><b>Unidad 8073 · semana del 23 al 29 de noviembre</b><small>Operador asignado: <u>(del rol)</u> · Ruta base: CU – Centro · todos los datos salen de los archivos de esa semana</small></div><span class="sp"></span><button class="bt">Descargar en Excel</button></div>
+          <div class="fi-k">
+            <div><small>Km GPS</small><b>1.592</b><span>KW · 5 días</span></div>
+            <div><small>Diésel</small><b>401 L</b><span>DI · 5 cargas</span></div>
+            <div class="az"><small>Rendimiento</small><b>3,97 km/L</b><span>bono: tabla pendiente</span></div>
+            <div><small>Puntualidad</small><b class="ok">98,6 %</b><span>PU · 1 tarde de 70</span></div>
+            <div><small>Excesos</small><b class="mal">9</b><span>VW · 1 crítico (88 km/h)</span></div>
+            <div><small>Eventos</small><b>9</b><span>EW · 0 de alta</span></div>
+            <div><small>Días sin GPS</small><b class="ok">0</b><span>KW / KS</span></div>
+          </div>
+          <div class="fi-dias"><div class="fi-t">Día por día</div>
+            <table class="xls"><tr><th><button>Día</button></th><th><button>Operador (Monitor)</button></th><th><button>Corridas</button></th><th><button>Tardes</button></th><th><button>Km GPS</button></th><th><button>Excesos</button></th><th><button>Eventos</button></th><th><button>Litros</button></th></tr>
+            <tr><td><b>Lun 23</b></td><td>Asignado</td><td>14</td><td>0</td><td>318,2</td><td>2</td><td>1</td><td>85,0</td></tr>
+            <tr><td><b>Mar 24</b></td><td>Asignado</td><td>14</td><td>0</td><td>316,6</td><td>3</td><td class="rojo">4</td><td>80,0</td></tr>
+            <tr><td><b>Mié 25</b></td><td>Asignado</td><td>14</td><td class="rojo">1</td><td>320,5</td><td>1</td><td>2</td><td>78,5</td></tr>
+            <tr><td><b>Jue 26</b></td><td><span class="conf baja">Cubre otro operador</span></td><td>14</td><td>0</td><td>317,0</td><td class="rojo">3</td><td>1</td><td>82,0</td></tr>
+            <tr><td><b>Vie 27</b></td><td>Asignado</td><td>14</td><td>0</td><td>319,8</td><td>0</td><td>1</td><td>75,5</td></tr></table>
+          </div>
+          <p class="rn">Ejemplo: el km del martes (316,6) es real de tu Kilometraje Webfleet del 24/11; lo demás de esta ficha es de ejemplo. Lo mismo se puede ver por operador (ficha del operador: suma de sus unidades y días).</p>
+        </div>
+      </section>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const REPS = ["Rol del día", "Puntualidad", "Kilometraje", "Excesos", "Eventos", "Diésel y bono", "Indicadores", "Ficha unidad / operador"];
+const CRU = { plan: "●○○○○○●●", mon: "●○●○○○●●", pun: "○●○○○○●●", velW: "○○○●○○●●", velS: "○○○●○○●●", evW: "○○○○●○●●", evS: "○○○○●○●●", kmW: "○○●○○●●●", kmS: "○○●○○●●●", die: "○○○○○●●●" };
+const USA = { plan: [1, 0, 1, 0, 0, 0, 1, 1], mon: [1, 1, 1, 1, 1, 1, 1, 1], pun: [0, 1, 0, 0, 0, 0, 1, 1], velW: [0, 0, 0, 1, 0, 0, 1, 1], velS: [0, 0, 0, 1, 0, 0, 1, 1], evW: [0, 0, 0, 0, 1, 0, 1, 1], evS: [0, 0, 0, 0, 1, 0, 1, 1], kmW: [0, 1, 1, 0, 0, 1, 1, 1], kmS: [0, 1, 1, 0, 0, 1, 1, 1], die: [0, 0, 0, 0, 0, 1, 1, 1] };
+const DIRECTO = { plan: [1, 0, 0, 0, 0, 0, 0, 0], mon: [1, 0, 0, 0, 0, 0, 0, 0], pun: [0, 1, 0, 0, 0, 0, 1, 1], velW: [0, 0, 0, 1, 0, 0, 1, 1], velS: [0, 0, 0, 1, 0, 0, 1, 1], evW: [0, 0, 0, 0, 1, 0, 1, 1], evS: [0, 0, 0, 0, 1, 0, 1, 1], kmW: [0, 0, 1, 0, 0, 1, 1, 1], kmS: [0, 0, 1, 0, 0, 1, 1, 1], die: [0, 0, 0, 0, 0, 1, 1, 1] };
+const T = [
+  { k: "plan", t: "Plantilla", s: "Programado", c: "#1D3F94", a: "PL", al: ["Rol", "Kilometraje"] },
+  { k: "mon", t: "Monitor", s: "Real (Smart)", c: "#2E55B8", a: "MO", al: ["Kilometraje", "Rol"] },
+  { k: "pun", t: "Puntualidad", s: "Geocercas", c: "#0F1E4A", a: "PU", al: ["Puntualidad", "Indicadores"] },
+  { k: "velW", t: "Velocidad", s: "Webfleet", c: "#E31B23", a: "VW", al: ["Excesos", "Indicadores"] },
+  { k: "velS", t: "Velocidad", s: "Samsara", c: "#B8141B", a: "VS", al: ["Excesos", "Indicadores"] },
+  { k: "evW", t: "Eventos", s: "Webfleet", c: "#C2410C", a: "EW", al: ["Excesos", "Indicadores"] },
+  { k: "evS", t: "Eventos", s: "Samsara", c: "#9A3412", a: "ES", al: ["Excesos", "Indicadores"] },
+  { k: "kmW", t: "Kilometraje", s: "Webfleet", c: "#0052CC", a: "KW", al: ["Kilometraje", "Puntualidad", "Indicadores"] },
+  { k: "kmS", t: "Kilometraje", s: "Samsara", c: "#2563EB", a: "KS", al: ["Kilometraje", "Puntualidad", "Indicadores"] },
+  { k: "die", t: "Diésel", s: "Semanal", c: "#0E7490", a: "DI", al: ["Rendimiento de diésel", "Bono", "Indicadores"], semanal: true }
+];
+const KB = { plan: 49, mon: 52, pun: 218, velW: 50, velS: 7, evW: 16, evS: 7, kmW: 37, kmS: 9, die: 22 };
+const NOM = {
+  plan: d => `${d}_Plantilla_Ordenes_Servicio_24_horas.xlsx`, mon: d => `${d}_Monitor_de_servicio.xlsx`,
+  pun: d => `${d}_Indicador_de_puntualidad_del_servicio_-_Servicio_-_Resumen.xlsx`,
+  velW: d => `${d}_STU_Velocidad_Excesiva_WEBFLEET.xlsx`, velS: d => `${d}_STU_Velocidad_Excesiva_SAMSARA.xlsx`,
+  evW: d => `${d}_STU_Eventos_de_Conduccion_WEBFLEET.xlsx`, evS: d => `${d}_STU_Eventos_de_Conduccion_SAMSARA.xlsx`,
+  kmW: d => `${d}_STU_Kilometraje_WEBFLEET.xlsx`, kmS: d => `${d}_STU_Kilometraje_SAMSARA.xlsx`, die: d => `Diesel_Octubre_1-11.xls (cargas del ${d})`
+};
+const DS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+// días de ejemplo (más reciente primero); 0 = no subido, 1 = guardado, 2 = dos versiones
+// días de ejemplo: 0 = no subido, 1 = guardado, 2 = dos versiones. Diésel de octubre = días reales del archivo.
+const FIJOS = {
+  "2026-11-25": { plan: 1, mon: 1, pun: 1 },
+  "2026-11-24": { plan: 1, mon: 1, pun: 1, velW: 1, velS: 1, evW: 1, evS: 1, kmW: 1, kmS: 1 },
+  "2026-11-23": { plan: 1, mon: 1, pun: 1, velW: 1, velS: 1, evW: 1, evS: 1, kmW: 2, kmS: 1 },
+  "2026-11-21": { plan: 1, mon: 1, velW: 1, velS: 1, evW: 1, evS: 1, kmW: 1, kmS: 1 },
+  "2026-11-19": { plan: 1, mon: 2, pun: 1, velW: 1, velS: 1, evW: 1, evS: 1, kmW: 1, kmS: 1 }
+};
+const DIE_OCT = ["2026-10-01", "2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10"];
+const DIAS = [];
+// diésel: una vez por semana (lunes de cada semana con archivo)
+const SEM_DIE = new Set(["2026-11-16", "2026-11-09", "2026-11-02", "2026-10-26", "2026-10-19", "2026-10-12", "2026-10-05", "2026-09-28"]);
+const TD = T.filter(t => !t.semanal); // los que van por día
+(function () {
+  let sm = 11; const r = () => (sm = (sm * 16807) % 2147483647) / 2147483647;
+  for (let d = new Date("2026-11-25T12:00:00"); d >= new Date("2026-10-01T12:00:00"); d.setDate(d.getDate() - 1)) {
+    const iso = d.toISOString().slice(0, 10), dow = d.getDay();
+    let f = {};
+    if (FIJOS[iso]) f = FIJOS[iso];
+    else if (dow !== 0) { T.forEach(t => { if (t.k === "die") return; if (r() > (iso < "2026-10-20" ? 0.22 : 0.06)) f[t.k] = 1; }); }
+    DIAS.push([iso, f]);
+  }
+})();
+let sel = "2026-11-24";
+const dmy = iso => iso.split("-").reverse().join("-");
+const diaTxt = iso => { const d = new Date(iso + "T12:00:00"); return DS[d.getDay()] + " " + d.getDate(); };
+let vista = "dia", mesSel = "2026-11";
+const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const lunes = iso => { const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return d.toISOString().slice(0, 10); };
+const corto = iso => { const d = new Date(iso + "T12:00:00"); return d.getDate() + " " + MESES[d.getMonth()].slice(0, 3); };
+function celdaCob(n, tot) { const c = n === 0 ? "cero" : n >= tot ? "full" : "parc"; return `<span class="cob ${c}"><b>${n}/${tot}</b><i><span style="width:${tot ? n / tot * 100 : 0}%"></span></i></span>`; }
+function filaGrupo(lbl, sub, dias, clave) {
+  const op = dias.filter(([d, f]) => Object.keys(f).length).length; // días con operación
+  if (!op) return `<tr><td class="dia grupo" data-g="${clave}">${lbl}<small>${sub}</small></td><td colspan="${T.length}" style="color:var(--ter);font-size:12px">Sin operación</td><td></td></tr>`;
+  const comp = dias.filter(([d, f]) => TD.every(t => f[t.k])).length;
+  const sems = [...new Set(dias.map(x => lunes(x[0])))], semOk = sems.filter(l => SEM_DIE.has(l)).length;
+  return `<tr><td class="dia grupo" data-g="${clave}">${lbl}<small>${sub}</small></td>${T.map(t => t.semanal ? `<td>${clave.length > 7 ? (SEM_DIE.has(clave) ? `<span class="c sem-si" style="width:auto;padding:0 8px">✓ semana</span>` : `<span class="c no" style="width:auto;padding:0 8px">falta</span>`) : celdaCob(semOk, sems.length).replace("</b>", " sem.</b>")}</td>` : `<td>${celdaCob(dias.filter(([d, f]) => f[t.k]).length, op)}</td>`).join("")}<td>${comp === op ? `<span class="est comp">Completa</span>` : `<span class="est falta">${op - comp} ${op - comp === 1 ? "día incompleto" : "días incompletos"}</span>`}</td></tr>`;
+}
+function pintarMtz() {
+  const ms = [...new Set(DIAS.map(x => x[0].slice(0, 7)))].sort().reverse();
+  document.getElementById("meses").innerHTML = vista === "mes" ? "" : ms.map(m => `<button class="${m === mesSel ? "on" : ""}" data-m="${m}">${MESES[+m.slice(5) - 1][0].toUpperCase() + MESES[+m.slice(5) - 1].slice(1)}</button>`).join("");
+  document.querySelectorAll("#meses button").forEach(b => b.onclick = () => { mesSel = b.dataset.m; pintarMtz(); });
+  const th = `<tr><th>${vista === "dia" ? "Día" : vista === "sem" ? "Semana" : "Mes"}</th>${T.map(t => `<th>${t.t}<small>${t.s}</small></th>`).join("")}<th>Estado</th></tr>`;
+  let tr = "";
+  if (vista === "dia") {
+    let semAnt = "";
+    DIAS.filter(x => x[0].slice(0, 7) === mesSel).forEach(([d, f]) => {
+      const l = lunes(d);
+      if (l !== semAnt) { semAnt = l; const fin = new Date(l + "T12:00:00"); fin.setDate(fin.getDate() + 6); tr += `<tr class="sem"><td colspan="${T.length + 2}">Semana del ${corto(l)} al ${corto(fin.toISOString().slice(0, 10))}<span class="sem-die ${SEM_DIE.has(l) ? "ok" : ""}">${SEM_DIE.has(l) ? "✓ Diésel de la semana subido" : l >= "2026-11-23" ? "Diésel: se sube al cerrar la semana" : "Falta el diésel de esta semana"}</span></td></tr>`; }
+      const n = TD.filter(t => f[t.k]).length;
+      const est = n === TD.length ? `<span class="est comp">Completo</span>` : n === 0 ? `<span class="est falta">Sin archivos</span>` : `<span class="est falta">Faltan ${TD.length - n}</span>`;
+      const semDie = SEM_DIE.has(lunes(d));
+      tr += `<tr class="${d === sel ? "sel" : ""}"><td class="dia" data-d="${d}">${diaTxt(d)}<small>${dmy(d)}</small></td>${T.map(t => t.semanal ? `<td><span class="c ${semDie ? "sem-si" : "no"}" title="${semDie ? "Incluido en el archivo de la semana" : "Falta el archivo de la semana"}">${semDie ? "S" : "—"}</span></td>` : `<td>${f[t.k] === 2 ? `<span class="c v2" title="2 versiones">2</span>` : f[t.k] ? `<span class="c si">✓</span>` : `<span class="c no">—</span>`}</td>`).join("")}<td>${est}</td></tr>`;
+    });
+  } else if (vista === "sem") {
+    const G = {}; DIAS.filter(x => x[0].slice(0, 7) === mesSel || lunes(x[0]).slice(0, 7) === mesSel).forEach(x => (G[lunes(x[0])] = G[lunes(x[0])] || []).push(x));
+    Object.keys(G).sort().reverse().forEach(l => { const fin = new Date(l + "T12:00:00"); fin.setDate(fin.getDate() + 6); tr += filaGrupo(`${corto(l)} – ${corto(fin.toISOString().slice(0, 10))}`, `${G[l].length} días`, G[l], l); });
+  } else {
+    const G = {}; DIAS.forEach(x => (G[x[0].slice(0, 7)] = G[x[0].slice(0, 7)] || []).push(x));
+    Object.keys(G).sort().reverse().forEach(m => tr += filaGrupo(MESES[+m.slice(5) - 1][0].toUpperCase() + MESES[+m.slice(5) - 1].slice(1) + " " + m.slice(0, 4), `${G[m].length} días`, G[m], m));
+  }
+  const m = document.getElementById("mtz"); m.innerHTML = th + tr;
+  document.getElementById("leyenda").textContent = vista === "dia" ? "toca un día para ver sus archivos" : "cada celda = días con ese archivo / días con operación · toca un renglón para ver sus días";
+  m.querySelectorAll("td.dia[data-d]").forEach(td => td.onclick = () => { sel = td.dataset.d; pintarMtz(); pintarDet(); });
+  m.querySelectorAll("td.dia[data-g]").forEach(td => td.onclick = () => { const g = td.dataset.g; mesSel = g.slice(0, 7); vista = "dia"; document.querySelectorAll("#vista button").forEach(x => x.classList.toggle("on", x.dataset.v === "dia")); sel = (DIAS.filter(x => x[0].startsWith(g.length === 7 ? g : g.slice(0, 7))).pop() || [sel])[0]; if (g.length > 7) sel = DIAS.filter(x => lunes(x[0]) === g).pop()[0]; pintarMtz(); pintarDet(); });
+}
+document.querySelectorAll("#vista button").forEach(b => b.onclick = () => { vista = b.dataset.v; document.querySelectorAll("#vista button").forEach(x => x.classList.toggle("on", x === b)); pintarMtz(); });
+// ---- Rendimiento de diésel (datos reales del archivo de octubre) ----
+const DZS = [{"u": "8127", "op": "Israel Ortiz Diaz", "lt": 140.4, "cargas": 5, "km": 644.4}, {"u": "8082", "op": "Alfonso Cortez de Jesus", "lt": 90, "cargas": 3, "km": 411.3}, {"u": "8052", "op": "Marcos Meza Torres", "lt": 245.3, "cargas": 5, "km": 1118.6}, {"u": "8083", "op": "", "lt": 289.5, "cargas": 6, "km": 1317.2}, {"u": "8063", "op": "MISRAIM HERNANDEZ MORALES", "lt": 372.5, "cargas": 5, "km": 1687.4}, {"u": "8057", "op": "Elías Alejandro Martínez Rosas", "lt": 103.9, "cargas": 2, "km": 469.6}, {"u": "8095", "op": "SERGIO MARQUEZ RODRIGUEZ", "lt": 217, "cargas": 5, "km": 978.7}, {"u": "8026", "op": "Luis Fernando Fernandez Hernandez", "lt": 316.9, "cargas": 5, "km": 1422.9}, {"u": "8109", "op": "Edmundo Armando Arenas Pouchoulen", "lt": 256, "cargas": 5, "km": 1149.4}, {"u": "8099", "op": "Cristhian Jaffet Alvarez Martínez", "lt": 177, "cargas": 2, "km": 793.0}, {"u": "8017", "op": "Jose Alfredo Romero Antonio", "lt": 233.5, "cargas": 5, "km": 1046.1}, {"u": "8061", "op": "Luis Manuel Quintero Contreras", "lt": 310.9, "cargas": 5, "km": 1392.8}, {"u": "8098", "op": "Gerardo Chavez Quiterio", "lt": 245, "cargas": 5, "km": 1092.7}, {"u": "8115", "op": "Rodrigo Mazapila Reyes", "lt": 273.8, "cargas": 5, "km": 1218.4}, {"u": "8113", "op": "David González Martínez", "lt": 164.5, "cargas": 3, "km": 730.4}, {"u": "8019", "op": "LUIS GERARDO LOZANO PARRA", "lt": 158, "cargas": 4, "km": 701.5}, {"u": "8041", "op": "Isaac Munive Hernández", "lt": 261.1, "cargas": 5, "km": 1156.7}, {"u": "8028", "op": "Orley Ramirez", "lt": 266.5, "cargas": 4, "km": 1172.6}, {"u": "8064", "op": "JOSE MAURICIO TORIJA CUELLAR", "lt": 327.6, "cargas": 5, "km": 1438.2}, {"u": "8049", "op": "ELIEL MEDRANO GALICIA", "lt": 239.1, "cargas": 4, "km": 1037.7}, {"u": "8053", "op": "Jesus Ceron Zompance", "lt": 293.9, "cargas": 5, "km": 1275.5}, {"u": "8107", "op": "Ricardo Romero Cuautle", "lt": 233.7, "cargas": 5, "km": 1009.6}, {"u": "8087", "op": "SAMUEL IVAN RUIZ MARTINEZ", "lt": 184, "cargas": 5, "km": 789.4}, {"u": "8002", "op": "Jorge Contreras Gutiérrez", "lt": 90.7, "cargas": 3, "km": 385.5}, {"u": "8076", "op": "Jose Enrique Garcia Flores", "lt": 169, "cargas": 4, "km": 716.6}, {"u": "8044", "op": "Heremio Osorio Navor", "lt": 226.2, "cargas": 5, "km": 947.8}, {"u": "8016", "op": "JOSE JUAREZ ESCALERA", "lt": 242, "cargas": 5, "km": 1014.0}, {"u": "8106", "op": "RAFAEL RAMOS ROBLES", "lt": 320, "cargas": 5, "km": 1340.8}, {"u": "8089", "op": "Oscar Alducin Acevedo", "lt": 242, "cargas": 5, "km": 1011.6}, {"u": "8103", "op": "Victor Hugo Santos Jiménez", "lt": 257, "cargas": 5, "km": 1066.6}, {"u": "8042", "op": "Esteban Isaac Pimentel Cerezo", "lt": 274.2, "cargas": 5, "km": 1132.4}, {"u": "8097", "op": "Cristian Brayan Osorno Lima", "lt": 230.5, "cargas": 4, "km": 947.4}, {"u": "8105", "op": "GUSTAVO GARCIA FLORES", "lt": 202, "cargas": 5, "km": 828.2}, {"u": "8086", "op": "JOSE MAXIMO PEREZ ROMERO", "lt": 235, "cargas": 6, "km": 963.5}, {"u": "8015", "op": "", "lt": 328.2, "cargas": 5, "km": 1339.1}, {"u": "8018", "op": "", "lt": 224, "cargas": 5, "km": 913.9}, {"u": "8080", "op": "Jose Vicente Conde Ortega", "lt": 193, "cargas": 5, "km": 773.9}, {"u": "8062", "op": "Andres Lira Badillo", "lt": 316.4, "cargas": 5, "km": 1259.3}, {"u": "8125", "op": "Hugo Ariel Aguirre Diaz", "lt": 88.7, "cargas": 4, "km": 353.0}, {"u": "8059", "op": "JUAN DANIEL GOMEZ REBOLLEDO", "lt": 193.5, "cargas": 5, "km": 766.3}, {"u": "8073", "op": "JOSAFAT DE HILARIO MACHORRO", "lt": 314, "cargas": 5, "km": 1243.4}, {"u": "8027", "op": "Francisco Daniel Cuautle Pérez", "lt": 199, "cargas": 3, "km": 776.1}, {"u": "8005", "op": "Brayam Jimenes Macuitl", "lt": 164.1, "cargas": 3, "km": 631.8}, {"u": "8046", "op": "Jorge Hernan Carrillo Zambrano", "lt": 241.6, "cargas": 5, "km": 925.3}, {"u": "8112", "op": "LUIS ENRIQUE LOBATO LARA", "lt": 264, "cargas": 5, "km": 1008.5}, {"u": "8071", "op": "Aaron Sanchez Gutierrez", "lt": 310.6, "cargas": 5, "km": 1183.4}, {"u": "8124", "op": "Jeronimo Pedro Lopez Vazquez", "lt": 176, "cargas": 5, "km": 667.0}, {"u": "8091", "op": "Roberto Saynos Zepeda", "lt": 221.4, "cargas": 5, "km": 832.5}, {"u": "8034", "op": "JESUS GIOVANNI PIMENTEL CEREZO", "lt": 189.7, "cargas": 3, "km": 711.4}, {"u": "8033", "op": "Saúl Ordóñez Valencia", "lt": 219.8, "cargas": 5, "km": 811.1}, {"u": "8116", "op": "Primitivo Castillo", "lt": 293.1, "cargas": 5, "km": 1081.5}, {"u": "8058", "op": "Miguel Ángel García Rodríguez", "lt": 227.6, "cargas": 5, "km": 837.6}, {"u": "8085", "op": "Francisco Miguel Hernandez Garcia", "lt": 147, "cargas": 5, "km": 539.5}, {"u": "8102", "op": "EDGAR SANCHEZ FLORES", "lt": 311, "cargas": 5, "km": 1135.1}, {"u": "8077", "op": "Javier Rubín Juarez", "lt": 302.3, "cargas": 5, "km": 1076.2}, {"u": "8079", "op": "Gustavo Vargas Lucero", "lt": 214, "cargas": 5, "km": 761.8}, {"u": "8030", "op": "MANUEL CAMPOS CASTAÑEDA", "lt": 265.2, "cargas": 5, "km": 938.8}, {"u": "8025", "op": "Gustavo Olmedo Reta", "lt": 211.3, "cargas": 5, "km": 745.9}, {"u": "8022", "op": "Fernando Romero Garcia", "lt": 33.5, "cargas": 1, "km": 117.6}, {"u": "8126", "op": "Juan Carlos Tovar Lima", "lt": 25, "cargas": 1, "km": 86.0}, {"u": "8122", "op": "Roberto Rivera Ochoa", "lt": 12, "cargas": 2, "km": 40.9}, {"u": "8090", "op": "GREGORIO URBANO GONZALEZ MUÑOZ", "lt": 182.5, "cargas": 5, "km": 607.7}, {"u": "8066", "op": "Jose Valentin Silva Marcial", "lt": 214, "cargas": 5, "km": 710.5}, {"u": "8101", "op": "PASCUAL LOPEZ MENDOZA", "lt": 234.1, "cargas": 5, "km": 774.9}, {"u": "8100", "op": "Sebastian Emanuel Aguilar Mendoza", "lt": 258.8, "cargas": 5, "km": 851.5}, {"u": "8114", "op": "MOISES ROMERO HERNANDEZ", "lt": 312, "cargas": 5, "km": 1023.4}, {"u": "8111", "op": "Mario Vazque Salazar", "lt": 244.9, "cargas": 5, "km": 803.3}, {"u": "8074", "op": "Juan Carlos Candia de Ita", "lt": 309.8, "cargas": 5, "km": 1016.1}, {"u": "8078", "op": "Alejandro Rodriguez Aquino", "lt": 316.5, "cargas": 5, "km": 1022.3}, {"u": "8118", "op": "MIGUEL SANCHEZ GAMBOA", "lt": 188, "cargas": 4, "km": 607.2}, {"u": "8117", "op": "Armando Lopez Munguia", "lt": 273, "cargas": 5, "km": 879.1}, {"u": "8075", "op": "Fernando del Razo Cortez", "lt": 316.2, "cargas": 5, "km": 1018.2}, {"u": "8070", "op": "Leopoldo Muñoz Ramirez", "lt": 246.6, "cargas": 5, "km": 789.1}, {"u": "8065", "op": "Efren Jacobo Muñoz Coutiño", "lt": 169.7, "cargas": 3, "km": 543.0}, {"u": "8056", "op": "Jose Ubaldo Gonzalez Gonzalez", "lt": 290.5, "cargas": 6, "km": 923.8}, {"u": "8038", "op": "", "lt": 260.5, "cargas": 5, "km": 823.2}, {"u": "8031", "op": "Juan Carlos Vargas Gonzales", "lt": 160.0, "cargas": 5, "km": 494.4}, {"u": "8123", "op": "MARCOS ORTEGA CUEVAS", "lt": 152, "cargas": 4, "km": 466.6}, {"u": "8051", "op": "José Armando Hernandes Delgado", "lt": 267.2, "cargas": 5, "km": 809.6}, {"u": "8037", "op": "Cristian Eduardo Mendez Hernandez", "lt": 137.6, "cargas": 3, "km": 416.9}, {"u": "8050", "op": "JOSE FELIPE MORALES FLORES", "lt": 248.6, "cargas": 5, "km": 750.8}, {"u": "8060", "op": "ISAAC HUERTA CASTILLO", "lt": 269.3, "cargas": 4, "km": 810.6}, {"u": "8096", "op": "Rolando Crescencio Vallejo", "lt": 239.3, "cargas": 5, "km": 715.5}, {"u": "8094", "op": "GUILLERMO TORIZ ROJAS", "lt": 263.2, "cargas": 5, "km": 779.1}, {"u": "8119", "op": "MELESIO DE LA LUZ GUZMAN", "lt": 387, "cargas": 5, "km": 1141.7}, {"u": "8067", "op": "Julian Garcia Arrazola", "lt": 272.9, "cargas": 5, "km": 799.6}, {"u": "8043", "op": "Javier Velázquez Bautista", "lt": 244.3, "cargas": 5, "km": 713.4}, {"u": "8032", "op": "Emmanuel Martinez Meza", "lt": 125, "cargas": 5, "km": 365.0}, {"u": "8121", "op": "Hector Alfonso Martinez Barreda", "lt": 97.1, "cargas": 3, "km": 281.6}, {"u": "8068", "op": "Jose Luis Cuaya Lopez", "lt": 346, "cargas": 5, "km": 999.9}, {"u": "8045", "op": "Ignacio Palma Martinez", "lt": 212.4, "cargas": 5, "km": 611.7}, {"u": "8047", "op": "Dario Hernández Flores", "lt": 355.2, "cargas": 5, "km": 1012.3}, {"u": "8029", "op": "", "lt": 289.7, "cargas": 5, "km": 819.9}, {"u": "8104", "op": "Juan Valentin Meneses Jimenez", "lt": 243, "cargas": 5, "km": 685.3}, {"u": "8110", "op": "Israel Vázquez Ypatlan", "lt": 255.4, "cargas": 5, "km": 710.0}, {"u": "8120", "op": "Eliseo Serrano Rodriguez", "lt": 152.3, "cargas": 5, "km": 420.3}, {"u": "8069", "op": "CARLOS MUÑOZ GOMEZ", "lt": 293.6, "cargas": 5, "km": 801.5}, {"u": "8081", "op": "Jose Miguel Rodriguez Mendoza", "lt": 269.1, "cargas": 5, "km": 729.3}, {"u": "8035", "op": "", "lt": 75, "cargas": 3, "km": 202.5}, {"u": "8093", "op": "JOSE FELIX ERNESTO SANTIAGO SUAREZ", "lt": 265.1, "cargas": 5, "km": 713.1}, {"u": "8108", "op": "Cesar Aguilar Fermin", "lt": 237, "cargas": 6, "km": 632.8}, {"u": "8024", "op": "Eduardo Sánchez Velazquez", "lt": 205.5, "cargas": 5, "km": 546.6}, {"u": "8084", "op": "Jesus Alberto Zavala Huerta", "lt": 223.8, "cargas": 5, "km": 593.1}, {"u": "8088", "op": "ABEL MENDEZ CAMARGO", "lt": 199, "cargas": 5, "km": 525.4}, {"u": "8036", "op": "", "lt": 127.9, "cargas": 4, "km": 336.4}, {"u": "8092", "op": "Hazel Patricio Rodríguez", "lt": 316.0, "cargas": 5, "km": 827.9}, {"u": "8072", "op": "LUIS FERNANDO ZAPATA HERNANDEZ", "lt": 247.5, "cargas": 4, "km": 646.0}, {"u": "8048", "op": "Cristian Gomez Diego", "lt": 283.1, "cargas": 5, "km": 736.1}];
+let dzOrd = "rd";
+function pintarDiesel() {
+  const km = DZS.reduce((a, x) => a + x.km, 0), lt = DZS.reduce((a, x) => a + x.lt, 0);
+  document.getElementById("fKm").textContent = fN(km, 0); document.getElementById("fLt").textContent = fN(lt, 0); document.getElementById("fRd").textContent = fN(km / lt, 2);
+  const f = DZS.map((x, i) => Object.assign({}, x, { rd: x.km / x.lt, cambio: i % 23 === 7 })).sort((a, b) => dzOrd === "peor" ? a.rd - b.rd : b[dzOrd] - a[dzOrd]);
+  document.getElementById("dzT").dataset.id = "die"; document.getElementById("dzT").innerHTML = `<tr><th><button>#</button></th><th><button>Unidad</button></th><th><button>Operador asignado (rol)</button></th><th><button>Cargas</button></th><th class="${dzOrd === "lt" ? "ord" : ""}"><button>Litros</button></th><th class="${dzOrd === "km" ? "ord" : ""}"><button>Km GPS</button></th><th class="${dzOrd === "rd" || dzOrd === "peor" ? "ord" : ""}"><button>km/L</button></th><th><button>Bono</button></th></tr>` +
+    f.map((r, i) => `<tr><td class="pos">${i + 1}</td><td><b>${r.u}</b></td><td style="max-width:260px;overflow:hidden;text-overflow:ellipsis">${r.op || `<span style="color:var(--ter)">sin operador en el rol</span>`}${r.cambio ? ` <span class="conf baja" title="Esa semana la manejaron dos operadores">2 operadores</span>` : ""}</td><td>${r.cargas}</td><td>${fN(r.lt, 1)}</td><td>${fN(r.km, 1)}</td><td class="col">${fN(r.rd, 2)}</td><td style="color:var(--ter)">pendiente</td></tr>`).join("");
+  editables(document.getElementById("t-diesel"));
+}
+document.querySelectorAll("#dzOrd button").forEach(b => b.onclick = () => { dzOrd = b.dataset.k; document.querySelectorAll("#dzOrd button").forEach(x => x.classList.toggle("on", x === b)); pintarDiesel(); });
+const ICO_D = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1D3F94" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg>`;
+const GRUPOS = [
+  { t: "Rol", c: "#1D3F94", ks: ["plan", "mon"] },
+  { t: "Puntualidad", c: "#0F1E4A", ks: ["pun"] },
+  { t: "Velocidad", c: "#E31B23", ks: ["velW", "velS"] },
+  { t: "Eventos", c: "#C2410C", ks: ["evW", "evS"] },
+  { t: "Kilometraje", c: "#0052CC", ks: ["kmW", "kmS"] },
+  { t: "Diésel", c: "#0E7490", ks: ["die"] }
+];
+function pintarDet() {
+  const f = (DIAS.find(x => x[0] === sel) || [0, {}])[1];
+  const n = TD.filter(t => f[t.k]).length, tot = TD.filter(t => f[t.k]).reduce((a, t) => a + KB[t.k], 0);
+  const pc = Math.round(n / TD.length * 100);
+  document.getElementById("dd").innerHTML = `<div class="dd-cab"><div class="anillo" style="--p:${pc};--c:${n === TD.length ? "#1F8A4C" : "#C98A1B"}"><span>${n}/${TD.length}</span></div>
+      <div><h3>${diaTxt(sel)} · ${dmy(sel)}</h3><small>${n === TD.length ? "Día completo" : `Faltan ${TD.length - n} archivos`} · ${tot} KB en la nube</small></div><span class="sp"></span>
+      ${n < TD.length ? `<button class="bt">Subir lo que falta</button>` : ""}${n ? `<button class="bt prim">Descargar día (.zip)</button>` : ""}</div>
+    <div class="grupos">${GRUPOS.map(g => `<div class="gr" style="--c:${g.c}"><div class="gr-t"><i></i>${g.t}<em>${g.ks.filter(k => f[k]).length}/${g.ks.length}</em></div>
+      ${g.ks.map(k => { const t = T.find(x => x.k === k); return f[k]
+        ? `<div class="ar"><div><b>${t.s}${f[k] === 2 ? `<span class="v">2 versiones</span>` : ""}</b><small>${KB[k]} KB · Torre de Control · 23:4${k.length}</small></div><button title="Descargar ${NOM[k](dmy(sel))}">${ICO_D}</button></div>`
+        : t.semanal ? (SEM_DIE.has(lunes(sel)) ? `<div class="ar"><div><b>Archivo de la semana</b><small>Diesel_semana_${dmy(lunes(sel))}.xls · 17 KB</small></div><button title="Descargar">${ICO_D}</button></div>` : `<div class="ar falta"><div><b>Semana sin archivo</b><small>Se sube una vez por semana</small></div><button>Subir</button></div>`)
+        : `<div class="ar falta"><div><b>${t.s}</b><small>No se ha subido</small></div><button>Subir</button></div>`; }).join("")}</div>`).join("")}</div>`;
+}
+function pintarUlt() {
+  const it = [["#0F1E4A", "Puntualidad · mié 25", "23:45"], ["#2E55B8", "Monitor · mié 25", "23:41"], ["#1D3F94", "Plantilla · mié 25", "06:02"], ["#0052CC", "Kilometraje Webfleet · mar 24", "23:47"], ["#E31B23", "Velocidad Webfleet · mar 24", "23:47"]];
+  document.getElementById("ult").innerHTML = it.map(x => `<div class="it" style="--c:${x[0]}"><i></i><span>${x[1]}</span><small>${x[2]}</small></div>`).join("");
+}
+// ---- detalles del periodo (números de ejemplo) ----
+let rkK = "exc", rkPor = "u", rkOrd = null;
+const OPS = ["J. D. Gómez R.", "G. Olmedo R.", "E. Sánchez F.", "A. Méndez C.", "J. Rubín J.", "E. I. Pimentel C.", "R. Sainos Z.", "J. Pérez L.", "M. Hernández T.", "L. Ramírez P.", "C. Flores M.", "F. Torres A.", "S. Aguilar V.", "H. Cruz B.", "O. Vargas N.", "P. Morales G.", "R. Castillo D.", "V. Ortiz L."];
+let sem = 7; const R0 = () => (sem = (sem * 16807) % 2147483647) / 2147483647;
+const UNI = [];
+for (let i = 0; UNI.length < 30 && i < 200; i++) {
+  const u = String(8001 + Math.floor(R0() * 105));
+  if (UNI.some(x => x.u === u)) continue;
+  const cor = 50 + Math.floor(R0() * 40), tar = Math.floor(R0() * R0() * 9), exc = Math.floor(R0() * R0() * 95), ev = Math.floor(R0() * R0() * 40);
+  UNI.push({ u, op: OPS[UNI.length % OPS.length], exc, crit: Math.floor(exc * 0.08), ev, alta: Math.floor(ev * 0.05), cor, tar, pun: (cor - tar) / cor * 100, km: Math.round((900 + R0() * 2300) * 10) / 10 });
+  UNI[UNI.length - 1].lt = Math.round(UNI[UNI.length - 1].km / (2.6 + R0() * 1.8) * 10) / 10;
+}
+function filasRk() {
+  if (rkPor === "u") return UNI.map(x => Object.assign({ a: x.u, b: x.op }, x));
+  const M = {};
+  UNI.forEach(x => { const m = M[x.op] = M[x.op] || { a: x.op, exc: 0, crit: 0, ev: 0, alta: 0, cor: 0, tar: 0, km: 0, lt: 0, us: [] }; ["exc", "crit", "ev", "alta", "cor", "tar", "km", "lt"].forEach(k => m[k] += x[k]); m.us.push(x.u); });
+  return Object.values(M).map(m => Object.assign(m, { b: m.us.join(", "), pun: (m.cor - m.tar) / m.cor * 100 }));
+}
+const fN = (v, d) => { const [e, f] = Math.abs(v).toFixed(d || 0).split("."); return e.replace(/\B(?=(\d{3})+(?!\d))/g, ".") + (f ? "," + f : ""); };
+function pintarRk() {
+  const cols = [
+    { k: "pos", t: "#" }, { k: "a", t: rkPor === "u" ? "Unidad" : "Operador" }, { k: "b", t: rkPor === "u" ? "Operador principal" : "Unidades" },
+    { k: "exc", t: "Excesos", c: "#E31B23", f: r => `${r.exc}${r.crit ? `<small class="rojo">${r.crit} crít.</small>` : ""}` },
+    { k: "ev", t: "Eventos", c: "#C2410C", f: r => `${r.ev}${r.alta ? `<small class="rojo">${r.alta} alta</small>` : ""}` },
+    { k: "tar", t: "Impuntuales", c: "#0F1E4A", f: r => `${r.tar}<small>de ${r.cor}</small>` },
+    { k: "pun", t: "Puntualidad", f: r => `<span class="${r.pun < 98 ? "rojo" : ""}">${fN(r.pun, 1)} %</span>` },
+    { k: "km", t: "Km recorridos", c: "#0052CC", f: r => fN(r.km, 1) },
+    { k: "lt", t: "Diésel (L)", c: "#0E7490", f: r => fN(r.lt, 1) },
+    { k: "rd", t: "km/L", f: r => fN(r.km / r.lt, 2) }
+  ];
+  const ord = rkOrd || { k: rkK, dir: -1 };
+  const filas = filasRk().map(r => Object.assign(r, { rd: r.km / r.lt })).sort((x, y) => { const a = x[ord.k], b = y[ord.k]; return (typeof a === "string" ? a.localeCompare(b, "es", { numeric: true }) : a - b) * ord.dir; });
+  const max = Math.max(1, ...filas.map(r => r[rkK]));
+  document.getElementById("rkT").innerHTML = `<tr>${cols.map(c => `<th class="${c.k === ord.k ? "ord" : ""}">${c.k === "pos" ? `<button>#</button>` : `<button data-k="${c.k}">${c.t}${c.k === ord.k ? (ord.dir > 0 ? " ▲" : " ▼") : ""}</button>`}</th>`).join("")}</tr>` +
+    filas.map((r, i) => `<tr>${cols.map(c => c.k === "pos" ? `<td class="pos">${i + 1}</td>` : c.k === "a" ? `<td><b>${r.a}</b></td>` : c.k === "b" ? `<td style="color:var(--sub);max-width:220px;overflow:hidden;text-overflow:ellipsis">${r.b}</td>` :
+      `<td class="${c.k === ord.k ? "col" : ""}">${c.f(r)}${c.k === rkK && c.c ? `<span class="mini" style="--c:${c.c};width:${Math.max(2, r[rkK] / max * 60)}px"></span>` : ""}</td>`).join("")}</tr>`).join("");
+  editables(document.getElementById("rk"));
+  document.querySelectorAll("#rkT th button[data-k]").forEach(b => b.onclick = () => { const k = b.dataset.k; const o = rkOrd || { k: rkK, dir: -1 }; rkOrd = o.k === k ? { k, dir: -o.dir } : { k, dir: k === "pun" || k === "a" || k === "b" ? 1 : -1 }; pintarRk(); });
+}
+document.getElementById("btDet").onclick = e => { const rk = document.getElementById("rk"); rk.hidden = !rk.hidden; e.currentTarget.textContent = rk.hidden ? "Mostrar detalles ▾" : "Ocultar detalles ▴"; if (!rk.hidden) pintarRk(); };
+document.querySelectorAll("#rkBts > button").forEach(b => b.onclick = () => { rkK = b.dataset.k; rkOrd = null; document.querySelectorAll("#rkBts > button").forEach(x => x.classList.toggle("on", x === b)); pintarRk(); });
+document.querySelectorAll("#rkPor button").forEach(b => b.onclick = () => { rkPor = b.dataset.p; rkOrd = null; document.querySelectorAll("#rkPor button").forEach(x => x.classList.toggle("on", x === b)); pintarRk(); });
+function pintarCruce() {
+  document.getElementById("cruce").innerHTML = `<tr><th>Archivo</th>${REPS.map(r => `<th>${r}</th>`).join("")}</tr>` +
+    T.map(t => `<tr><td><span class="ti" style="background:${t.c}">${t.a}</span><b>${t.t}</b> <small>${t.s}</small></td>${REPS.map((r, i) => `<td>${DIRECTO[t.k][i] ? `<span class="pt d" style="background:${t.c}"></span>` : USA[t.k][i] ? `<span class="pt c" style="border-color:${t.c}"></span>` : ""}</td>`).join("")}</tr>`).join("");
+}
+// ---- Infografía del periodo ----
+const PD = {
+  dias: ["Lun 16", "Mar 17", "Mié 18", "Jue 19", "Vie 20", "Sáb 21", "Lun 23", "Mar 24", "Mié 25"],
+  pun: [96.2, 96.8, 96.8, 95.7, 97.1, 95.8, 97.1, 96.9, 97.3],
+  km: [14820, 14950, 14710, 14630, 14880, 11240, 14910, 14018, 15382],
+  exc: [441, 468, 402, 455, 437, 318, 470, 452, 469],
+  ev: [181, 176, 169, 192, 174, 131, 188, 197, 196],
+  ant: { pun: 96.1, km: 128900, exc: 4105, ev: 1660, rd: 3.78 },
+  rd: [3.78, 3.86], sev: [1820, 1811, 281], tipos: [["Frenadas", 452], ["Giro izquierda", 597], ["Giro derecha", 555]]
+};
+const sum = a => a.reduce((x, y) => x + y, 0);
+function spark(v, c, meta) {
+  const w = 150, h = 38, mn = Math.min(...v, meta ?? Infinity), mx = Math.max(...v, meta ?? -Infinity), r = mx - mn || 1;
+  const X = i => i * (w / (v.length - 1)), Y = x => h - 3 - (x - mn) / r * (h - 6);
+  const d = v.map((x, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(x).toFixed(1)}`).join("");
+  return `<svg viewBox="0 0 ${w} ${h}" class="sp" preserveAspectRatio="none"><path d="${d}L${w},${h}L0,${h}Z" fill="${c}" opacity=".10"/><path d="${d}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round"/>${meta !== undefined ? `<line x1="0" x2="${w}" y1="${Y(meta)}" y2="${Y(meta)}" stroke="#0B1A30" stroke-dasharray="3 3" stroke-width="1" opacity=".5"/>` : ""}<circle cx="${X(v.length - 1)}" cy="${Y(v[v.length - 1])}" r="3" fill="${c}"/></svg>`;
+}
+function delta(act, ant, buenoSube, dec) {
+  const dif = (act - ant) / ant * 100, bueno = buenoSube ? dif >= 0 : dif <= 0;
+  return `<span class="dl ${bueno ? "b" : "m"}">${dif >= 0 ? "▲" : "▼"} ${fN(Math.abs(dif), dec ?? 1)} %</span><span class="dl-t">vs periodo anterior</span>`;
+}
+function pintarInf() {
+  const pun = sum(PD.pun) / PD.pun.length, km = sum(PD.km), exc = sum(PD.exc), ev = sum(PD.ev), rd = PD.rd[PD.rd.length - 1];
+  const sevT = sum(PD.sev), crit = PD.sev[2];
+  // barras de puntualidad diaria con meta
+  const W = 520, H = 170, mn = 94, mx = 99, bw = W / PD.pun.length;
+  const yb = v => H - 22 - (v - mn) / (mx - mn) * (H - 40);
+  const barras = PD.pun.map((v, i) => `<rect x="${i * bw + bw * .2}" y="${yb(v)}" width="${bw * .6}" height="${H - 22 - yb(v)}" rx="5" fill="${v >= 98 ? "#1F8A4C" : v === Math.min(...PD.pun) ? "#B3262D" : "#E8858A"}"/><text x="${i * bw + bw / 2}" y="${yb(v) - 6}" text-anchor="middle" class="tv">${fN(v, 1)}</text><text x="${i * bw + bw / 2}" y="${H - 6}" text-anchor="middle" class="tx">${PD.dias[i].split(" ")[1]}</text>`).join("");
+  // dona de severidad
+  let ang = -Math.PI / 2; const R = 46, cx = 60, cy = 60;
+  const arcos = PD.sev.map((v, i) => { const a2 = ang + v / sevT * Math.PI * 2, l = a2 - ang > Math.PI ? 1 : 0; const p = `M${cx + R * Math.cos(ang)},${cy + R * Math.sin(ang)} A${R},${R} 0 ${l} 1 ${cx + R * Math.cos(a2)},${cy + R * Math.sin(a2)}`; ang = a2; return `<path d="${p}" stroke="${["#F5B800", "#F28C28", "#D52B2B"][i]}" stroke-width="18" fill="none"/>`; }).join("");
+  const mxT = Math.max(...PD.tipos.map(t => t[1]));
+  document.getElementById("inf").innerHTML = `
+  <div class="inf-hero">
+    <div><small>REPORTE DEL PERIODO · STU BUAP</small><h3>16 al 25 de noviembre de 2026</h3><span>9 días de operación · 78 archivos · domingo 22 sin servicio</span></div>
+    <div class="inf-meta"><b>${fN(pun, 1)} %</b><span>puntualidad<br>meta 98 %</span><i class="${pun >= 98 ? "ok" : ""}">${pun >= 98 ? "CUMPLE" : "NO CUMPLE"}</i></div>
+  </div>
+  <div class="inf-k">
+    <div style="--c:#1D3F94"><small><i>PU</i>Puntualidad</small><b>${fN(pun, 1)} %</b>${delta(pun, PD.ant.pun, true)}${spark(PD.pun, "#1D3F94", 98)}</div>
+    <div style="--c:#0052CC"><small><i>KM</i>Km recorridos</small><b>${fN(km)}</b>${delta(km, PD.ant.km, true)}${spark(PD.km, "#0052CC")}</div>
+    <div style="--c:#D52B2B"><small><i>VE</i>Excesos</small><b>${fN(exc)}</b>${delta(exc, PD.ant.exc, false)}${spark(PD.exc, "#D52B2B")}</div>
+    <div style="--c:#9A3412"><small><i>EV</i>Eventos</small><b>${fN(ev)}</b>${delta(ev, PD.ant.ev, false)}${spark(PD.ev, "#9A3412")}</div>
+    <div style="--c:#0E7490"><small><i>DI</i>Rendimiento</small><b>${fN(rd, 2)}<u> km/L</u></b>${delta(rd, PD.ant.rd, true)}${spark(PD.rd.concat([rd]), "#0E7490")}</div>
+  </div>
+  <div class="inf-2">
+    <div class="inf-c"><div class="inf-t">Puntualidad por día <em>línea punteada = meta 98 %</em></div>
+      <svg viewBox="0 0 ${W} ${H}" class="inf-svg"><line x1="0" x2="${W}" y1="${yb(98)}" y2="${yb(98)}" stroke="#0B1A30" stroke-dasharray="5 4" opacity=".55"/><text x="2" y="${yb(98) - 5}" class="tm">META 98 %</text>${barras}</svg></div>
+    <div class="inf-c"><div class="inf-t">Lo más importante</div>
+      <ol class="inf-l">
+        <li style="--c:#D52B2B"><div><b>Ningún día llegó a la meta.</b> El mejor fue el miércoles 25 con 97,3 %; el más bajo, el jueves 19 con 95,7 %.</div></li>
+        <li style="--c:#6B4FBB"><div><b>Si los de GPS hubieran llegado a tiempo: 97,4 %.</b> El resto de las tardes son de operación.</div></li>
+        <li style="--c:#D52B2B"><div><b>Excesos bajaron ${fN((PD.ant.exc - exc) / PD.ant.exc * 100, 1)} %</b>, pero ${crit} fueron críticos. La 8045 encabeza con 60.</div></li>
+        <li style="--c:#0E7490"><div><b>Rendimiento ${fN(rd, 2)} km/L</b>, mejor que la semana anterior. Mejor unidad: 8127 (4,59).</div></li>
+        <li style="--c:#C98A1B"><div><b>2 días con archivos incompletos</b> (sáb 21 y mié 25): sus números pueden cambiar al completarlos.</div></li>
+      </ol></div>
+  </div>
+  <div class="inf-3">
+    <div class="inf-c"><div class="inf-t">Excesos por severidad</div><div class="dona"><svg viewBox="0 0 120 120">${arcos}<text x="60" y="58" text-anchor="middle" class="dn">${fN(exc)}</text><text x="60" y="74" text-anchor="middle" class="dt">excesos</text></svg>
+      <ul><li><i style="background:#F5B800"></i>Leve<b>${fN(PD.sev[0])}</b></li><li><i style="background:#F28C28"></i>Moderado<b>${fN(PD.sev[1])}</b></li><li><i style="background:#D52B2B"></i>Crítico<b>${fN(crit)}</b></li></ul></div></div>
+    <div class="inf-c"><div class="inf-t">Eventos de conducción por tipo</div>${PD.tipos.map(t => `<div class="hb"><span>${t[0]}</span><i><b style="width:${t[1] / mxT * 100}%"></b></i><em>${fN(t[1])}</em></div>`).join("")}<p class="inf-n">${fN(63)} de severidad alta · 9 días</p></div>
+    <div class="inf-c"><div class="inf-t">Km recorridos por día</div>${spark(PD.km, "#0052CC").replace('class="sp"', 'class="sp grande"')}<p class="inf-n">Promedio ${fN(km / PD.km.length)} km al día · sábado 21 con servicio reducido</p></div>
+  </div>
+  <div class="inf-pie"><span>Fuentes:</span>${["PL", "MO", "PU", "VW", "VS", "EW", "ES", "KW", "KS", "DI"].map((a, i) => `<i style="background:${T[i].c}">${a}</i>`).join("")}<em>Números de ejemplo · Rol Operativo STU BUAP</em></div>`;
+}
+// ---- 5.1 · Desglose por reporte: misma infografía para todos (datos reales de tus archivos) ----
+function ifxDona(vals, cols, centro, txt) {
+  const T0 = sum(vals) || 1; let ang = -Math.PI / 2; const R = 46, cx = 60, cy = 60;
+  return `<svg viewBox="0 0 120 120">${vals.map((v, i) => { const a2 = ang + v / T0 * Math.PI * 2 - 0.0001, l = a2 - ang > Math.PI ? 1 : 0; const d = `M${cx + R * Math.cos(ang)},${cy + R * Math.sin(ang)} A${R},${R} 0 ${l} 1 ${cx + R * Math.cos(a2)},${cy + R * Math.sin(a2)}`; ang = a2 + 0.0001; return v ? `<path d="${d}" stroke="${cols[i]}" stroke-width="18" fill="none"/>` : ""; }).join("")}<text x="60" y="58" text-anchor="middle" class="dn">${centro}</text><text x="60" y="74" text-anchor="middle" class="dt">${txt}</text></svg>`;
+}
+function ifxBloque(o) {
+  return `<div class="ifx" style="--c:${o.c}">
+    <div class="ifx-hero"><div class="ifx-ic">${o.ar.map(a => `<i>${a}</i>`).join("")}</div>
+      <div><small>${o.eti}</small><h3>${o.tit}</h3><span>${o.sub}</span></div>
+      <div class="ifx-num"><b>${o.num}</b><em>${o.numT}</em>${o.pill ? `<i style="--p:${o.pill[1]}">${o.pill[0]}</i>` : ""}<button class="ifx-ab" onclick="document.querySelector('#tabs button[data-t=${o.tab}]').click()">Abrir reporte ›</button></div></div>
+    <div class="inf-k">${o.k.map(x => `<div ${x[3] ? `style="--kc:${x[3]}"` : ""}><small>${x[0]}</small><b>${x[1]}</b><span>${x[2] || ""}</span></div>`).join("")}</div>
+    <div class="inf-3">
+      <div class="inf-c"><div class="inf-t">${o.g1[0]}</div>${o.g1[1]}</div>
+      <div class="inf-c"><div class="inf-t">Lo más importante</div><ol class="inf-l">${o.imp.map(x => `<li style="--c:${x[0]}"><div>${x[1]}</div></li>`).join("")}</ol></div>
+      <div class="inf-c"><div class="inf-t">${o.g3[0]}</div>${o.g3[1]}</div>
+    </div></div>`;
+}
+const hbs = (filas, fmt) => { const mx = Math.max(...filas.map(f => f[1])) || 1; return filas.map(f => `<div class="hb"><span title="${f[0]}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f[0]}</span><i><b style="width:${f[1] / mx * 100}%"></b></i><em>${fmt ? fmt(f[1]) : fN(f[1])}</em></div>`).join(""); };
+const rls = filas => `<ol class="rl">${filas.map(f => `<li><b title="${f[0]}">${f[0]}</b><span>${f[1] || ""}</span><em class="${f[3] || ""}">${f[2]}</em></li>`).join("")}</ol>`;
+const nomCorto = n => { const p = String(n || "").trim().split(/\s+/); return p.length > 2 ? p.slice(0, 2).join(" ") + " " + p[2][0] + "." : n; };
+function pintarDesg() {
+  const B = [];
+  // Puntualidad (archivo real del miércoles 25)
+  { const P = RD.PU, pc = P.ok / P.tot * 100, imp = P.tot - P.ok, gps = P.tar.filter(t => !t[3]).length, pg = (P.ok + gps) / P.tot * 100;
+    const vT = P.tot - P.iT, vOk = P.ok - P.iOk, hs = Object.keys(P.h).sort(), pv = hs.map(h => P.h[h][1] / P.h[h][0] * 100);
+    const peorH = hs.reduce((a, h) => P.h[h][1] / P.h[h][0] < P.h[a][1] / P.h[a][0] ? h : a, hs[0]);
+    const rutas = {}; P.tar.forEach(t => rutas[t[5]] = (rutas[t[5]] || 0) + 1);
+    const tr = Object.entries(rutas).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const con = P.tar.filter(t => (PNOTA[t[0] + "|" + t[2] + "|" + t[1]] || {}).m).length;
+    B.push(ifxBloque({ c: "#1D3F94", ar: ["PU"], tab: "pun", eti: "PUNTUALIDAD · MIÉRCOLES 25/11/2026", tit: "Puntualidad del servicio", sub: "Geocercas · IDA y VUELTA punto inicial · meta fija 98 %",
+      num: fN(pc, 1) + "<u>%</u>", numT: `${imp} impuntuales<br>de ${fN(P.tot)} corridas`, pill: pc >= 98 ? ["CUMPLE", "#1F8A4C"] : ["NO CUMPLE", "#E31B23"],
+      k: [["IDA", fN(P.iOk / P.iT * 100, 1) + " %", `${P.iT - P.iOk} tarde de ${P.iT}`], ["VUELTA", fN(vOk / vT * 100, 1) + " %", `${vT - vOk} tarde de ${vT}`], ["Si GPS llegara a tiempo", fN(pg, 1) + " %", `${gps} sin registro de GPS`, "#6B4FBB"], ["Sin justificar", imp - con, `${con} de ${imp} con motivo`, imp - con ? "#B3262D" : "#1F8A4C"], ["Peor hora", peorH + " h", fN(P.h[peorH][1] / P.h[peorH][0] * 100, 1) + " %", "#B3262D"]],
+      g1: ["Puntualidad por hora <em>punteada = meta 98 %</em>", barrasH(pv, hs, v => v >= 98 ? "#1F8A4C" : "#E8858A", 98, v => fN(v, 1))],
+      imp: [[pc >= 98 ? "#1F8A4C" : "#D52B2B", `<b>${pc >= 98 ? "Cumplió la meta" : "No llegó a la meta"}:</b> ${fN(pc, 1)} % contra 98 %. Faltaron ${Math.max(0, Math.ceil(P.tot * .98) - P.ok)} corridas a tiempo.`],
+        ["#6B4FBB", `<b>${gps} de las ${imp} tardes son de GPS</b> (sin registro). Si hubieran llegado a tiempo: ${fN(pg, 1)} %.`],
+        ["#1D3F94", `<b>VUELTA va más baja que IDA:</b> ${fN(vOk / vT * 100, 1)} % contra ${fN(P.iOk / P.iT * 100, 1)} %.`],
+        ["#C98A1B", `<b>${imp - con} tardes sin motivo.</b> Justifícalas en la tabla del reporte.`]],
+      g3: ["Rutas con más tardes", rls(tr.map(r => [r[0], "", r[1] + (r[1] === 1 ? " tarde" : " tardes"), "rojo"]))] }));
+  }
+  // Kilometraje (Webfleet real del martes 24)
+  { const K = RD.KM.map(x => Object.assign({}, x, { u: String(x.u).trim() })), tot = sum(K.map(x => x.km)), vi = sum(K.map(x => x.v));
+    const act = K.filter(x => x.km >= 5), bajos = K.filter(x => x.km < 5), prom = sum(act.map(x => x.km)) / act.length;
+    const top = K.slice().sort((a, b) => b.km - a.km).slice(0, 6), men = act.slice().sort((a, b) => a.km - b.km).slice(0, 5);
+    B.push(ifxBloque({ c: "#0052CC", ar: ["KW", "MO"], tab: "km", eti: "KILOMETRAJE · MARTES 24/11/2026", tit: "Kilometraje recorrido", sub: "GPS Webfleet · Samsara no se subió ese día · cruce con el Monitor",
+      num: fN(tot) + "<u>km</u>", numT: `GPS sin depurar<br>${K.length} unidades · ${fN(vi)} viajes`, pill: ["SIN PLAN DE KM", "#64748B"],
+      k: [["Km por unidad", fN(prom, 1), "promedio de las que trabajaron"], ["Km por viaje", fN(tot / vi, 1), "promedio del día"], ["Unidades activas", act.length, "más de 5 km"], ["Casi sin moverse", bajos.length, "menos de 5 km · revisar GPS", bajos.length ? "#B3262D" : null], ["Más km", fN(top[0].km, 1), "unidad " + top[0].u]],
+      g1: ["Unidades con más km", hbs(top.map(x => [x.u, x.km]), v => fN(v))],
+      imp: [["#0052CC", `<b>${fN(tot)} km en ${fN(vi)} viajes</b> de ${K.length} unidades con GPS.`],
+        ["#B3262D", `<b>${bajos.length} unidades casi no se movieron</b> (${bajos.map(x => x.u).slice(0, 4).join(", ")}${bajos.length > 4 ? "…" : ""}). Si estaban en servicio, es falta de posicionamiento y Puntualidad la toma como impuntual con ese motivo.`],
+        ["#1F8A4C", `<b>La ${top[0].u} hizo más km:</b> ${fN(top[0].km, 1)} km en ${top[0].v} viajes.`],
+        ["#C98A1B", `<b>Ya depurado en el módulo: 14.017 km</b> (quita las unidades fuera de rango). Falta Samsara (8105 en adelante).`]],
+      g3: ["Menos km (de las activas)", rls(men.map(x => [x.u, `${x.v} viajes · ${x.ini} a ${x.fin}`, fN(x.km, 1) + " km"]))] }));
+  }
+  // Excesos (Webfleet + Samsara reales del martes 24)
+  { const E = RD.EXC, hr = E.horas.map((h, i) => [i, h[0]]).sort((a, b) => b[1] - a[1])[0];
+    B.push(ifxBloque({ c: "#E31B23", ar: ["VW", "VS"], tab: "exc", eti: "EXCESOS DE VELOCIDAD · MARTES 24/11/2026", tit: "Excesos de velocidad", sub: "Webfleet y Samsara · Periférico Ecológico a 90 km/h · sin Libramiento Elevado",
+      num: fN(E.tot), numT: `excesos<br>en ${E.unis} unidades`, pill: [E.crit + " CRÍTICOS", "#E31B23"],
+      k: [["Promedio sobre el límite", "+" + fN(E.prom, 1) + " km/h"], ["Velocidad más alta", E.vmax.v + " km/h", `${E.vmax.u} · ${E.vmax.h}`, "#B3262D"], ["Operadores", E.ops, `${E.opsCrit} con críticos`], ["En Periférico", E.perif, "pasaron de 90 km/h"], ["Hora con más", String(hr[0]).padStart(2, "0") + ":00", hr[1] + " excesos"]],
+      g1: ["Por severidad", `<div class="dona">${ifxDona([E.leve, E.mod, E.crit], ["#F5B800", "#F28C28", "#D52B2B"], fN(E.tot), "excesos")}<ul><li><i style="background:#F5B800"></i>Leve +1 a +10<b>${E.leve}</b></li><li><i style="background:#F28C28"></i>Moderado +11 a +20<b>${E.mod}</b></li><li><i style="background:#D52B2B"></i>Crítico más de +20<b>${E.crit}</b></li></ul></div>`],
+      imp: [["#D52B2B", `<b>${E.crit} excesos críticos</b> (más de 20 km/h arriba del límite), de ${E.opsCrit} operadores.`],
+        ["#B3262D", `<b>Lo más rápido: ${E.vmax.v} km/h</b> en ${E.vmax.loc}, unidad ${E.vmax.u} a las ${E.vmax.h}.`],
+        ["#1D3F94", `<b>${nomCorto(E.top[0].op)} encabeza</b> con ${E.top[0].n} excesos en la ${E.top[0].u} (${E.top[0].c} críticos).`],
+        ["#C98A1B", `<b>${E.locs[0].loc}</b> es la calle con más: ${E.locs[0].n}.`]],
+      g3: ["Operadores con más excesos", rls(E.top.slice(0, 5).map(x => [nomCorto(x.op), "Unidad " + x.u + (x.c ? ` · ${x.c} críticos` : ""), x.n, "rojo"]))] }));
+  }
+  // Eventos de conducción (Webfleet + Samsara reales del martes 24)
+  { const R = RD.BR, hr = R.horas.map((h, i) => [i, h[0]]).sort((a, b) => b[1] - a[1])[0];
+    B.push(ifxBloque({ c: "#C2410C", ar: ["EW", "ES"], tab: "ev", eti: "EVENTOS DE CONDUCCIÓN · MARTES 24/11/2026", tit: "Manejo brusco", sub: "Frenadas y giros bruscos · Webfleet y Samsara",
+      num: fN(R.tot), numT: `eventos<br>en ${R.unis} unidades`, pill: [R.alta + " DE SEVERIDAD ALTA", "#C2410C"],
+      k: [["Frenadas bruscas", R.fren, fN(R.fren / R.tot * 100, 0) + " % del total"], ["Giros bruscos", R.izq + R.der, `${R.izq} izq. · ${R.der} der.`], ["Fuerza promedio", fN(R.gprom, 2) + " g"], ["Evento más fuerte", fN(R.gmax.g, 2) + " g", `${R.gmax.u} · ${R.gmax.h}`, "#B3262D"], ["Hora con más", String(hr[0]).padStart(2, "0") + ":00", hr[1] + " eventos"]],
+      g1: ["Por tipo", hbs([["Frenadas", R.fren], ["Giro izquierda", R.izq], ["Giro derecha", R.der]])],
+      imp: [["#C2410C", `<b>${fN(R.izq + R.der)} de ${R.tot} son giros</b>: el problema principal es tomar curvas rápido.`],
+        ["#B3262D", `<b>El más fuerte: ${fN(R.gmax.g, 2)} g</b>, ${R.gmax.tipo.toLowerCase()} en ${R.gmax.loc} (${R.gmax.u}, ${R.gmax.h}).`],
+        ["#1D3F94", `<b>${R.top[0].op.startsWith("Unidad") ? "La " + R.top[0].op.toLowerCase() : nomCorto(R.top[0].op)}</b> encabeza con ${R.top[0].n} eventos.`],
+        ["#C98A1B", `<b>${R.locs[0].loc}</b> concentra ${R.locs[0].n} eventos.`]],
+      g3: ["Con más eventos", rls(R.top.slice(0, 5).map(x => x.op.startsWith("Unidad") ? [x.op, "sin operador en el Monitor" + (x.alta ? ` · ${x.alta} alta` : ""), x.n, "rojo"] : [nomCorto(x.op), "Unidad " + x.u + (x.alta ? ` · ${x.alta} alta` : ""), x.n, "rojo"]))] }));
+  }
+  // Diésel (litros reales de octubre, semana lunes a domingo)
+  { const D = DZS.map(x => Object.assign({}, x, { rd: x.km / x.lt })), km = sum(D.map(x => x.km)), lt = sum(D.map(x => x.lt)), rd = km / lt;
+    const mej = D.slice().sort((a, b) => b.rd - a.rd), peor = D.slice().sort((a, b) => a.rd - b.rd), bajo3 = D.filter(x => x.rd < 3).length;
+    B.push(ifxBloque({ c: "#0E7490", ar: ["DI", "KW"], tab: "diesel", eti: "RENDIMIENTO DE DIÉSEL · SEMANA 5 AL 11 DE OCTUBRE", tit: "Rendimiento para el bono", sub: "Km GPS de lunes a domingo ÷ litros cargados en la semana · por unidad",
+      num: fN(rd, 2) + "<u>km/L</u>", numT: `${fN(lt)} L<br>${fN(km)} km`, pill: ["TABLA DEL BONO PENDIENTE", "#64748B"],
+      k: [["Unidades", D.length, fN(sum(D.map(x => x.cargas))) + " cargas"], ["Litros", fN(lt), "lunes a viernes"], ["Km GPS", fN(km), "lunes a domingo"], ["Mejor", fN(mej[0].rd, 2) + " km/L", "unidad " + mej[0].u, "#1F8A4C"], ["Abajo de 3 km/L", bajo3, "unidades a revisar", bajo3 ? "#B3262D" : null]],
+      g1: ["Mejor rendimiento", hbs(mej.slice(0, 6).map(x => [x.u, x.rd]), v => fN(v, 2))],
+      imp: [["#0E7490", `<b>${fN(rd, 2)} km/L de la flota</b> en la semana.`],
+        ["#1F8A4C", `<b>La ${mej[0].u} rinde más:</b> ${fN(mej[0].rd, 2)} km/L${mej[0].op ? " (" + nomCorto(mej[0].op) + ")" : ""}.`],
+        ["#B3262D", `<b>La ${peor[0].u} rinde menos:</b> ${fN(peor[0].rd, 2)} km/L. Revisar fugas, ralentí o cargas mal capturadas.`],
+        ["#C98A1B", `<b>El bono queda pendiente</b> hasta tener la tabla de rangos.`]],
+      g3: ["Peor rendimiento", rls(peor.slice(0, 5).map(x => [x.u, x.op ? nomCorto(x.op) : "sin operador en el rol", fN(x.rd, 2) + " km/L", "rojo"]))] }));
+  }
+  document.getElementById("desg").innerHTML = B.join("");
+}
+// ---- Reportes uno por uno (datos reales de tus archivos) ----
+const RD = {"PU":{"tot":714,"ok":695,"iT":341,"iOk":335,"h":{"05":[6,6],"06":[61,59],"07":[74,73],"08":[40,39],"09":[38,37],"10":[31,31],"11":[41,41],"12":[44,44],"13":[56,55],"14":[80,79],"15":[45,43],"16":[51,50],"17":[51,47],"18":[45,43],"19":[33,30],"20":[14,14],"21":[4,4]},"tar":[["8098","IDA","06:50","",null,"CU - CU2","Gerardo Chavez Quiterio"],["8021","IDA","06:55","07:02",7.1,"MARAVILLAS - CU","Noe Flores Escudero"],["8023","IDA","07:15","07:29",14.7,"SAN DIEGO - CU","Josue Perez Lopez"],["8051","IDA","08:00","",null,"CU - CU2","José Armando Hernandes Delgado"],["8098","IDA","09:00","",null,"CU - CU2","Gerardo Chavez Quiterio"],["8098","IDA","13:50","",null,"CU - CU2","Gerardo Chavez Quiterio"],["8098","VUELTA","14:35","",null,"CU2 - CU","Gerardo Chavez Quiterio"],["8059","VUELTA","15:10","15:21",11.5,"AREA DE LA SALUD - ENTRONQUE","JUAN DANIEL GOMEZ REBOLLEDO"],["8074","VUELTA","15:55","17:15",80.4,"CU - CUAUTLANCINGO","Juan Carlos Candia de Ita"],["8028","VUELTA","16:20","16:27",7.5,"CU2 - CU","Orley Ramirez"],["8098","VUELTA","17:00","",null,"CU2 - CU","Gerardo Chavez Quiterio"],["8082","VUELTA","17:45","18:01",16.9,"CU2 - CU","Alfonso Cortez de Jesus"],["8005","VUELTA","17:45","18:03",18.2,"CU2 - CU","Brayam Jimenes Macuitl"],["8043","VUELTA","17:50","18:02",12.1,"CU2 - CU","Javier Velázquez Bautista"],["8081","VUELTA","18:00","18:26",26.0,"CU2 - CU","Jose Miguel Rodriguez Mendoza"],["8096","VUELTA","18:40","18:53",13.4,"CU2 - CU","Rolando Crescencio Vallejo"],["8098","VUELTA","19:00","",null,"CU2 - CU","Gerardo Chavez Quiterio"],["8073","VUELTA","19:00","20:00",60.4,"CU2 - CU","JOSAFAT DE HILARIO MACHORRO"],["8112","VUELTA","19:20","",null,"CU2 - CU","LUIS ENRIQUE LOBATO LARA"]],"sinReg":41},"KM":[{"u":"8002","km":130.6,"v":13,"ini":"06:18","fin":"19:31","par":3.3},{"u":"8003","km":102.1,"v":15,"ini":"05:49","fin":"21:53","par":2.7},{"u":"8005","km":137.2,"v":10,"ini":"07:14","fin":"18:29","par":1.9},{"u":"8008","km":0.6,"v":2,"ini":"06:43","fin":"07:31","par":0.1},{"u":"8016","km":152.5,"v":18,"ini":"05:36","fin":"20:15","par":2.9},{"u":"8017","km":98.3,"v":10,"ini":"08:36","fin":"20:36","par":3.1},{"u":"8018","km":95.5,"v":4,"ini":"05:50","fin":"15:33","par":3.0},{"u":"8019","km":137.5,"v":10,"ini":"06:23","fin":"21:35","par":3.4},{"u":"8022","km":140.6,"v":6,"ini":"06:01","fin":"20:58","par":4.2},{"u":"8024 ","km":149.7,"v":13,"ini":"05:46","fin":"19:54","par":4.0},{"u":"8025","km":249.5,"v":15,"ini":"06:14","fin":"21:32","par":4.0},{"u":"8026","km":236.3,"v":13,"ini":"05:53","fin":"20:02","par":3.3},{"u":"8027","km":151.7,"v":8,"ini":"05:05","fin":"20:39","par":3.9},{"u":"8028","km":163.7,"v":6,"ini":"06:31","fin":"19:57","par":3.4},{"u":"8031","km":142.8,"v":10,"ini":"04:59","fin":"20:30","par":5.3},{"u":"8032","km":277.5,"v":11,"ini":"05:33","fin":"21:04","par":3.6},{"u":"8033","km":159.1,"v":12,"ini":"06:24","fin":"21:21","par":4.6},{"u":"8034","km":189.4,"v":8,"ini":"05:12","fin":"20:54","par":4.8},{"u":"8035","km":0.4,"v":1,"ini":"07:16","fin":"07:23","par":0.1},{"u":"8036","km":68.9,"v":4,"ini":"07:12","fin":"17:53","par":1.8},{"u":"8037","km":158.0,"v":9,"ini":"05:39","fin":"22:22","par":4.2},{"u":"8041 ","km":204.3,"v":9,"ini":"06:19","fin":"21:27","par":4.3},{"u":"8042","km":210.1,"v":4,"ini":"05:12","fin":"19:45","par":4.7},{"u":"8043","km":199.4,"v":9,"ini":"05:28","fin":"21:07","par":1.8},{"u":"8044","km":141.8,"v":10,"ini":"06:38","fin":"21:03","par":3.7},{"u":"8045","km":133.3,"v":5,"ini":"06:26","fin":"20:29","par":5.6},{"u":"8046","km":181.4,"v":6,"ini":"06:17","fin":"20:48","par":3.3},{"u":"8047","km":262.8,"v":6,"ini":"05:26","fin":"20:41","par":2.7},{"u":"8048","km":235.9,"v":6,"ini":"05:39","fin":"19:23","par":2.1},{"u":"8049","km":243.9,"v":5,"ini":"05:47","fin":"19:37","par":3.9},{"u":"8050","km":190.0,"v":5,"ini":"05:49","fin":"20:24","par":3.9},{"u":"8051","km":209.9,"v":11,"ini":"05:04","fin":"17:13","par":3.0},{"u":"8052","km":171.7,"v":6,"ini":"04:41","fin":"19:39","par":4.9},{"u":"8053","km":264.0,"v":9,"ini":"05:58","fin":"19:53","par":2.0},{"u":"8056","km":200.5,"v":4,"ini":"05:29","fin":"20:09","par":4.1},{"u":"8057","km":242.2,"v":6,"ini":"05:29","fin":"22:22","par":3.6},{"u":"8058","km":190.5,"v":5,"ini":"06:34","fin":"21:43","par":3.5},{"u":"8059","km":159.4,"v":5,"ini":"05:43","fin":"20:22","par":3.2},{"u":"8060","km":259.9,"v":7,"ini":"05:04","fin":"20:49","par":4.2},{"u":"8061","km":256.1,"v":6,"ini":"06:03","fin":"21:02","par":3.3},{"u":"8063","km":185.7,"v":3,"ini":"05:18","fin":"19:46","par":7.0},{"u":"8064","km":280.5,"v":6,"ini":"05:47","fin":"21:18","par":3.7},{"u":"8065","km":122.5,"v":15,"ini":"06:46","fin":"18:21","par":2.3},{"u":"8066","km":153.8,"v":8,"ini":"06:43","fin":"18:23","par":3.1},{"u":"8067","km":336.7,"v":6,"ini":"06:31","fin":"21:25","par":4.1},{"u":"8068","km":267.8,"v":9,"ini":"05:51","fin":"21:08","par":3.5},{"u":"8069","km":122.2,"v":8,"ini":"06:40","fin":"18:12","par":1.7},{"u":"8070","km":201.9,"v":13,"ini":"03:58","fin":"18:32","par":3.2},{"u":"8071","km":176.8,"v":6,"ini":"06:40","fin":"16:31","par":3.1},{"u":"8072","km":225.1,"v":4,"ini":"05:20","fin":"20:53","par":4.6},{"u":"8073","km":316.6,"v":6,"ini":"06:17","fin":"21:27","par":3.4},{"u":"8075","km":305.0,"v":9,"ini":"05:12","fin":"22:19","par":2.2},{"u":"8076","km":142.3,"v":6,"ini":"06:38","fin":"22:05","par":6.8},{"u":"8077","km":239.0,"v":5,"ini":"05:43","fin":"20:22","par":4.0},{"u":"8078","km":271.0,"v":5,"ini":"07:15","fin":"21:55","par":2.4},{"u":"8079","km":131.3,"v":4,"ini":"07:07","fin":"21:56","par":5.5},{"u":"8080","km":132.5,"v":6,"ini":"07:19","fin":"18:38","par":2.6},{"u":"8081","km":176.7,"v":9,"ini":"06:16","fin":"19:41","par":3.0},{"u":"8082","km":189.0,"v":7,"ini":"05:06","fin":"18:22","par":2.4},{"u":"8083","km":18.9,"v":3,"ini":"08:38","fin":"12:15","par":0.5},{"u":"8084","km":176.0,"v":6,"ini":"05:37","fin":"20:15","par":4.5},{"u":"8085","km":45.6,"v":5,"ini":"06:05","fin":"19:22","par":1.9},{"u":"8086","km":192.1,"v":4,"ini":"08:50","fin":"15:24","par":3.0},{"u":"8087","km":124.4,"v":7,"ini":"06:18","fin":"21:03","par":4.8},{"u":"8088","km":158.7,"v":9,"ini":"05:20","fin":"18:50","par":2.5},{"u":"8089","km":187.2,"v":5,"ini":"05:05","fin":"20:19","par":4.6},{"u":"8090","km":149.7,"v":5,"ini":"05:41","fin":"20:46","par":6.2},{"u":"8091","km":182.2,"v":5,"ini":"06:25","fin":"20:11","par":3.6},{"u":"8092","km":137.5,"v":5,"ini":"06:24","fin":"21:27","par":7.5},{"u":"8093","km":158.0,"v":5,"ini":"06:24","fin":"19:05","par":3.2},{"u":"8094","km":187.1,"v":7,"ini":"05:39","fin":"20:31","par":3.1},{"u":"8095","km":157.1,"v":4,"ini":"06:45","fin":"19:14","par":2.8},{"u":"8096","km":285.3,"v":5,"ini":"06:01","fin":"21:11","par":4.0},{"u":"8097","km":197.3,"v":5,"ini":"06:01","fin":"21:03","par":5.7},{"u":"8099","km":188.2,"v":5,"ini":"05:34","fin":"19:45","par":2.8},{"u":"8100","km":183.2,"v":5,"ini":"06:54","fin":"20:51","par":2.8},{"u":"8101","km":207.3,"v":4,"ini":"05:32","fin":"20:32","par":4.2},{"u":"8102","km":194.5,"v":6,"ini":"04:13","fin":"17:28","par":4.3},{"u":"8103","km":219.3,"v":3,"ini":"05:05","fin":"20:52","par":6.7},{"u":"8105","km":182.1,"v":11,"ini":"04:52","fin":"19:43","par":2.1},{"u":"8107","km":146.1,"v":6,"ini":"05:33","fin":"17:47","par":4.8},{"u":"8108","km":182.4,"v":12,"ini":"05:12","fin":"18:56","par":4.2},{"u":"8110","km":170.3,"v":1,"ini":"05:16","fin":"19:42","par":8.5},{"u":"8111","km":179.4,"v":12,"ini":"05:14","fin":"17:57","par":1.8},{"u":"8112","km":159.6,"v":3,"ini":"04:54","fin":"18:05","par":6.3}],"EXC":{"tot":452,"unis":86,"leve":210,"mod":210,"crit":32,"prom":11.7,"ops":80,"opsCrit":18,"vmax":{"v":107,"u":8067,"h":"10:23","lim":90,"op":"Julian Garcia Arrazola","loc":"Periférico Ecológico","perif":true},"perif":36,"perifBajo":239,"lims":[[70,40],[60,128],[50,159],[40,84],[30,4],[20,1],[90,36]],"top":[{"op":"Juan Daniel Gomez Rebolledo","u":"8059","l":4,"m":11,"c":4,"n":19},{"op":"Gustavo Olmedo Reta","u":"8025","l":7,"m":9,"c":1,"n":17},{"op":"Edgar Sanchez Flores","u":"8102","l":8,"m":7,"c":1,"n":16},{"op":"Abel Mendez Camargo","u":"8088","l":3,"m":9,"c":2,"n":14},{"op":"Javier Rubín Juárez","u":"8077","l":4,"m":7,"c":2,"n":13}],"locs":[{"loc":"Boulevard Vicente Suárez","n":72,"vmax":93,"crit":3},{"loc":"Carretera Puebla-Totimehuacán","n":63,"vmax":77,"crit":3},{"loc":"Boulevard Carlos Camacho Espíritu","n":42,"vmax":77,"crit":0},{"loc":"Carretera Entronque Km. 7.5","n":35,"vmax":77,"crit":5},{"loc":"Periférico Ecológico","n":33,"vmax":107,"crit":0},{"loc":"Av.Libertad","n":21,"vmax":70,"crit":0}],"horas":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[8,2,5,1],[23,8,10,5],[40,11,26,3],[55,26,22,7],[30,16,12,2],[30,13,13,4],[19,9,10,0],[28,13,14,1],[26,10,14,2],[22,12,10,0],[42,23,19,0],[32,15,15,2],[49,26,22,1],[25,14,9,2],[3,1,2,0],[5,4,1,0],[9,5,2,2],[5,1,4,0],[1,1,0,0],[0,0,0,0]],"porOp":[["Edgar Sanchez Flores","8102",8,7,1],["Leopoldo Muñoz Ramirez","8070",3,6,0],["Marcos Meza Torres","8052",4,3,0],["Hugo Ariel Aguirre Díaz","8125",1,1,0],["Fernando Del Razo Cortes","8075",2,2,0],["Abel Mendez Camargo","8088",3,9,2],["Jose Ubaldo Gonzalez Gonzalez","8056",5,4,0],["Alvarez Martínez Cristhian Jaffet","8099",4,5,2],["Isaac Huerta Castillo","8060",5,4,0],["Juan Daniel Gomez Rebolledo","8059",4,11,4],["Eduardo Sanchez Velazquez","8024",1,3,0],["Jose Felipe Morales Flores","8050",6,3,0],["Eliseo Serrano Rodríguez","8120",0,1,0],["Noe Flores Escudero","8085",3,7,0],["Esteban Isaac Pimentel Cerezo","8042",5,6,0],["Eliel Medrano Galicia","8049",2,0,0],["Cristian Brayan Osorno Lima","8097",6,1,1],["Francisco Alejandro Zepeda Arce","8063",6,5,0],["Alfonso Cortez de Jesús","8082",7,1,0],["Javier Rubín Juárez","8077",4,7,2],["Victor Hugo Santos Jimenez","8103",5,5,0],["Hazel Patricio Rodríguez","8092",3,4,0],["Luis Gerardo Lozano Parra","8019",0,2,0],["Miguel Angel García Rodríguez","8058",6,3,0],["Francisco Daniel CUautle Pérez","8027",1,0,0],["Julian Garcia Arrazola","8067",3,3,1],["Elias Alejandro Martinez Rosas","8057",5,3,0],["Efren Jacobo Muñoz Coutiño","8065",2,2,0],["Roberto Sainos Zepeda","8091",4,4,2],["Luis Manuel Contreras Quintero","8061",4,1,1],["Guillermo Toriz Rojas","8094",2,3,0],["Orley Ramirez Garcia","8028",5,1,0],["Jose Miguel Rodriguez Mendoza","8081",5,8,0],["Saúl Ordóñez Valencia","8033",2,2,1],["Jose Luis Vazquez Gonzales","8005",4,3,4],["Jorge Hernan Zambrano Carrillo","8046",5,1,0],["Luis Fernando Fernandez Hernandez","8026",5,2,0],["Sergio Marquez Rodriguez","8095",4,4,0],["Antonio Sanchez Arroyo","8100",3,2,0],["Armando Lopez Munguia","8117",0,0,1],["Alejandro Rodriguez Aquino","8078",3,0,0],["Gustavo Olmedo Reta","8025",7,9,1],["Jesus Alberto Zavala Huerta","8084",0,4,1],["Javier Velázquez Bautista","8043",2,1,0],["Ignacio Palma Martinez","8045",1,1,0],["Gustavo Vargas Lucero","8079",3,0,0],["Cristian Gomez Diego","8048",3,2,0],["Heremio Osorio Navor","8044",1,0,0],["Rodrigo Mazapila Reyes","8115",0,3,0],["Jose Luis CUaya Lopez","8068",1,4,0],["Jesus Giovanni Pimentel Cerezo","8034",1,1,0],["Melesio de La Luz Guzmán","8119",0,2,0],["Cesar Antonio Aguilar Fermin","8108",0,1,1],["Hector Alfonso Martinez Barreda","8121",0,1,0],["Israel Vazquez Ypatlan","8110",0,0,1],["Primitivo Castillo Castillo","8116",0,1,0],["Emmanuel Martinez Meza","8032",4,2,2],["Jose Juarez Escalera","8016",1,0,0],["Francisco Miguel Hernandez Garcia","8036",1,1,0],["Aaron Sánchez Gutiérrez","8066",1,2,0],["Roberto Rivera Ochoa","8122",0,1,0],["Jose Vicente Conde Ortega","8080",2,1,0],["Jeronimo Pedro Lopez Vazquez","8124",1,0,0],["Josue Perez Lopez","8071",2,1,0],["Josafat de Hilario Machorro","8083",0,1,0],["Dario Hernández Flores","8047",1,1,0],["Jose Felix Santiago Suarez","8093",2,1,0],["Enrique Garcia Flores","8076",0,1,0],["Miguel Angel Sanchez Gamboa","8118",0,1,0],["Sebastián Emmanuel Aguilar Mendoza","8111",0,1,0],["Pascual Lopez Mendoza","8101",1,0,0],["Juan Carlos Tovar Lima","8126",0,2,0],["Cristian Eduardo Mendez Hernández","8037",2,0,0],["Ricardo Romero CUautle","8107",0,1,0],["Oscar Alducín Acevedo","8089",2,0,0],["Juan Carlos Candia de Ita","8074",0,1,0],["Jose Alfredo Romero Antonio","8017",5,2,1],["Samuel Ivan Ruiz Martinez","8087",2,1,0],["Isaac Munive Hernandez","8041",1,0,0],["José Baltazar Flores Domínguez","8003",1,0,0]]},"BR":{"tot":197,"unis":47,"fren":56,"izq":74,"der":67,"otro":0,"alta":8,"media":28,"baja":139,"gprom":0.58,"gmax":{"g":1.12,"u":8059,"h":"05:58","op":"Juan Daniel Gomez Rebolledo","tipo":"Giro brusco derecha","loc":"Boulevard Vicente Suárez 4217"},"ops":43,"top":[{"op":"Unidad 8069","u":"8069","f":11,"i":0,"de":4,"alta":1,"n":15},{"op":"Esteban Isaac Pimentel Cerezo","u":"8042","f":1,"i":9,"de":2,"alta":0,"n":12},{"op":"Roberto Sainos Zepeda","u":"8091","f":2,"i":4,"de":5,"alta":0,"n":11},{"op":"Unidad 8073","u":"8073","f":1,"i":6,"de":2,"alta":1,"n":9},{"op":"Josue Perez Lopez","u":"8071","f":2,"i":3,"de":4,"alta":0,"n":9}],"locs":[{"loc":"Boulevard Vicente Suárez","n":16,"f":11,"alta":2},{"loc":"Calle Independencia","n":16,"f":0,"alta":0},{"loc":"Carretera Puebla-Totimehuacán","n":15,"f":0,"alta":0},{"loc":"Periférico Ecológico","n":10,"f":4,"alta":0},{"loc":"Carretera Entronque Km. 7.5","n":8,"f":4,"alta":0},{"loc":"Boulevard José María Lafragua","n":8,"f":2,"alta":0}],"horas":[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[1,0,1,0],[11,4,4,3],[23,8,4,11],[24,8,8,8],[23,8,7,8],[16,7,6,3],[4,1,0,3],[4,1,3,0],[17,2,10,5],[10,2,4,4],[18,5,7,6],[8,2,3,3],[17,1,9,7],[15,3,8,4],[1,0,0,1],[2,2,0,0],[2,1,0,1],[1,1,0,0],[0,0,0,0],[0,0,0,0]],"porOp":[["Leopoldo Muñoz Ramirez","8070",8,0,0],["Edgar Sanchez Flores","8102",1,2,0],["Israel Vazquez Ypatlan","8110",0,0,0],["Victor Hugo Santos Jimenez","8103",3,0,0],["Alvarez Martínez Cristhian Jaffet","8099",2,1,0],["Jose Ubaldo Gonzalez Gonzalez","8056",0,0,1],["Jesus Alberto Zavala Huerta","8084",6,2,0],["Juan Daniel Gomez Rebolledo","8059",3,1,2],["Eduardo Sanchez Velazquez","8024",1,0,0],["Emmanuel Martinez Meza","8032",6,0,0],["Noe Flores Escudero","8085",4,1,0],["Rodrigo Mazapila Reyes","8115",0,0,0],["Fernando Del Razo Cortes","8075",2,1,0],["Hazel Patricio Rodríguez","8092",5,0,1],["Juan Carlos Tovar Lima","8126",0,0,0],["Julian Garcia Arrazola","8067",6,1,0],["Roberto Sainos Zepeda","8091",11,0,0],["José Armando Hernandes Delgado","8051",1,0,0],["Cristian Brayan Osorno Lima","8097",1,0,0],["Esteban Isaac Pimentel Cerezo","8042",9,3,0],["Antonio Sanchez Arroyo","8100",4,0,0],["Jose Luis CUaya Lopez","8068",3,0,0],["Jose Felix Santiago Suarez","8093",6,2,0],["Sebastián Emmanuel Aguilar Mendoza","8111",0,0,0],["Jesus Giovanni Pimentel Cerezo","8034",7,0,1],["Oscar Alducín Acevedo","8089",1,0,0],["Cristian Eduardo Mendez Hernández","8037",4,1,0],["Josue Perez Lopez","8071",7,2,0],["Melesio de La Luz Guzmán","8119",0,0,0],["Gustavo Olmedo Reta","8025",1,3,0],["Moises Romero Hernández","8114",0,0,0],["Jeronimo Pedro Lopez Vazquez","8124",0,0,0],["Abel Mendez Camargo","8088",8,1,0],["Armando Lopez Munguia","8117",0,0,0],["Francisco Miguel Hernandez Garcia","8036",1,0,0],["Francisco Daniel CUautle Pérez","8027",1,0,0],["Javier Velázquez Bautista","8043",1,0,0],["Jorge Hernan Zambrano Carrillo","8046",0,0,1],["Luis Enrique Lobato Lara","8112",0,0,0],["Luis Gerardo Lozano Parra","8019",1,0,0],["Isaac Huerta Castillo","8060",1,0,0],["Gustavo Garcia Flores","8105",0,0,0],["José Baltazar Flores Domínguez","8003",1,0,0]],"porUni":[["8073",5,3,1],["8069",12,2,1],["8072",5,2,0],["8064",1,0,0]]}};
+const ORD = {};
+function tablaOrd(id, cols, filas, def) {
+  const o = ORD[id] || def;
+  const v = (r, k) => { const c = cols.find(x => x.k === k); return c.v ? c.v(r) : r[k]; };
+  const f = filas.slice().sort((a, b) => { const x = v(a, o.k), y = v(b, o.k); return (typeof x === "number" && typeof y === "number" ? x - y : String(x ?? "").localeCompare(String(y ?? ""), "es", { numeric: true })) * o.dir; });
+  const max = 15, todo = ORD[id + "_todo"], vis = todo ? f : f.slice(0, max);
+  return `<div class="xls-caja"><table class="xls tord" data-id="${id}"><tr><th><button>#</button></th>${cols.map(c => `<th class="${c.k === o.k ? "ord" : ""}"><button data-k="${c.k}">${c.t}${c.k === o.k ? (o.dir > 0 ? " ▲" : " ▼") : ""}</button></th>`).join("")}</tr>${vis.map((r, i) => `<tr><td class="pos">${i + 1}</td>${cols.map(c => `<td class="${c.k === o.k ? "col" : ""} ${c.cls || ""}">${c.f ? c.f(r) : (r[c.k] ?? "")}</td>`).join("")}</tr>`).join("")}</table></div>${f.length > max ? `<button class="bt vertodo" data-id="${id}">${todo ? "Ver solo los primeros 15" : `Ver los ${f.length}`}</button>` : ""}`;
+}
+function activarOrden(cont, id, repintar, def) {
+  cont.querySelectorAll(`button.vertodo[data-id="${id}"]`).forEach(b => b.onclick = () => { ORD[id + "_todo"] = !ORD[id + "_todo"]; repintar(); });
+  cont.querySelectorAll(`table[data-id="${id}"] th button[data-k]`).forEach(b => b.onclick = () => { const o = ORD[id] || def; ORD[id] = o.k === b.dataset.k ? { k: o.k, dir: -o.dir } : { k: b.dataset.k, dir: -1 }; repintar(); });
+}
+// ---- Selector de fechas de cada reporte: un día, varios días, semana o mes ----
+const SEL = {};
+const MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const DSL = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+const isoAdd = (iso, n) => { const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+const conDatos = iso => iso >= "2026-10-01" && iso <= "2026-11-25" && new Date(iso + "T12:00:00").getDay() !== 0;
+function selDe(k) { if (!SEL[k]) SEL[k] = { modo: "dia", dias: [k === "pun" ? "2026-11-25" : "2026-11-24"] }; return SEL[k]; }
+function selTexto(S) {
+  const d0 = new Date(S.dias[0] + "T12:00:00");
+  if (S.modo === "dia") return `${DSL[d0.getDay()]} ${d0.getDate()} de ${MES[d0.getMonth()]}`;
+  if (S.modo === "semana") { const f = new Date(isoAdd(S.dias[0], 6) + "T12:00:00"); return `Semana del ${d0.getDate()} ${d0.getMonth() !== f.getMonth() ? MES[d0.getMonth()].slice(0, 3) + " " : ""}al ${f.getDate()} ${MES[f.getMonth()].slice(0, 3)}`; }
+  if (S.modo === "mes") return `${MES[d0.getMonth()]} ${d0.getFullYear()}`;
+  const ds = S.dias.slice().sort(); return `${ds.length} días · ${ds.map(x => +x.slice(8)).join(", ")} ${MES[+ds[ds.length - 1].slice(5, 7) - 1].slice(0, 3)}`;
+}
+function selDias(S) { // días con operación que entran en la selección
+  if (S.modo === "dia" || S.modo === "varios") return S.dias.filter(conDatos);
+  if (S.modo === "semana") return [0, 1, 2, 3, 4, 5, 6].map(i => isoAdd(S.dias[0], i)).filter(conDatos);
+  const m = S.dias[0].slice(0, 7), out = []; for (let d = m + "-01"; d.slice(0, 7) === m; d = isoAdd(d, 1)) if (conDatos(d)) out.push(d); return out;
+}
+function selMover(k, n) {
+  const S = selDe(k);
+  if (S.modo === "dia") S.dias = [isoAdd(S.dias[0], n)];
+  else if (S.modo === "semana") S.dias = [isoAdd(S.dias[0], 7 * n)];
+  else if (S.modo === "mes") { const d = new Date(S.dias[0] + "T12:00:00"); d.setMonth(d.getMonth() + n, 1); S.dias = [d.toISOString().slice(0, 10)]; }
+  REP_PINTA[k]();
+}
+let POP = null;
+function selAbrir(k, boton) {
+  const S0 = selDe(k); POP = { k, modo: S0.modo, dias: S0.dias.slice(), mes: S0.dias[0].slice(0, 7) };
+  let el = document.getElementById("selPop");
+  if (!el) { el = document.createElement("div"); el.id = "selPop"; el.className = "selpop"; document.body.appendChild(el); document.addEventListener("mousedown", e => { if (el.style.display === "block" && !el.contains(e.target) && !e.target.closest(".rp-fe")) el.style.display = "none"; }); }
+  const r = boton.getBoundingClientRect();
+  el.style.display = "block"; el.style.top = (window.scrollY + r.bottom + 6) + "px"; el.style.left = Math.max(8, Math.min(window.innerWidth - 330, r.left + r.width / 2 - 160)) + "px";
+  selPintar();
+}
+function selPintar() {
+  const el = document.getElementById("selPop"), P = POP;
+  const lun = iso => { const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return d.toISOString().slice(0, 10); };
+  const [y, m] = P.mes.split("-").map(Number), primero = P.mes + "-01";
+  let ini = lun(primero), celdas = "";
+  for (let w = 0; w < 6; w++) {
+    const semIni = isoAdd(ini, w * 7); if (w > 0 && semIni.slice(0, 7) !== P.mes && isoAdd(semIni, 0) > P.mes + "-31") break;
+    if (semIni.slice(0, 7) > P.mes) break;
+    const semSel = P.modo === "semana" && P.dias[0] === semIni;
+    celdas += `<div class="sw ${semSel ? "on" : ""}" data-w="${semIni}">${[0, 1, 2, 3, 4, 5, 6].map(i => { const d = isoAdd(semIni, i), fuera = d.slice(0, 7) !== P.mes, sel = (P.modo === "dia" || P.modo === "varios") && P.dias.includes(d);
+      return `<button type="button" data-d="${d}" class="${fuera ? "fu" : ""} ${sel ? "on" : ""} ${conDatos(d) ? "dt" : ""}">${+d.slice(8)}</button>`; }).join("")}</div>`;
+  }
+  el.innerHTML = `<div class="sp-seg">${[["dia", "Un día"], ["varios", "Varios días"], ["semana", "Semana"], ["mes", "Mes"]].map(x => `<button type="button" data-m="${x[0]}" class="${P.modo === x[0] ? "on" : ""}">${x[1]}</button>`).join("")}</div>
+    <div class="sp-at">${[["ayer", "Ayer"], ["sem", "Esta semana"], ["sempas", "Semana pasada"], ["mesact", "Este mes"]].map(x => `<button type="button" data-a="${x[0]}">${x[1]}</button>`).join("")}</div>
+    ${P.modo === "mes" ? `<div class="sp-meses">${["2026-09", "2026-10", "2026-11"].map(mm => `<button type="button" data-mes="${mm}" class="${P.dias[0].slice(0, 7) === mm ? "on" : ""}">${MES[+mm.slice(5) - 1]}<small>${mm.slice(0, 4)}</small></button>`).join("")}</div>` :
+    `<div class="sp-cal"><div class="sp-mh"><button type="button" data-nav="-1">‹</button><b>${MES[m - 1]} ${y}</b><button type="button" data-nav="1">›</button></div>
+      <div class="sp-ds">${["L", "M", "M", "J", "V", "S", "D"].map(d => `<span>${d}</span>`).join("")}</div>${celdas}</div>`}
+    <p class="sp-info">${P.modo === "varios" ? "Toca los días que quieras sumar." : P.modo === "semana" ? "Toca cualquier día para elegir su semana (lunes a domingo)." : P.modo === "mes" ? "Elige el mes." : "Elige el día."} <span>● = hay archivos</span></p>
+    <div class="sp-bt"><button type="button" class="bt" data-x="1">Cancelar</button><button type="button" class="bt prim" data-ok="1">Aplicar</button></div>`;
+  el.querySelectorAll("[data-m]").forEach(b => b.onclick = () => { P.modo = b.dataset.m; if (P.modo === "semana") P.dias = [lun(P.dias[0])]; if (P.modo !== "varios") P.dias = [P.dias[0]]; selPintar(); });
+  el.querySelectorAll("[data-nav]").forEach(b => b.onclick = () => { const d = new Date(P.mes + "-15T12:00:00"); d.setMonth(d.getMonth() + +b.dataset.nav); P.mes = d.toISOString().slice(0, 7); selPintar(); });
+  el.querySelectorAll("[data-d]").forEach(b => b.onclick = () => { const d = b.dataset.d;
+    if (P.modo === "dia") P.dias = [d]; else if (P.modo === "semana") P.dias = [lun(d)];
+    else { P.dias = P.dias.includes(d) ? P.dias.filter(x => x !== d) : P.dias.concat(d); if (!P.dias.length) P.dias = [d]; }
+    selPintar(); });
+  el.querySelectorAll("[data-mes]").forEach(b => b.onclick = () => { P.dias = [b.dataset.mes + "-01"]; selPintar(); });
+  el.querySelectorAll("[data-a]").forEach(b => b.onclick = () => { const hoy = "2026-11-26", a = b.dataset.a;
+    if (a === "ayer") { P.modo = "dia"; P.dias = ["2026-11-25"]; } if (a === "sem") { P.modo = "semana"; P.dias = [lun(hoy)]; } if (a === "sempas") { P.modo = "semana"; P.dias = [isoAdd(lun(hoy), -7)]; } if (a === "mesact") { P.modo = "mes"; P.dias = ["2026-11-01"]; } selPintar(); });
+  el.querySelector("[data-x]").onclick = () => el.style.display = "none";
+  el.querySelector("[data-ok]").onclick = () => { SEL[P.k] = { modo: P.modo, dias: P.dias.slice().sort() }; el.style.display = "none"; REP_PINTA[P.k](); };
+}
+function cabRep(c, tit, sub, ar) {
+  const k = (document.querySelector("#tabs button.on") || {}).dataset?.t || "km";
+  const S = selDe(k), nd = selDias(S).length;
+  const [nom] = tit.split(" · "), fecha = selTexto(S);
+  return `<div class="rp-h" style="--c:${c}"><div class="rp-ic">${ar.map(a => { const t = T.find(x => x.a === a); return `<i style="background:${t ? t.c : c}">${a}</i>`; }).join("")}</div>
+    <div class="rp-tt"><h3>${nom}</h3><small>${sub}</small></div>
+    <div class="rp-fe">${S.modo === "varios" ? "" : `<button title="Anterior" onclick="selMover('${k}',-1)">‹</button>`}<span class="rp-sel" onclick="selAbrir('${k}', this)" title="Cambiar fechas"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>${fecha}<em>▾</em></span>${S.modo === "varios" ? "" : `<button title="Siguiente" onclick="selMover('${k}',1)">›</button>`}</div>
+    <div class="rp-ac"><button class="bt">Copiar</button><button class="bt prim">Descargar Excel</button></div></div>
+    ${S.modo !== "dia" ? `<div class="sel-aviso"><b>${nd} ${nd === 1 ? "día" : "días"} con operación</b> · ${S.modo === "varios" ? "días elegidos" : S.modo === "semana" ? "lunes a domingo" : "mes completo"} · los números se suman y las tablas agregan la columna <b>Días</b> · <button type="button" onclick="SEL['${k}']={modo:'dia',dias:['${S.dias[0]}']};REP_PINTA['${k}']()">Volver a un día</button><span>En este ejemplo las tablas siguen mostrando un solo día.</span></div>` : ""}`;
+}
+function kpis(a) { return `<div class="rp-k">${a.map(x => `<div><small>${x[0]}</small><b style="color:${x[2] || "var(--ink)"}">${x[1]}</b><span>${x[3] || ""}</span></div>`).join("")}</div>`; }
+function barrasH(vals, labels, colorF, meta, fmt) {
+  const W = 640, H = 150, mx = Math.max(...vals, meta || 0) || 1, mn = meta ? Math.min(...vals) - 2 : 0, bw = W / vals.length;
+  const y = v => H - 20 - (v - mn) / (mx - mn || 1) * (H - 38);
+  return `<svg viewBox="0 0 ${W} ${H}" class="inf-svg">${meta ? `<line x1="0" x2="${W}" y1="${y(meta)}" y2="${y(meta)}" stroke="#0B1A30" stroke-dasharray="5 4" opacity=".5"/><text x="2" y="${y(meta) - 4}" class="tm">META ${meta} %</text>` : ""}${vals.map((v, i) => `<rect x="${i * bw + bw * .18}" y="${y(v)}" width="${bw * .64}" height="${Math.max(1, H - 20 - y(v))}" rx="3" fill="${colorF(v, i)}"><title>${labels[i]} · ${fmt ? fmt(v) : v}</title></rect><text x="${i * bw + bw / 2}" y="${H - 6}" text-anchor="middle" class="tx">${labels[i]}</text>`).join("")}</svg>`;
+}
+const MOTS = [["gps1", "No posicionó la unidad", true], ["gps2", "La geocerca no lo detectó", true], ["sinpos", "Sin posicionamiento (km)", true], ["tra", "Tráfico", false], ["mec", "Falla mecánica", false], ["ope", "Operador tarde", false], ["cam", "Cambio de unidad u operador", false], ["otro", "Otro", false]];
+let PNOTA = {}; try { PNOTA = JSON.parse(localStorage.getItem("arch_pn") || "null") || { "8098|06:50|IDA": { m: "gps2", c: "Despacho confirma que salió 06:49", por: "Supervisión · 07:10" }, "8021|06:55|IDA": { m: "tra", c: "Cierre en 24 Sur por obra", por: "Torre de Control · 07:20" } }; } catch (e) {}
+const guardarPN = () => { try { localStorage.setItem("arch_pn", JSON.stringify(PNOTA)); } catch (e) {} };
+// 5.1 · Excesos y Eventos: el mismo módulo de la app, en modo integrado, alimentado con lo que ya se subió en Archivos
+function incrustarGps(k, vista, color, tit, sub, ar, extra) {
+  const el = document.getElementById("r-" + k);
+  if (REAL) {
+    if (el.querySelector("iframe")) return;
+    el.innerHTML = cabRep(color, tit, "Tu módulo de Excesos · carga los archivos del día dentro del módulo", ar) + (extra && !/kpis|kp-/.test(extra) ? extra : "") + `<iframe class="km-mod gps-mod" id="${k}Mod" src="excesos.html?v=5.1" title="${tit}"></iframe>`;
+    const fr = document.getElementById(k + "Mod");
+    fr.addEventListener("load", () => { try { if (vista === "conduccion" && fr.contentWindow.go) fr.contentWindow.go("conduccion"); } catch (e) {} const aj = () => { try { const h = Math.max(760, fr.contentDocument.documentElement.scrollHeight); fr.style.height = h + "px"; } catch (e) {} }; aj(); clearInterval(el._aj); el._aj = setInterval(aj, 1000); });
+    const b = el.querySelector(".rp-ac .prim"); if (b) { b.textContent = "Descargar (CSV)"; b.onclick = () => { try { fr.contentWindow.document.getElementById("bCsv").click(); } catch (e) {} }; }
+    return;
+  }
+  const cab = () => cabRep(color, tit, sub, ar);
+  if (el.querySelector("iframe")) { el.querySelectorAll(".sel-aviso").forEach(x => x.remove()); const h = el.querySelector(".rp-h"); if (h) h.outerHTML = cab(); if (el._conectar) el._conectar(); return; }
+  el.innerHTML = cab() + (extra || "") + `<div class="km-src" id="${k}Src"><span>Cargando desde Archivos…</span></div>
+    <iframe class="km-mod gps-mod" id="${k}Mod" src="excesos.html?integrado=1&vista=${vista}" title="${tit}"></iframe>`;
+  const fr = document.getElementById(k + "Mod");
+  const conectar = () => { const b = el.querySelector(".rp-ac .prim"); if (b) { b.textContent = "Descargar (CSV)"; b.onclick = () => { try { fr.contentWindow.excExportar(); } catch (e) {} }; } };
+  conectar(); el._conectar = conectar;
+  const ajustar = () => { try { const d = fr.contentDocument; const h = Math.max(700, d.documentElement.scrollHeight); if (Math.abs(h - fr.offsetHeight) > 20) fr.style.height = h + "px"; } catch (e) {} };
+  fr.addEventListener("load", async () => {
+    const src = document.getElementById(k + "Src");
+    try {
+      const w = fr.contentWindow;
+      for (let i = 0; i < 100 && !w.handleFiles; i++) await new Promise(r => setTimeout(r, 100));
+      // En la app real salen de la nube (Archivos); aquí vienen en paquetes junto a la página
+      const [p1, p2] = await Promise.all([fetch("datos/archivos-24-11-gps.json").then(r => r.json()), fetch("datos/archivos-24-11.json").then(r => r.json())]);
+      const paquete = Object.assign({}, p2, p1);
+      const usar = (vista === "conduccion"
+        ? [["24-11-2026_STU_Eventos_de_Conduccion_WEBFLEET.xlsx", "EW", "Eventos Webfleet"], ["24-11-2026_STU_Eventos_de_Conduccion_SAMSARA.xlsx", "ES", "Eventos Samsara"]]
+        : [["24-11-2026_STU_Velocidad_Excesiva_WEBFLEET.xlsx", "VW", "Velocidad Webfleet"], ["24-11-2026_STU_Velocidad_Excesiva_SAMSARA.xlsx", "VS", "Velocidad Samsara"]])
+        .concat([["24-11-2026_Monitor_de_servicio.xlsx", "MO", "Monitor · quién manejaba"]]);
+      const files = usar.map(([n]) => { const bin = atob(paquete[n]), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); return new File([u8], n, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }); });
+      await w.handleFiles(files);
+      w.excVista();
+      src.innerHTML = `<b>Cargado solo desde Archivos:</b>${usar.map(x => { const t = T.find(z => z.a === x[1]); return `<span class="kf"><i style="background:${t ? t.c : color}">${x[1]}</i>${x[2]} 24/11</span>`; }).join("")}<em>✓ Sin volver a subir nada</em>`;
+      ajustar(); clearInterval(el._aj); el._aj = setInterval(ajustar, 800);
+    } catch (e) { src.innerHTML = `<span>No se pudieron cargar los archivos guardados (${e.message}).</span>`; }
+  });
+}
+
+function pintarDieselReal() {
+  const c = document.getElementById("t-diesel"); if (!c) return;
+  c.innerHTML = `<div class="real-card"><h3>Rendimiento de diésel</h3><p>Sube el archivo de consumos de la bomba (aunque Excel diga que está dañado). El rendimiento semanal sale de los km del GPS de lunes a domingo entre los litros de la semana. La tabla del bono queda pendiente.</p><button onclick="irApp(a => a.dieElegirArchivo())">Subir consumos de diésel</button></div>`;
+}
+// 5.1 · Versión real: lo que ya funciona usa tus módulos y la app; lo demás se queda como ejemplo
+const REAL = true;
+const PAPP = (() => { try { return window.parent !== window ? window.parent : null; } catch (e) { return null; } })();
+function irApp(fn) { try { if (PAPP && PAPP.stuCerrarModulo) PAPP.stuCerrarModulo(); setTimeout(() => { try { fn(PAPP); } catch (e) {} }, 120); } catch (e) {} }
+const REP_PINTA = {
+  pun() {
+    if (REAL) { document.getElementById("r-pun").innerHTML = cabRep("#0F1E4A", "Puntualidad", "Geocercas · IDA y VUELTA punto inicial · meta 98 % · motivos y comentarios en la nube", ["PU"]) + `<div class="real-card"><h3>Puntualidad del día</h3><p>Se abre la pantalla de Puntualidad de la app: subes el archivo del día, ves por unidad, ruta y hora, y justificas cada impuntual con motivo y comentario.</p><button onclick="irApp(a => a.punAbrir())">Abrir Puntualidad</button></div>`; return; }
+    const P = RD.PU, el = document.getElementById("r-pun"), pc = P.ok / P.tot * 100;
+    const hs = Object.keys(P.h).sort(), pv = hs.map(h => P.h[h][1] / P.h[h][0] * 100);
+    const filas = P.tar.map(t => ({ u: t[0], ind: t[1], hp: t[2], hr: t[3], m: t[4], ru: t[5], op: t[6] }));
+    el.innerHTML = cabRep("#0F1E4A", "Puntualidad · miércoles 25 de noviembre", "Geocercas · IDA y VUELTA punto inicial · archivo real", ["PU"]) +
+      kpis([["Puntualidad", fN(pc, 1) + " %", pc >= 98 ? "var(--verde)" : "var(--rojo)", "meta 98 %"], ["Corridas", fN(P.tot), null, `${P.iT} ida · ${P.tot - P.iT} vuelta`], ["Impuntuales", P.tot - P.ok, "var(--rojo)", "ver tabla abajo"], ["IDA", fN(P.iOk / P.iT * 100, 1) + " %", null, ""], ["Sin registro GPS", P.sinReg, "#9A6B0F", "corridas"]]) +
+      `<div class="rp-2"><div class="inf-c"><div class="inf-t">Por hora de salida</div>${barrasH(pv, hs, v => v >= 98 ? "#1F8A4C" : "#E8858A", 98, v => fN(v, 1) + " %")}</div>
+       <div class="inf-c"><div class="inf-t">Impuntuales · ${filas.filter(f => (PNOTA[f.u + "|" + f.hp + "|" + f.ind] || {}).m).length} de ${filas.length} con motivo · toca un encabezado para ordenar</div>${tablaOrd("pun", [{ k: "u", t: "Unidad", f: r => `<b>${r.u}</b><small class="pn-ind">${r.ind}</small>` }, { k: "hp", t: "Prog." }, { k: "m", t: "Real", v: r => r.m ?? 999, f: r => r.hr ? `${r.hr} <span class="rojo">+${fN(r.m, 1)}</span>` : `<span style="color:#9A6B0F">sin registro</span>` }, { k: "op", t: "Operador", cls: "txt", f: r => `<span title="${r.op}">${r.op}</span>` },
+        { k: "mot", t: "Motivo", v: r => (PNOTA[r.u + "|" + r.hp + "|" + r.ind] || {}).m || "~", f: r => { const k = r.u + "|" + r.hp + "|" + r.ind, n = PNOTA[k] || {}; return `<select class="pn-sel ${n.m ? (MOTS.find(x => x[0] === n.m) || [])[2] ? "gps" : "op" : ""}" data-k="${k}"><option value="">Elegir motivo…</option>${MOTS.map(x => `<option value="${x[0]}" ${n.m === x[0] ? "selected" : ""}>${x[1]}</option>`).join("")}</select>`; } },
+        { k: "com", t: "Comentario", v: r => (PNOTA[r.u + "|" + r.hp + "|" + r.ind] || {}).c || "~", f: r => { const k = r.u + "|" + r.hp + "|" + r.ind, n = PNOTA[k] || {}; return `<div class="pn-com" contenteditable="true" data-k="${k}" data-ph="Escribe por qué llegó tarde…">${n.c ? n.c.replace(/</g, "&lt;") : ""}</div>${n.por ? `<small class="pn-por">${n.por}</small>` : ""}`; } }], filas, { k: "hp", dir: 1 })}</div></div>`;
+    el.querySelectorAll("td:has(.pn-sel), td:has(.pn-com)").forEach(td => td.classList.add("noed"));
+    editables(el);
+    el.querySelectorAll(".pn-sel").forEach(sl => sl.onchange = () => { const n = PNOTA[sl.dataset.k] = PNOTA[sl.dataset.k] || {}; n.m = sl.value; n.por = "Supervisión · " + new Date().toTimeString().slice(0, 5); guardarPN(); REP_PINTA.pun(); });
+    el.querySelectorAll(".pn-com").forEach(c => { c.onkeydown = ev => { if (ev.key === "Enter") { ev.preventDefault(); c.blur(); } }; c.onblur = () => { const n = PNOTA[c.dataset.k] = PNOTA[c.dataset.k] || {}; const v = c.textContent.trim(); if (v === (n.c || "")) return; n.c = v; n.por = "Supervisión · " + new Date().toTimeString().slice(0, 5); guardarPN(); REP_PINTA.pun(); }; });
+    activarOrden(el, "pun", REP_PINTA.pun, { k: "hp", dir: 1 });
+  },
+  km() {
+    const el = document.getElementById("r-km");
+    if (REAL) { if (el.querySelector("iframe")) return; el.innerHTML = cabRep("#0052CC", "Kilometraje", "Tu módulo de Kilometraje · elige los archivos dentro del módulo", ["KW", "KS", "MO"]) + `<iframe class="km-mod" id="kmMod" src="kilometraje.html?v=5.1" title="Kilometraje"></iframe>`; const fr = document.getElementById("kmMod"), b = el.querySelector(".rp-ac .prim"); if (b) b.onclick = () => { try { fr.contentWindow.kmExportarExcel ? fr.contentWindow.kmExportarExcel() : fr.contentWindow.document.getElementById("btnXlsDay").click(); } catch (e) {} }; return; }
+    if (el.querySelector("iframe")) { el.querySelectorAll(".sel-aviso").forEach(x => x.remove()); const h = el.querySelector(".rp-h"); if (h) h.outerHTML = cabRep("#0052CC", "Kilometraje", "Tu módulo de Kilometraje, ya dentro de la app · toma solo los archivos guardados del día", ["KW", "KS", "MO"]); if (el._conectar) el._conectar(); return; }
+    el.innerHTML = cabRep("#0052CC", "Kilometraje", "Tu módulo de Kilometraje, ya dentro de la app · toma solo los archivos guardados del día", ["KW", "KS", "MO"]) +
+      `<div class="km-src" id="kmSrc"><span>Cargando desde Archivos…</span></div>
+       <iframe class="km-mod" id="kmMod" src="kilometraje.html?integrado=1" title="Kilometraje"></iframe>`;
+    const fr = document.getElementById("kmMod");
+    const conectar = () => { const b = el.querySelector(".rp-ac .prim"); if (b) b.onclick = () => { try { fr.contentWindow.kmExportarExcel(); } catch (e) {} }; };
+    conectar(); el._conectar = conectar;
+    fr.addEventListener("load", async () => {
+      const src = document.getElementById("kmSrc");
+      try {
+        const w = fr.contentWindow;
+        for (let i = 0; i < 100 && !(w.XLSX && w.ingest); i++) await new Promise(r => setTimeout(r, 100));
+        const archivos = [["datos/24-11-2026_Monitor_de_servicio.xlsx", "MO", "Monitor (real) 24/11"], ["datos/24-11-2026_STU_Kilometraje_WEBFLEET.xlsx", "KW", "Kilometraje Webfleet 24/11"]];
+        // En la app real salen de la nube; aquí vienen en un paquete junto a la página
+        const paquete = await (await fetch("datos/archivos-24-11.json")).json();
+        for (const [ruta] of archivos) {
+          const nombre = ruta.split("/").pop(), bin = atob(paquete[nombre]), u8 = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+          await w.ingest(new File([u8], nombre, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+        }
+        w.eval("S.sample = false");
+        const op = w.document.getElementById("opDate"); if (op) op.value = "2026-11-24";
+        w.document.getElementById("btnProcess").click();
+        src.innerHTML = `<b>Cargado solo desde Archivos:</b>${archivos.map(x => { const t = T.find(z => z.a === x[1]); return `<span class="kf"><i style="background:${t.c}">${x[1]}</i>${x[2]}</span>`; }).join("")}<span class="kf falta"><i style="background:#2563EB">KS</i>Samsara: no se subió ese día</span><em>✓ Día calculado y guardado solo</em>`;
+      } catch (e) { src.innerHTML = `<span>No se pudieron cargar los archivos guardados (${e.message}). Puedes elegirlos dentro del módulo como siempre.</span>`; }
+    });
+  },
+  exc() { incrustarGps("exc", "resumen", "#E31B23", "Excesos de velocidad", "Tu módulo de Excesos, ya dentro de la app · Webfleet y Samsara · toma solo los archivos guardados del día", ["VW", "VS", "MO"]); },
+  ev() {
+    if (REAL) return incrustarGps("ev", "conduccion", "#C2410C", "Eventos de conducción", "", ["EW", "ES"]);
+    const B = RD.BR;
+    incrustarGps("ev", "conduccion", "#C2410C", "Eventos de conducción", "Frenadas y giros bruscos del módulo de Excesos · Webfleet y Samsara · toma solo los archivos guardados del día", ["EW", "ES", "MO"],
+      kpis([["Eventos", fN(B.tot), "#9A3412", `${B.unis} unidades`], ["Severidad alta", B.alta, "var(--rojo)", `${B.media} media · ${B.baja} baja`], ["Frenadas bruscas", B.fren, null, ""], ["Giros bruscos", B.izq + B.der, null, `${B.izq} izq. · ${B.der} der.`], ["Evento más fuerte", fN(B.gmax.g, 2) + " g", null, `${B.gmax.u} · ${B.gmax.h}`]]));
+  },
+  rol() {
+    const el = document.getElementById("r-rol");
+    const dif = [["06:10", "8045", "8045", "J. Rubín J.", "E. Sánchez F.", "Cambio de operador", "Falta"], ["07:30", "8073", "8104", "R. Sainos Z.", "R. Sainos Z.", "Cambio de unidad", "Taller"], ["09:15", "8021", "—", "J. D. Gómez R.", "—", "No realizada", "Sin unidad"], ["12:40", "—", "8088", "—", "A. Méndez C.", "Vuelta extra", "Demanda"], ["14:05", "8099", "8099", "M. Hernández T.", "L. Ramírez P.", "Cambio de operador", "Permiso"], ["18:20", "8031", "8112", "C. Flores M.", "C. Flores M.", "Cambio de unidad", "Siniestro"]].map(x => ({ h: x[0], up: x[1], ur: x[2], op: x[3], or: x[4], tipo: x[5], mot: x[6] }));
+    el.innerHTML = cabRep("#1D3F94", "Programado contra real · martes 24 de noviembre", "Plantilla (lo programado) contra Monitor (lo real) · ejemplo", ["PL", "MO"]) +
+      kpis([["Programadas", "714", null, "Plantilla"], ["Realizadas", "711", "var(--verde)", "99,6 %"], ["No realizadas", "3", "var(--rojo)", ""], ["Cambios de unidad", "12", "#9A6B0F", ""], ["Cambios de operador", "9", "#9A6B0F", ""], ["Vueltas extra", "4", "var(--azul)", ""]]) +
+      `<div class="inf-c"><div class="inf-t">Diferencias · toca un encabezado para ordenar</div>${tablaOrd("rol", [{ k: "h", t: "Hora" }, { k: "tipo", t: "Qué pasó", f: r => `<span class="conf ${r.tipo === "No realizada" ? "baja" : ""}" style="${r.tipo === "No realizada" ? "background:#FDE7E8;color:#B42318" : r.tipo === "Vuelta extra" ? "background:#E8EEFA;color:#1D3F94" : "background:#FBF1DA;color:#7A5310"}">${r.tipo}</span>` }, { k: "up", t: "Unidad prog." }, { k: "ur", t: "Unidad real" }, { k: "op", t: "Operador prog." }, { k: "or", t: "Operador real" }, { k: "mot", t: "Motivo" }], dif, { k: "h", dir: 1 })}</div>
+      <p class="rn">Números de ejemplo: tus archivos de Plantilla (23/11) y Monitor (24/11) son de días distintos. Con los dos del mismo día salen solos.</p>`;
+    editables(el); activarOrden(el, "rol", REP_PINTA.rol, { k: "h", dir: 1 });
+  },
+  // 5.1: la bitácora de cambios que antes estaba en la Entrega de turno. Sale sola de los cambios que se hacen en la app.
+  cp() {
+    const el = document.getElementById("r-cp");
+    let lista = [], real = false;
+    try {
+      const P = window.parent !== window && window.parent.STU_PUENTE;
+      const x = P && P.datosDelDia && P.datosDelDia();
+      if (x && x.cambios && x.cambios.length) {
+        real = true;
+        lista = x.cambios.map(c => ({ h: (c.rutas[0] || {}).hora || "", ruta: (c.rutas[0] || {}).ruta || "", vueltas: c.rutas.filter(v => v.hora).length, us: c.unidad, ue: c.cambioUnidad || c.unidad, os: c.opSal, oe: c.opEnt, mot: c.motivo, est: c.comentario, por: c.por || "", tipo: c.cambioUnidad ? "Unidad" : "Operador" }));
+      }
+    } catch (e) {}
+    if (!real) lista = CP_EJEMPLO.map(c => ({ h: c[0], ruta: c[1], vueltas: c[2], us: c[3], ue: c[4], os: c[5], oe: c[6], mot: c[7], est: c[8], por: c[9], tipo: c[3] !== c[4] ? "Unidad" : "Operador" }));
+    const nU = lista.filter(c => c.tipo === "Unidad").length, nO = lista.length - nU;
+    const mots = {}; lista.forEach(c => { const m = String(c.mot || "Sin motivo").split(" · ")[0]; mots[m] = (mots[m] || 0) + 1; });
+    const horas = {}; lista.forEach(c => { const hh = String(c.h).slice(0, 2); if (hh) horas[hh] = (horas[hh] || 0) + 1; });
+    const hs = Object.keys(horas).sort();
+    const hechos = lista.filter(c => /realizado/i.test(c.est)).length;
+    el.innerHTML = cabRep("#7C3AED", "Cambios programados", real ? "Cada cambio de unidad u operador que se hace en la app · se registra solo" : "Cada cambio de unidad u operador que se hace en la app · se registra solo · datos de ejemplo", ["CP"]) +
+      kpis([["Cambios", lista.length, "#7C3AED", "del día"], ["De unidad", nU, null, "taller, falla, siniestro…"], ["De operador", nO, null, "falta, préstamo, permiso…"], ["Realizados", hechos, "var(--verde)", lista.length - hechos ? (lista.length - hechos) + " deshechos o corregidos" : "todos"], ["Vueltas movidas", lista.reduce((a, c) => a + (c.vueltas || 0), 0), null, "corridas que cambiaron de mano"]]) +
+      `<div class="rp-2"><div class="inf-c"><div class="inf-t">Por qué se cambió</div>${hbs(Object.entries(mots).sort((a, b) => b[1] - a[1]))}
+         <div class="inf-t" style="margin-top:12px">Por hora</div>${hs.length ? barrasH(hs.map(h => horas[h]), hs, () => "#7C3AED") : ""}</div>
+       <div class="inf-c"><div class="inf-t">Bitácora · toca un encabezado para ordenar · cada celda se puede corregir</div>${tablaOrd("cp", [{ k: "h", t: "Hora" }, { k: "ruta", t: "Ruta", cls: "txt" }, { k: "tipo", t: "Cambio", f: r => `<span class="conf" style="${r.tipo === "Unidad" ? "background:#FBF1DA;color:#7A5310" : "background:#EDE7FB;color:#5B21B6"}">${r.tipo}</span>` }, { k: "us", t: "Unidad", f: r => r.us === r.ue ? (r.us || "—") : `${r.us || "—"} → <b>${r.ue}</b>` }, { k: "os", t: "Operador", cls: "txt", f: r => r.os === r.oe ? r.os : `${r.os} → <b>${r.oe}</b>` }, { k: "mot", t: "Motivo", cls: "txt" }, { k: "est", t: "Estado", f: r => `<span class="conf ${/realizado/i.test(r.est) ? "" : "baja"}">${r.est}</span>` }, { k: "por", t: "Lo registró", cls: "txt" }], lista, { k: "h", dir: 1 })}</div></div>
+       <p class="rn">${real ? "" : "Ejemplo: en la app salen los cambios reales del día. "}Ya no hay que capturarlos en la Entrega de turno: cada cambio que se hace en Activas, Tablero o Flota queda aquí con hora, motivo y quién lo hizo.</p>`;
+    editables(el); activarOrden(el, "cp", REP_PINTA.cp, { k: "h", dir: 1 });
+  }
+};
+const CP_EJEMPLO = [
+  ["05:40", "CU - Amalucan", 3, "8045", "8045", "J. Rubín J.", "E. Sánchez F.", "Falta", "Realizado", "Supervisión · 05:31"],
+  ["06:10", "CAPU - CU", 4, "8073", "8104", "R. Sainos Z.", "R. Sainos Z.", "Taller · ponchadura", "Realizado", "Torre de Control · 06:02"],
+  ["06:55", "Maravillas - CU", 2, "8021", "8021", "N. Flores E.", "A. Méndez C.", "Retardo", "Realizado", "Supervisión · 06:50"],
+  ["07:30", "CU - Tlaxcalancingo", 5, "8059", "8112", "J. D. Gómez R.", "J. D. Gómez R.", "Falla mecánica · frenos", "Realizado", "Torre de Control · 07:18"],
+  ["09:15", "San Ramón - CU", 3, "8031", "8031", "C. Flores M.", "L. Ramírez P.", "Préstamo turismo", "Realizado", "Supervisión · 09:02"],
+  ["11:40", "CU2 - CU", 6, "8088", "8088", "A. Méndez C.", "G. Olmedo R.", "Movimiento para cubrir", "Corregido", "Despacho · 11:35"],
+  ["13:20", "CU - Camino Real", 2, "8025", "8099", "G. Olmedo R.", "G. Olmedo R.", "Siniestro", "Realizado", "Torre de Control · 13:05"],
+  ["14:05", "CU - Cuautlancingo", 4, "8099", "8099", "M. Hernández T.", "L. Ramírez P.", "Permiso", "Realizado", "Supervisión · 13:58"],
+  ["16:30", "CAPU - CU", 3, "8067", "8067", "J. García A.", "E. Pimentel C.", "Suspensión", "Realizado", "Supervisión · 16:21"],
+  ["18:20", "CU - Amalucan", 2, "8031", "8112", "C. Flores M.", "C. Flores M.", "Sin diésel", "Deshecho", "Torre de Control · 18:11"]
+];
+// ---- Celdas editables (estilo Excel) ----
+let EDIT = {}; try { EDIT = JSON.parse(localStorage.getItem("arch_ed") || "{}") || {}; } catch (e) {}
+const guardarEd = () => { try { localStorage.setItem("arch_ed", JSON.stringify(EDIT)); } catch (e) {} };
+function editables(cont) {
+  cont.querySelectorAll("table.xls").forEach(tb => {
+    const id = tb.dataset.id || tb.id; if (!id) return;
+    const filas = [...tb.querySelectorAll("tr")].slice(1);
+    const llave = tr => [...tr.children].filter(td => !td.classList.contains("pos")).slice(0, 3).map(td => (td.dataset.o ?? td.textContent).trim()).join("|");
+    filas.forEach(tr => {
+      const k = llave(tr);
+      [...tr.children].forEach((td, ci) => {
+        if (td.classList.contains("pos") || td.classList.contains("noed") || td.tagName !== "TD") return;
+        td.classList.add("edc"); td.contentEditable = "true"; td.spellcheck = false;
+        const e = (EDIT[id] || {})[k + "#" + ci];
+        if (e) { td.dataset.o = e.o; td.textContent = e.v; td.classList.add("ed"); td.title = "Antes: " + (e.o || "(vacío)"); }
+        td.onfocus = () => { if (td.dataset.o === undefined) td.dataset.o = td.textContent.trim(); td.dataset.html = td.innerHTML; td.textContent = td.textContent.trim(); const r = document.createRange(); r.selectNodeContents(td); const s2 = getSelection(); s2.removeAllRanges(); s2.addRange(r); };
+        td.onblur = () => {
+          const v = td.textContent.trim(), o = td.dataset.o;
+          EDIT[id] = EDIT[id] || {};
+          if (v === o) { delete EDIT[id][k + "#" + ci]; td.classList.remove("ed"); td.removeAttribute("title"); if (td.dataset.html) td.innerHTML = td.dataset.html; }
+          else { EDIT[id][k + "#" + ci] = { v, o }; td.classList.add("ed"); td.title = "Antes: " + (o || "(vacío)"); }
+          guardarEd(); barra(tb, id);
+        };
+        td.onkeydown = ev => {
+          if (ev.key === "Escape") { td.textContent = td.dataset.o; td.blur(); }
+          else if (ev.key === "Enter") { ev.preventDefault(); const sig = tr.nextElementSibling && tr.nextElementSibling.children[ci]; td.blur(); if (sig) sig.focus(); }
+        };
+      });
+    });
+    barra(tb, id);
+  });
+}
+function barra(tb, id) {
+  const caja = tb.closest(".xls-caja"); if (!caja) return;
+  let b = caja.previousElementSibling && caja.previousElementSibling.classList.contains("edbar") ? caja.previousElementSibling : null;
+  if (!b) { b = document.createElement("div"); b.className = "edbar"; caja.parentNode.insertBefore(b, caja); }
+  const n = Object.keys(EDIT[id] || {}).length;
+  b.innerHTML = `<span>✎ Toca una celda para corregirla · <b>Enter</b> guarda y baja · <b>Esc</b> cancela</span>${n ? `<em>${n} ${n === 1 ? "celda corregida" : "celdas corregidas"}</em><button type="button">Regresar originales</button>` : ""}`;
+  const bt = b.querySelector("button"); if (bt) bt.onclick = () => { delete EDIT[id]; guardarEd(); const t = document.querySelector("#tabs button.on"); if (t) t.click(); };
+}
+// simulación de subida
+const EJ = [
+  ["26-11-2026_Indicador_de_puntualidad_del_servicio.xlsx", "pun", "Mié 26", 218],
+  ["reporte (3).xlsx", "velW", "Mié 26", 51],
+  ["26-11-2026_STU_Kilometraje_WEBFLEET.xlsx", "kmW", "Mié 26", 38],
+  ["Diesel_Octubre_1-11.xls", "die", "1 al 10 oct (7 días)", 149, "Excel lo marca dañado: se leyó completo · 597 cargas"],
+  ["Libro1.xlsx", null, "?", 12]
+];
+document.getElementById("btSim").onclick = document.getElementById("btElegir").onclick = () => {
+  const s = document.getElementById("subida");
+  s.innerHTML = EJ.map((e, i) => `<div class="sf" id="sf${i}"><span class="t" style="background:#94A3B8">…</span><div class="n"><b>${e[0]}</b><small>Leyendo…</small></div><span class="e leyendo">Leyendo</span></div>`).join("");
+  EJ.forEach((e, i) => setTimeout(() => {
+    const el = document.getElementById("sf" + i); const t = T.find(x => x.k === e[1]);
+    if (t) el.innerHTML = `<span class="t" style="background:${t.c}">${t.a}</span><div class="n"><b>${e[0]}</b><small>${t.t} · ${t.s} · ${/^\d|día/.test(e[2]) ? "" : "día "}${e[2]} · ${e[3]} KB · pasa a ${t.al.join(", ")}${e[4] ? `<br><span style="color:#0E5566;font-weight:600">${e[4]}</span>` : ""}</small></div><span class="e ok">✓ Guardado</span>`;
+    else el.innerHTML = `<span class="t" style="background:var(--ambar)">?</span><div class="n"><b>${e[0]}</b><small>No lo reconozco. ¿Qué reporte es?</small></div><select><option>Elegir…</option>${T.map(x => `<option>${x.t} · ${x.s}</option>`).join("")}<option>Otro (solo guardar)</option></select>`;
+  }, 500 + i * 450));
+};
+const drop = document.getElementById("drop");
+drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("on"); });
+drop.addEventListener("dragleave", () => drop.classList.remove("on"));
+drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("on"); document.getElementById("btSim").click(); });
+document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
+  if (b.dataset.t === "diesel") { if (REAL) pintarDieselReal(); else pintarDiesel(); }
+  if (REP_PINTA[b.dataset.t]) REP_PINTA[b.dataset.t]();
+  ["dias", "periodo", "diesel", "reportes", "apart", "rol", "cp", "pun", "km", "exc", "ev"].forEach(k => document.getElementById("t-" + k).hidden = k !== b.dataset.t);
+});
+document.querySelectorAll("#chipsP button").forEach(b => b.onclick = () => b.classList.toggle("on"));
+pintarMtz(); pintarDet(); pintarUlt(); pintarCruce(); pintarInf(); pintarDesg();
+
+// 5.1 · Accesos (solo para probar en el ejemplo; en la app sale del área de quien entra)
+(function () {
+  const sel = document.getElementById("verComo");
+  const aplicar = () => {
+    const a = sel.value, entra = ["Supervisión", "Torre de Control", "Jefatura", "Desarrollo"].includes(a);
+    document.body.classList.toggle("sin-acceso", !entra);
+    document.getElementById("sinAcc").hidden = entra;
+    document.body.classList.toggle("no-sube", a !== "Desarrollo");
+    try { localStorage.setItem("arch_area", a); } catch (e) {}
+  };
+  try { const g = localStorage.getItem("arch_area"); if (g) sel.value = g; } catch (e) {}
+  // Dentro de la app: el área sale de quien entró
+  try {
+    const P = window.parent !== window && window.parent.STU_PUENTE;
+    if (P && P.puede) {
+      const a = P.area && P.area();
+      sel.value = [...sel.options].some(o => o.value === a) ? a : P.puede("subirReportes") ? "Desarrollo" : P.puede("reportes") ? "Supervisión" : "Consulta";
+      document.body.classList.add("en-app");
+    }
+  } catch (e) {}
+  sel.onchange = aplicar; aplicar();
+})();
+</script>
+
+</body>
+</html>

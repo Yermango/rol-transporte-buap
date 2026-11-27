@@ -18,7 +18,7 @@ Germán es Ingeniero Industrial, no programa: explicar en español sencillo, sin
 6. Nunca escribir PINs, contraseñas ni llaves en el código: el repositorio es público.
 7. Datos personales: sin domicilios ni columnas sensibles en la nube; los teléfonos personales sí se quedan.
    El área Consulta no ve nombres completos ni teléfonos; las demás áreas sí ven nombres completos.
-8. En cada versión nueva: subir `CACHE_NAME` en `sw.js` (v21 = 5.0), `STU_VERSION` en `index.html`,
+8. En cada versión nueva: subir `CACHE_NAME` en `sw.js` (v21 = 5.0, v22 = 5.1), `STU_VERSION` en `index.html`,
    `version` en `package.json`, `versionName` en el workflow y el `?v=` de los módulos.
 
 ## Áreas y permisos
@@ -57,3 +57,23 @@ Supervisión, Despacho, Torre de Control, Jefatura, Desarrollo, Consulta.
 ## Entrega
 ZIP con `subir-a-github/` (index.html, sw.js, modulos/, package.json, capacitor.config.json,
 .github/workflows/generar-apk.yml, CLAUDE.md), `firebase/reglas-firebase.json` y `GUIA.txt` paso a paso.
+
+## Novedades 5.1 (para no romperlas)
+- Reportes: un solo apartado (`modulos/reportes.html`, menú Reportes). Acceso Supervisión, Torre de Control, Jefatura y Desarrollo;
+  subir archivos solo Desarrollo (`stuPuede("subirReportes")`). Kilometraje, Excesos, Eventos, Puntualidad, Diésel y Cambios programados
+  funcionan; Archivos, Reportes del día, Periodo, Cómo se cruzan y Programado vs real aún con datos de ejemplo (marcados «Ejemplo»).
+- Indicadores oculto (nav y menú); el código sigue (lo usa «Para el grupo de operadores»).
+- Flota: pestañas Flota · Headcount · Entrega de turno (`flotaTab`); sub-pestañas Asignados / Operadores sin asignar / Unidades sin asignar /
+  Unidades en taller (`flotaSub`). Asignación del día desde el rol (plantilla) → Monitor → Excel "datos" (`flAsignacionDelDia`).
+  Errores: operador en el rol con estado fuera (`FL_FUERA`) va en rojo hasta arriba. Bajas: `store.bajasFecha`, visibles hasta fin de mes.
+  Consulta no ve Flota. Edita solo Supervisión y Desarrollo (`estadoOp`, `estadoUnidad`, `headcount`, `turno`).
+- Headcount: ligado al rol planeado (sin rol = sin novedad y sin corridas en `t.n`); estado nuevo «Suspensión».
+- Entrega de turno dentro de Flota (`?en=flota`): solo Cambios y Seguimiento, sin días (usa `STU_PUENTE.diaIso`), copia del día pasado;
+  ya no cambia estados de operadores (`marcarEstado` desactivado) ni muestra préstamos (viven en Headcount).
+- Activas: colores de ruta (`stuColorRuta`, `RC_REGLAS`, config en `config/rutaColores`, Menú › Ajustes › Colores de rutas).
+  Celular: tarjeta de siempre con color hasta la hora, sin estrella de puntualidad. Computadora: hoja tipo Excel (`htmlFilaXl`):
+  Origen, Destino, Unidad, Clave, Nombre, Hora, Positivo, Salida real, Incidencias (ícono), Analista; flechas/Tab/Enter, "." o "+" + Enter marca;
+  anchos de columna arrastrables (`stu_xl_anchos`). Filtros: Todas · Entradas · Salidas · Entrada CU2 · Salida CU2.
+- Palomita oculta a los 5 min (`OCULTAR_FORMADO_MIN`). Sin botón rojo flotante de cambio.
+- Cambios por confirmar: Avisar · Sin aviso · Deshacer por cambio; solo se avisa lo hecho hoy; `stuAvisoVigente` (2 h) filtra avisos viejos.
+- Catálogo de rutas = Hoja2 oficial; clave desconocida sale «Ruta ####» con aviso (sin «Acajete»).

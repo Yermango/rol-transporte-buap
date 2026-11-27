@@ -17,6 +17,8 @@
      menú por áreas, estilo GER). Los módulos (carpeta "modulos") se guardan la primera vez que se abren.
    - v20: 4.9 (Programación y Crear día, candados, historial de roles, Rol del día, Descargas,
      Velocidad: lámina para el grupo de operadores, Kilometraje: copiar km real).
+   - v22: 5.1 (Reportes en un solo apartado, Flota con Headcount y Entrega de turno, colores de ruta,
+     Activas tipo hoja de Excel en computadora, avisos solo del día con Avisar / Sin aviso / Deshacer).
    - v21: 5.0 (estilo GER, usuarios por correo o usuario, Pendientes y agenda tipo Notion,
      Tablero compacto en celular, aviso sin internet, km como 17.973,40).
    - v10: al actualizarse ya NO borra lo guardado de tus otras apps de GitHub.
@@ -25,7 +27,7 @@
    ========================================================================== */
 
 const PREFIJO_CACHE = "stu-buap-pwa-";
-const CACHE_NAME = PREFIJO_CACHE + "v21";
+const CACHE_NAME = PREFIJO_CACHE + "v22";
 const ASSETS = [
   "./",
   "./index.html",

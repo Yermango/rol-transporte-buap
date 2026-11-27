@@ -309,6 +309,12 @@ textarea#dayCmt{min-height:80px}
   .drop{flex-direction:column;text-align:center}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* 5.1 · Modo integrado (dentro de Archivos/Reportes): sin encabezado ni pasos que ya hace la app */
+body.integrado header.top, body.integrado #tab-cargar, body.integrado #tab-hist, body.integrado #stamp,
+body.integrado #diaTitle, body.integrado #diaSub, body.integrado #btnSaveDay, body.integrado #btnXlsDay { display: none !important; }
+body.integrado .navbar { position: static; }
+body.integrado main.wrap { padding-top: 10px; }
 </style>
 
 <header class="top">
@@ -1885,6 +1891,37 @@ renderSlots();restoreFiles();renderSaved();renderHist();Store.init();renderGuard
   const hdr = document.querySelector('header');
   if (hdr && hdr.parentNode) hdr.parentNode.insertBefore(barra, hdr.nextSibling); else document.body.prepend(barra);
   const txt = document.getElementById('puenteTxt');
+  // 5.1: cada vez que se calcula un día, manda a la app las unidades sin posicionamiento (Sin GPS o marcadas "No pos")
+  // para que Puntualidad cuente como impuntuales sus corridas sin registro en la geocerca.
+  if (P.sinPosicion && typeof renderDay === 'function') {
+    let tSP = null;
+    const mandarSP = () => {
+      try {
+        const d = S.day; if (!d || S.sample || !d.D) return;
+        const us = [...d.units.values()];
+        const lista = us.filter(U => (U.tags || []).some(t => t === 'SG' || t === 'NP')).map(U => ({ u: String(U.u), t: U.tags.includes('NP') ? 'NP' : 'SG' }));
+        P.sinPosicion(d.D, lista);
+        // 5.1: resumen chico del día para Indicadores › Reportes (plan contra real, alertas y mayores diferencias)
+        if (P.guardarResumenKm) {
+          const r1 = v => Math.round((Number(v) || 0) * 10) / 10;
+          const n = {}; us.forEach(U => (U.tags || []).forEach(t => { n[t] = (n[t] || 0) + 1; }));
+          const conPlan = us.filter(U => (U.kq ?? U.kp) > 0 && U.kr != null);
+          const prov = {}; us.forEach(U => { if (U.kr != null) prov[U.p || '?'] = r1((prov[U.p || '?'] || 0) + U.kr); });
+          P.guardarResumenKm(d.D, {
+            v: 1, fecha: d.D, ts: Date.now(), plan: d.planLabel || '',
+            kp: r1(us.reduce((a, U) => a + (U.kq ?? U.kp ?? 0), 0)), kr: r1(us.reduce((a, U) => a + (U.kr || 0), 0)),
+            kpC: r1(conPlan.reduce((a, U) => a + (U.kq ?? U.kp), 0)), krC: r1(conPlan.reduce((a, U) => a + U.kr, 0)),
+            unis: us.length, conGps: us.filter(U => U.kr > 0).length, n, prov,
+            top: conPlan.filter(U => U.pc != null).sort((a, b) => Math.abs(b.pc) - Math.abs(a.pc)).slice(0, 8).map(U => ({ u: String(U.u), kp: r1(U.kq ?? U.kp), kr: r1(U.kr), pc: r1(U.pc), tg: (U.tags || []).join('|') })),
+            sinGps: us.filter(U => (U.tags || []).some(t => t === 'SG' || t === 'NP')).map(U => String(U.u)).slice(0, 20),
+            topKm: us.filter(U => U.kr > 0).sort((a, b) => b.kr - a.kr).slice(0, 5).map(U => ({ u: String(U.u), kr: r1(U.kr) }))
+          });
+        }
+      } catch (e) {}
+    };
+    const original = renderDay;
+    renderDay = function () { const r = original.apply(this, arguments); clearTimeout(tSP); tSP = setTimeout(mandarSP, 800); return r; };
+  }
   const partes = [];
   const pintar = () => { txt.textContent = partes.filter(Boolean).join(' · ') + ' · Aquí solo carga los GPS y las guardias/TP.'; };
 
@@ -1926,6 +1963,25 @@ renderSlots();restoreFiles();renderSaved();renderHist();Store.init();renderGuard
     } else await cargarMonitor(undefined);
     pintar();
   })();
+})();
+
+// 5.1 · Modo integrado: la app ya dice qué archivos se usaron y el día se guarda solo al calcularlo
+(function () {
+  let integrado = false;
+  try { integrado = new URLSearchParams(location.search).has('integrado') || !!(window.parent !== window && window.parent.STU_PUENTE && window.parent.STU_PUENTE.integrado); } catch (e) {}
+  if (!integrado) return;
+  document.body.classList.add('integrado');
+  window.kmExportarExcel = () => { try { exportDayXlsx(); } catch (e) {} };
+  if (typeof renderDay === 'function') {
+    let t = null;
+    const antes = renderDay;
+    renderDay = function () {
+      const r = antes.apply(this, arguments);
+      clearTimeout(t);
+      t = setTimeout(async () => { try { if (S.day && !S.sample && !S.day.fromHist) await Store.put(dayRecord()); } catch (e) {} }, 1200);
+      return r;
+    };
+  }
 })();
 </script>
 </body></html>
